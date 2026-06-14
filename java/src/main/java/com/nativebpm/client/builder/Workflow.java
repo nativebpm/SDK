@@ -373,7 +373,7 @@ public class Workflow {
 
     public AITaskBuilder aiTask(String id, String name) {
         Map<String, Object> node = new HashMap<>();
-        node.put("type", "aiTask");
+        node.put("type", "aiServiceTask");
         node.put("id", id);
         node.put("name", name);
         nodes.add(node);

@@ -655,7 +655,7 @@ export class Workflow {
         return new ServiceTaskBuilder(this, id);
     }
     aiTask(id, name) {
-        const node = { type: 'aiTask', id, name };
+        const node = { type: 'aiServiceTask', id, name };
         this.nodes.push(node);
         return new AITaskBuilder(this, id);
     }

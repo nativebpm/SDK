@@ -147,7 +147,7 @@ namespace NativeBPM.Client.Builder
         {
             nodes.Add(new Dictionary<string, object>
             {
-                { "type", "aiTask" },
+                { "type", "aiServiceTask" },
                 { "id", nodeId },
                 { "name", nodeName }
             });

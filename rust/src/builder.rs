@@ -110,7 +110,7 @@ impl Workflow {
 
     pub fn ai_task(&mut self, node_id: &str, name: &str) -> AITaskBuilder<'_> {
         self.nodes.push(serde_json::json!({
-            "type": "aiTask",
+            "type": "aiServiceTask",
             "id": node_id,
             "name": name
         }));

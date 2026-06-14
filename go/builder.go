@@ -126,7 +126,7 @@ func (w *Workflow) ServiceTask(id string, name string, topic string) *ServiceTas
 
 func (w *Workflow) AITask(id string, name string) *AITaskBuilder {
 	w.Nodes = append(w.Nodes, map[string]interface{}{
-		"type": "aiTask",
+		"type": "aiServiceTask",
 		"id":   id,
 		"name": name,
 	})

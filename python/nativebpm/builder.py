@@ -643,7 +643,7 @@ class Workflow:
         return ServiceTaskBuilder(self, node_id)
 
     def ai_task(self, node_id: str, name: str) -> AITaskBuilder:
-        self._nodes.append({'type': 'aiTask', 'id': node_id, 'name': name})
+        self._nodes.append({'type': 'aiServiceTask', 'id': node_id, 'name': name})
         return AITaskBuilder(self, node_id)
 
     def user_task(self, node_id: str, name: str) -> UserTaskBuilder:

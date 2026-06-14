@@ -114,6 +114,16 @@ Every language has its unique ecosystem, strengths, and philosophy. NativeBPM em
 
 ---
 
+## 🤖 AI Service Task Integration (`aiServiceTask`)
+
+To facilitate seamless AI and LLM orchestration without breaking BPMN 2.0 standards:
+* Every client SDK provides a fluent `.AITask(...)` (or `.ai()`) helper.
+* Under the hood, this compiles into a standard BPMN `<serviceTask>` element with the type `"aiServiceTask"` and topic `"ai_assistant"`.
+* System instructions, prompts, and target schemas are automatically serialized into `<extensionElements>` (matching standard Camunda input/output structures).
+* This keeps your process schemas fully compatible with standard BPMN 2.0 visual modelers while giving your developers a clean, type-safe API wrapper.
+
+---
+
 ## 📝 License
 
 This project is licensed under the terms of the **Unlicense** (see individual directories for details).

@@ -117,7 +117,7 @@ class Workflow {
 
     public function aiTask(string $id, string $name): AITaskBuilder {
         $this->nodes[] = [
-            'type' => 'aiTask',
+            'type' => 'aiServiceTask',
             'id' => $id,
             'name' => $name
         ];
