@@ -22,7 +22,7 @@ async fn main() {
         });
 
     // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
-    let bpmn_xml = match workflow.build_xml() {
+    let bpmn_xml = match tokio::task::spawn_blocking(move || workflow.build_xml()).await.unwrap() {
         Ok(xml) => {
             println!("✓ Successfully compiled native workflow AST to BPMN 2.0 XML.");
             xml
