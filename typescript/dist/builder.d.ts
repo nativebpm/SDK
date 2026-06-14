@@ -166,14 +166,50 @@ export declare class DMNRuleBuilder {
     mapDecisionResult(mapDecisionResult: string): BusinessRuleTaskBuilder;
     resultVariable(resultVar: string): BusinessRuleTaskBuilder;
 }
+export declare class Branch {
+    workflow: Workflow;
+    gatewayID: string;
+    currentNodeID: string;
+    isConditional: boolean;
+    condition?: string;
+    hasEnded: boolean;
+    constructor(workflow: Workflow, gatewayID: string, currentNodeID: string, isConditional: boolean, condition?: string);
+    private connectNode;
+    user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Branch;
+    service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Branch;
+    ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Branch;
+    end(id: string, name: string): Branch;
+    if(condition: string, thenFn: (b: Branch) => void): IfElseBranchBuilder;
+}
+export declare class IfElseBuilder {
+    workflow: Workflow;
+    gatewayID: string;
+    constructor(workflow: Workflow, gatewayID: string);
+    else(elseFn: (b: Branch) => void): Workflow;
+}
+export declare class IfElseBranchBuilder {
+    branch: Branch;
+    gatewayID: string;
+    constructor(branch: Branch, gatewayID: string);
+    else(elseFn: (b: Branch) => void): Branch;
+}
 export declare class Workflow {
     private id;
     private name;
     private nodes;
     private flows;
     private compiledModulePromise;
+    private currentNodeID;
+    private pendingMerges;
     constructor(id: string, name: string, wasmInput?: string | Uint8Array);
     private initCompiler;
+    private connectNode;
+    start(id: string): Workflow;
+    end(id: string, name: string): Workflow;
+    user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Workflow;
+    service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Workflow;
+    ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Workflow;
+    if(condition: string, thenFn: (b: Branch) => void): IfElseBuilder;
     startEvent(id: string): StartEventBuilder;
     endEvent(id: string, name: string): Workflow;
     serviceTask(id: string, name: string, topic: string): ServiceTaskBuilder;

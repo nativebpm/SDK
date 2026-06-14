@@ -209,4 +209,43 @@ func BenchmarkWorkflowBuilder(b *testing.B) {
 	}
 }
 
+func TestBlockClosureDSL(t *testing.T) {
+	ctx := context.Background()
+	wf := NewWorkflow("closure-process", "Closure Process")
+	
+	wf.Start("start").
+		User("task1", "User Approval").
+		If("${approved == true}", func(b *Branch) {
+			b.Service("publish", "Publish Page", "publish-topic", func(st *ServiceTaskBuilder) {
+				st.Wasm("./publish.wasm")
+			}).
+			End("end_approved", "Approved End")
+		}).
+		Else(func(b *Branch) {
+			b.Service("reject", "Notify Reject", "reject-topic").
+				End("end_rejected", "Rejected End")
+		})
+
+	xml, err := wf.BuildXML(ctx)
+	if err != nil {
+		t.Fatalf("failed to compile XML: %v", err)
+	}
+
+	if !strings.Contains(xml, `id="closure-process"`) {
+		t.Errorf("expected process ID in XML, got: %s", xml)
+	}
+	if !strings.Contains(xml, `exclusiveGateway id="gw_task1_decision"`) {
+		t.Errorf("expected exclusiveGateway decision in XML, got: %s", xml)
+	}
+	if !strings.Contains(xml, `serviceTask id="publish"`) {
+		t.Errorf("expected serviceTask publish in XML, got: %s", xml)
+	}
+	if !strings.Contains(xml, `wasmPath="./publish.wasm"`) {
+		t.Errorf("expected wasmPath in XML, got: %s", xml)
+	}
+	if !strings.Contains(xml, `serviceTask id="reject"`) {
+		t.Errorf("expected serviceTask reject in XML, got: %s", xml)
+	}
+}
+
 

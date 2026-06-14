@@ -493,12 +493,123 @@ export class DMNRuleBuilder {
   }
 }
 
+export class Branch {
+  public hasEnded: boolean = false;
+  constructor(
+    public workflow: Workflow,
+    public gatewayID: string,
+    public currentNodeID: string,
+    public isConditional: boolean,
+    public condition?: string
+  ) {}
+
+  private connectNode(id: string): void {
+    if (this.hasEnded) return;
+
+    const merges = (this.workflow as any).pendingMerges as string[];
+    if (merges && merges.length > 0) {
+      for (const sourceID of merges) {
+        this.workflow.sequenceFlow(sourceID, id);
+      }
+      (this.workflow as any).pendingMerges = [];
+      this.currentNodeID = id;
+      return;
+    }
+
+    if (this.currentNodeID === this.gatewayID) {
+      if (this.isConditional) {
+        this.workflow.sequenceFlowWithCondition(this.gatewayID, id, this.condition || '');
+      } else {
+        this.workflow.sequenceFlow(this.gatewayID, id);
+      }
+    } else if (this.currentNodeID && this.currentNodeID !== id) {
+      this.workflow.sequenceFlow(this.currentNodeID, id);
+    }
+    this.currentNodeID = id;
+  }
+
+  public user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Branch {
+    const builder = this.workflow.userTask(id, name);
+    if (config) config(builder);
+    this.connectNode(id);
+    return this;
+  }
+
+  public service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Branch {
+    const builder = this.workflow.serviceTask(id, name, topic);
+    if (config) config(builder);
+    this.connectNode(id);
+    return this;
+  }
+
+  public ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Branch {
+    const builder = this.workflow.aiTask(id, name);
+    if (config) config(builder);
+    this.connectNode(id);
+    return this;
+  }
+
+  public end(id: string, name: string): Branch {
+    this.workflow.endEvent(id, name);
+    this.connectNode(id);
+    this.hasEnded = true;
+    return this;
+  }
+
+  public if(condition: string, thenFn: (b: Branch) => void): IfElseBranchBuilder {
+    const gwID = `gw_${this.currentNodeID}_decision`;
+    this.workflow.exclusiveGateway(gwID, 'Decision Gateway');
+    this.connectNode(gwID);
+
+    const thenBranch = new Branch(this.workflow, gwID, gwID, true, condition);
+    thenFn(thenBranch);
+
+    if (!thenBranch.hasEnded && thenBranch.currentNodeID !== gwID) {
+      ((this.workflow as any).pendingMerges as string[]).push(thenBranch.currentNodeID);
+    }
+
+    return new IfElseBranchBuilder(this, gwID);
+  }
+}
+
+export class IfElseBuilder {
+  constructor(public workflow: Workflow, public gatewayID: string) {}
+
+  public else(elseFn: (b: Branch) => void): Workflow {
+    const elseBranch = new Branch(this.workflow, this.gatewayID, this.gatewayID, false);
+    elseFn(elseBranch);
+
+    if (!elseBranch.hasEnded && elseBranch.currentNodeID !== this.gatewayID) {
+      ((this.workflow as any).pendingMerges as string[]).push(elseBranch.currentNodeID);
+    }
+
+    return this.workflow;
+  }
+}
+
+export class IfElseBranchBuilder {
+  constructor(public branch: Branch, public gatewayID: string) {}
+
+  public else(elseFn: (b: Branch) => void): Branch {
+    const elseBranch = new Branch(this.branch.workflow, this.gatewayID, this.gatewayID, false);
+    elseFn(elseBranch);
+
+    if (!elseBranch.hasEnded && elseBranch.currentNodeID !== this.gatewayID) {
+      ((this.branch.workflow as any).pendingMerges as string[]).push(elseBranch.currentNodeID);
+    }
+
+    return this.branch;
+  }
+}
+
 export class Workflow {
   private id: string;
   private name: string;
   private nodes: NodeAST[] = [];
   private flows: FlowAST[] = [];
   private compiledModulePromise: Promise<WebAssembly.Module> | null = null;
+  private currentNodeID: string = '';
+  private pendingMerges: string[] = [];
 
   constructor(id: string, name: string, wasmInput?: string | Uint8Array) {
     this.id = id;
@@ -520,6 +631,70 @@ export class Workflow {
     }
     const decompressedBytes = decompressWasmIfNeeded(wasmBuffer);
     this.compiledModulePromise = WebAssembly.compile(decompressedBytes as any);
+  }
+
+  private connectNode(id: string): void {
+    if (this.pendingMerges.length > 0) {
+      for (const sourceID of this.pendingMerges) {
+        this.sequenceFlow(sourceID, id);
+      }
+      this.pendingMerges = [];
+    } else if (this.currentNodeID && this.currentNodeID !== id) {
+      this.sequenceFlow(this.currentNodeID, id);
+    }
+    this.currentNodeID = id;
+  }
+
+  public start(id: string): Workflow {
+    this.startEvent(id);
+    this.connectNode(id);
+    return this;
+  }
+
+  public end(id: string, name: string): Workflow {
+    this.endEvent(id, name);
+    this.connectNode(id);
+    this.currentNodeID = '';
+    return this;
+  }
+
+  public user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Workflow {
+    const builder = this.userTask(id, name);
+    if (config) config(builder);
+    this.connectNode(id);
+    return this;
+  }
+
+  public service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Workflow {
+    const builder = this.serviceTask(id, name, topic);
+    if (config) config(builder);
+    this.connectNode(id);
+    return this;
+  }
+
+  public ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Workflow {
+    const builder = this.aiTask(id, name);
+    if (config) config(builder);
+    this.connectNode(id);
+    return this;
+  }
+
+  public if(condition: string, thenFn: (b: Branch) => void): IfElseBuilder {
+    const gwID = `gw_${this.currentNodeID}_decision`;
+    this.exclusiveGateway(gwID, 'Decision Gateway');
+
+    if (this.currentNodeID) {
+      this.sequenceFlow(this.currentNodeID, gwID);
+    }
+
+    const thenBranch = new Branch(this, gwID, gwID, true, condition);
+    thenFn(thenBranch);
+
+    if (!thenBranch.hasEnded && thenBranch.currentNodeID !== gwID) {
+      this.pendingMerges.push(thenBranch.currentNodeID);
+    }
+
+    return new IfElseBuilder(this, gwID);
   }
 
   public startEvent(id: string): StartEventBuilder {

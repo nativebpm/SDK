@@ -12,7 +12,10 @@ export {
   ExclusiveGatewayBuilder,
   ParallelGatewayBuilder,
   EventBasedGatewayBuilder,
-  CallActivityBuilder
+  CallActivityBuilder,
+  Branch,
+  IfElseBuilder,
+  IfElseBranchBuilder
 } from './builder.js';
 
 export * from './client.js';

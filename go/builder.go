@@ -30,6 +30,8 @@ type Workflow struct {
 	err            error
 	runtime        wazero.Runtime
 	compiledModule wazero.CompiledModule
+	currentNodeID  string
+	pendingMerges  []string
 }
 
 func NewWorkflow(id, name string, wasmInput ...interface{}) *Workflow {
@@ -214,6 +216,239 @@ func (w *Workflow) findNode(id string) map[string]interface{} {
 		}
 	}
 	return nil
+}
+
+// Branch is a local scope context for conditional branches.
+type Branch struct {
+	workflow      *Workflow
+	gatewayID     string
+	currentNodeID string
+	isConditional bool
+	condition     string
+	hasEnded      bool
+}
+
+// IfElseBuilder facilitates chaining Else() after If() at the workflow level.
+type IfElseBuilder struct {
+	workflow  *Workflow
+	gatewayID string
+}
+
+// IfElseBranchBuilder facilitates chaining Else() after If() at the branch level.
+type IfElseBranchBuilder struct {
+	branch    *Branch
+	gatewayID string
+}
+
+func (w *Workflow) connectNode(id string) {
+	if len(w.pendingMerges) > 0 {
+		for _, sourceID := range w.pendingMerges {
+			w.SequenceFlow(sourceID, id)
+		}
+		w.pendingMerges = nil
+	} else if w.currentNodeID != "" && w.currentNodeID != id {
+		w.SequenceFlow(w.currentNodeID, id)
+	}
+	w.currentNodeID = id
+}
+
+// Start initiates the workflow sequential path.
+func (w *Workflow) Start(id string) *Workflow {
+	w.StartEvent(id)
+	w.connectNode(id)
+	return w
+}
+
+// End terminates the main workflow sequential path.
+func (w *Workflow) End(id, name string) *Workflow {
+	w.EndEvent(id, name)
+	w.connectNode(id)
+	w.currentNodeID = "" // terminate main path
+	return w
+}
+
+// User appends a user task and links it sequentially.
+func (w *Workflow) User(id, name string, config ...func(t *UserTaskBuilder)) *Workflow {
+	builder := w.UserTask(id, name)
+	if len(config) > 0 {
+		config[0](builder)
+	}
+	w.connectNode(id)
+	return w
+}
+
+// Service appends a service task and links it sequentially.
+func (w *Workflow) Service(id, name, topic string, config ...func(t *ServiceTaskBuilder)) *Workflow {
+	builder := w.ServiceTask(id, name, topic)
+	if len(config) > 0 {
+		config[0](builder)
+	}
+	w.connectNode(id)
+	return w
+}
+
+// AI appends an AI orchestration task and links it sequentially.
+func (w *Workflow) AI(id, name string, config ...func(t *AITaskBuilder)) *Workflow {
+	builder := w.AITask(id, name)
+	if len(config) > 0 {
+		config[0](builder)
+	}
+	w.connectNode(id)
+	return w
+}
+
+// If defines a conditional branch path on the main workflow.
+func (w *Workflow) If(condition string, thenFn func(b *Branch)) *IfElseBuilder {
+	gwID := fmt.Sprintf("gw_%s_decision", w.currentNodeID)
+	w.ExclusiveGateway(gwID, "Decision Gateway")
+	
+	if w.currentNodeID != "" {
+		w.SequenceFlow(w.currentNodeID, gwID)
+	}
+	
+	thenBranch := &Branch{
+		workflow:      w,
+		gatewayID:     gwID,
+		currentNodeID: gwID,
+		isConditional: true,
+		condition:     condition,
+	}
+	
+	thenFn(thenBranch)
+	
+	if !thenBranch.hasEnded && thenBranch.currentNodeID != gwID {
+		w.pendingMerges = append(w.pendingMerges, thenBranch.currentNodeID)
+	}
+	
+	return &IfElseBuilder{
+		workflow:  w,
+		gatewayID: gwID,
+	}
+}
+
+// Else defines the default path on the main workflow when the If condition evaluates to false.
+func (ie *IfElseBuilder) Else(elseFn func(b *Branch)) *Workflow {
+	elseBranch := &Branch{
+		workflow:      ie.workflow,
+		gatewayID:     ie.gatewayID,
+		currentNodeID: ie.gatewayID,
+		isConditional: false,
+	}
+	
+	elseFn(elseBranch)
+	
+	if !elseBranch.hasEnded && elseBranch.currentNodeID != ie.gatewayID {
+		ie.workflow.pendingMerges = append(ie.workflow.pendingMerges, elseBranch.currentNodeID)
+	}
+	
+	return ie.workflow
+}
+
+func (b *Branch) connectNode(id string) {
+	if b.hasEnded {
+		return
+	}
+	if len(b.workflow.pendingMerges) > 0 {
+		for _, sourceID := range b.workflow.pendingMerges {
+			b.workflow.SequenceFlow(sourceID, id)
+		}
+		b.workflow.pendingMerges = nil
+		b.currentNodeID = id
+		return
+	}
+	if b.currentNodeID == b.gatewayID {
+		if b.isConditional {
+			b.workflow.SequenceFlowWithCondition(b.gatewayID, id, b.condition)
+		} else {
+			b.workflow.ExclusiveGateway(b.gatewayID, "Decision Gateway").Default(id)
+		}
+	} else if b.currentNodeID != "" && b.currentNodeID != id {
+		b.workflow.SequenceFlow(b.currentNodeID, id)
+	}
+	b.currentNodeID = id
+}
+
+// User appends a user task inside a branch.
+func (b *Branch) User(id, name string, config ...func(t *UserTaskBuilder)) *Branch {
+	builder := b.workflow.UserTask(id, name)
+	if len(config) > 0 {
+		config[0](builder)
+	}
+	b.connectNode(id)
+	return b
+}
+
+// Service appends a service task inside a branch.
+func (b *Branch) Service(id, name, topic string, config ...func(t *ServiceTaskBuilder)) *Branch {
+	builder := b.workflow.ServiceTask(id, name, topic)
+	if len(config) > 0 {
+		config[0](builder)
+	}
+	b.connectNode(id)
+	return b
+}
+
+// AI appends an AI orchestration task inside a branch.
+func (b *Branch) AI(id, name string, config ...func(t *AITaskBuilder)) *Branch {
+	builder := b.workflow.AITask(id, name)
+	if len(config) > 0 {
+		config[0](builder)
+	}
+	b.connectNode(id)
+	return b
+}
+
+// End terminates the branch.
+func (b *Branch) End(id, name string) *Branch {
+	b.workflow.EndEvent(id, name)
+	b.connectNode(id)
+	b.hasEnded = true
+	return b
+}
+
+// If defines a nested conditional branch path inside a branch.
+func (b *Branch) If(condition string, thenFn func(sub *Branch)) *IfElseBranchBuilder {
+	gwID := fmt.Sprintf("gw_%s_decision", b.currentNodeID)
+	b.workflow.ExclusiveGateway(gwID, "Decision Gateway")
+	
+	b.connectNode(gwID)
+	
+	thenBranch := &Branch{
+		workflow:      b.workflow,
+		gatewayID:     gwID,
+		currentNodeID: gwID,
+		isConditional: true,
+		condition:     condition,
+	}
+	
+	thenFn(thenBranch)
+	
+	if !thenBranch.hasEnded && thenBranch.currentNodeID != gwID {
+		b.workflow.pendingMerges = append(b.workflow.pendingMerges, thenBranch.currentNodeID)
+	}
+	
+	return &IfElseBranchBuilder{
+		branch:    b,
+		gatewayID: gwID,
+	}
+}
+
+// Else defines the nested default path inside a branch.
+func (ieb *IfElseBranchBuilder) Else(elseFn func(sub *Branch)) *Branch {
+	elseBranch := &Branch{
+		workflow:      ieb.branch.workflow,
+		gatewayID:     ieb.gatewayID,
+		currentNodeID: ieb.gatewayID,
+		isConditional: false,
+	}
+	
+	elseFn(elseBranch)
+	
+	if !elseBranch.hasEnded && elseBranch.currentNodeID != ieb.gatewayID {
+		ieb.branch.workflow.pendingMerges = append(ieb.branch.workflow.pendingMerges, elseBranch.currentNodeID)
+	}
+	
+	return ieb.branch
 }
 
 func decompressWasmIfNeeded(data []byte) ([]byte, error) {
