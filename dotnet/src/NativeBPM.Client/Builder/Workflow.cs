@@ -390,6 +390,83 @@ namespace NativeBPM.Client.Builder
             return root.GetProperty("xml").GetString()!;
         }
 
+        private void ConnectNode(string nodeId)
+        {
+            if (PendingMerges.Count > 0)
+            {
+                foreach (var sourceId in PendingMerges)
+                {
+                    this.SequenceFlow(sourceId, nodeId);
+                }
+                PendingMerges.Clear();
+            }
+            else if (!string.IsNullOrEmpty(currentNodeID) && currentNodeID != nodeId)
+            {
+                this.SequenceFlow(currentNodeID, nodeId);
+            }
+            currentNodeID = nodeId;
+        }
+
+        public Workflow Start(string id)
+        {
+            this.StartEvent(id);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Workflow End(string id, string name)
+        {
+            this.EndEvent(id, name);
+            ConnectNode(id);
+            this.currentNodeID = "";
+            return this;
+        }
+
+        public Workflow User(string id, string name, Action<UserTaskBuilder>? config = null)
+        {
+            var builder = this.UserTask(id, name);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Workflow Service(string id, string name, string topic, Action<ServiceTaskBuilder>? config = null)
+        {
+            var builder = this.ServiceTask(id, name, topic);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Workflow Ai(string id, string name, Action<AITaskBuilder>? config = null)
+        {
+            var builder = this.AITask(id, name);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public IfElseBuilder If(string condition, Action<Branch> thenFn)
+        {
+            string gwID = "gw_" + this.currentNodeID + "_decision";
+            this.ExclusiveGateway(gwID, "Decision Gateway");
+
+            if (!string.IsNullOrEmpty(currentNodeID))
+            {
+                this.SequenceFlow(currentNodeID, gwID);
+            }
+
+            Branch thenBranch = new Branch(this, gwID, gwID, true, condition);
+            thenFn(thenBranch);
+
+            if (!thenBranch.HasEnded && thenBranch.currentNodeID != gwID)
+            {
+                this.PendingMerges.Add(thenBranch.currentNodeID);
+            }
+
+            return new IfElseBuilder(this, gwID);
+        }
+
         public void Dispose()
         {
             compiledModule?.Dispose();
@@ -909,83 +986,6 @@ namespace NativeBPM.Client.Builder
                 return Convert.ToString(val, System.Globalization.CultureInfo.InvariantCulture);
             }
             return val.ToString() ?? "-";
-        }
-
-        private void ConnectNode(string nodeId)
-        {
-            if (PendingMerges.Count > 0)
-            {
-                foreach (var sourceId in PendingMerges)
-                {
-                    this.SequenceFlow(sourceId, nodeId);
-                }
-                PendingMerges.Clear();
-            }
-            else if (!string.IsNullOrEmpty(currentNodeID) && currentNodeID != nodeId)
-            {
-                this.SequenceFlow(currentNodeID, nodeId);
-            }
-            currentNodeID = nodeId;
-        }
-
-        public Workflow Start(string id)
-        {
-            this.StartEvent(id);
-            ConnectNode(id);
-            return this;
-        }
-
-        public Workflow End(string id, string name)
-        {
-            this.EndEvent(id, name);
-            ConnectNode(id);
-            this.currentNodeID = "";
-            return this;
-        }
-
-        public Workflow User(string id, string name, Action<UserTaskBuilder>? config = null)
-        {
-            var builder = this.UserTask(id, name);
-            config?.Invoke(builder);
-            ConnectNode(id);
-            return this;
-        }
-
-        public Workflow Service(string id, string name, string topic, Action<ServiceTaskBuilder>? config = null)
-        {
-            var builder = this.ServiceTask(id, name, topic);
-            config?.Invoke(builder);
-            ConnectNode(id);
-            return this;
-        }
-
-        public Workflow Ai(string id, string name, Action<AITaskBuilder>? config = null)
-        {
-            var builder = this.AITask(id, name);
-            config?.Invoke(builder);
-            ConnectNode(id);
-            return this;
-        }
-
-        public IfElseBuilder If(string condition, Action<Branch> thenFn)
-        {
-            string gwID = "gw_" + this.currentNodeID + "_decision";
-            this.ExclusiveGateway(gwID, "Decision Gateway");
-
-            if (!string.IsNullOrEmpty(currentNodeID))
-            {
-                this.SequenceFlow(currentNodeID, gwID);
-            }
-
-            Branch thenBranch = new Branch(this, gwID, gwID, true, condition);
-            thenFn(thenBranch);
-
-            if (!thenBranch.HasEnded && thenBranch.currentNodeID != gwID)
-            {
-                this.PendingMerges.Add(thenBranch.currentNodeID);
-            }
-
-            return new IfElseBuilder(this, gwID);
         }
     }
 
