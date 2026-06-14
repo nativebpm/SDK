@@ -11,33 +11,24 @@ public class WorkflowWithWasmPluginsExample {
         Workflow workflow = new Workflow("wasm-demo", "Workflow with Guest WASM Plugins");
 
         // Chain starting from start event
-        workflow.startEvent("start")
-                .next("calculate");
-
-        // Configure WASM Service Task and chain to the AI task
-        workflow.serviceTask("calculate", "Calculate Totals", "payment_topic")
-                .wasm("./calculate_total.wasm")
-                .next("aiCheck");
-
-        // Configure AI task and chain to the exclusive gateway
-        workflow.aiTask("aiCheck", "AI Fraud Guard")
-                .provider("google")
-                .model("gemini-2.5-flash")
-                .prompt("Analyze transaction for fraud: ${orderAmount}")
-                .resultVar("isFraudulent")
-                .next("gateway");
-
-        // Set up exclusive gateway with transition conditions and default flow
-        workflow.exclusiveGateway("gateway", "Fraud Gateway")
-                .condition("userTask", "${isFraudulent == true}")
-                .defaultValue("end");
-
-        // Configure User Task and chain to the end event
-        workflow.userTask("userTask", "Manual Fraud Approval")
-                .assignee("security_officer")
-                .next("end");
-
-        workflow.endEvent("end", "Process Finished");
+        workflow.start("start")
+                .service("calculate", "Calculate Totals", "payment_topic", st -> {
+                    st.wasm("./calculate_total.wasm");
+                })
+                .ai("aiCheck", "AI Fraud Guard", ait -> {
+                    ait.provider("google")
+                       .model("gemini-2.5-flash")
+                       .prompt("Analyze transaction for fraud: ${orderAmount}")
+                       .resultVar("isFraudulent");
+                })
+                .ifBranch("${isFraudulent == true}", b -> {
+                    b.user("userTask", "Manual Fraud Approval", ut -> {
+                        ut.assignee("security_officer");
+                    }).end("end_fraud", "Process Finished");
+                })
+                .elseBranch(b -> {
+                    b.end("end_ok", "Process Finished");
+                });
 
         String bpmnXml = workflow.buildXML();
         System.out.println("✓ Successfully compiled WASM workflow AST to BPMN 2.0 XML.");

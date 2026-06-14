@@ -8,32 +8,24 @@ def main():
     workflow = Workflow('wasm-demo', 'Workflow with Guest WASM Plugins', './nativebpm/core.wasm')
     
     # Chain starting from the start event
-    workflow.start_event('start').next('calculate')
-    
-    # Configure WASM Service Task and chain to the AI task
-    workflow.service_task('calculate', 'Calculate Totals', 'payment_topic')\
-        .wasm('./calculate_total.wasm')\
-        .next('aiCheck')
-    
-    # Configure AI task and chain to the exclusive gateway
-    workflow.ai_task('aiCheck', 'AI Fraud Guard')\
-        .provider('google')\
-        .model('gemini-2.5-flash')\
-        .prompt('Analyze transaction for fraud: ${orderAmount}')\
-        .result_var('isFraudulent')\
-        .next('gateway')
-        
-    # Set up exclusive gateway with transition conditions and default flow
-    workflow.exclusive_gateway('gateway', 'Fraud Gateway')\
-        .condition('userTask', '${isFraudulent == true}')\
-        .default('end')
-    
-    # Configure User Task and chain to the end event
-    workflow.user_task('userTask', 'Manual Fraud Approval')\
-        .assignee('security_officer')\
-        .next('end')
-        
-    workflow.end_event('end', 'Process Finished')
+    workflow.start('start')\
+        .service('calculate', 'Calculate Totals', 'payment_topic', lambda st: (
+            st.wasm('./calculate_total.wasm')
+        ))\
+        .ai('aiCheck', 'AI Fraud Guard', lambda ait: (
+            ait.provider('google')
+               .model('gemini-2.5-flash')
+               .prompt('Analyze transaction for fraud: ${orderAmount}')
+               .result_var('isFraudulent')
+        ))\
+        .if_branch('${isFraudulent == True}', lambda b: (
+            b.user('userTask', 'Manual Fraud Approval', lambda ut: (
+                ut.assignee('security_officer')
+            )).end('end_fraud', 'Process Finished')
+        ))\
+        .else_branch(lambda b: (
+            b.end('end_ok', 'Process Finished')
+        ))
     
     # Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
     bpmn_xml = workflow.build_xml()

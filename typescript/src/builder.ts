@@ -7,6 +7,7 @@ import * as zlib from 'node:zlib';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const defaultWasmPath = path.resolve(__dirname, 'core.wasm');
+const compiledModuleCache = new Map<any, Promise<WebAssembly.Module>>();
 
 function decompressWasmIfNeeded(data: Uint8Array): Uint8Array {
   if (data.length >= 4 && data[0] === 0x00 && data[1] === 0x61 && data[2] === 0x73 && data[3] === 0x6d) {
@@ -620,6 +621,12 @@ export class Workflow {
   }
 
   private initCompiler(wasmInput: string | Uint8Array): void {
+    const cacheKey = wasmInput;
+    if (compiledModuleCache.has(cacheKey)) {
+      this.compiledModulePromise = compiledModuleCache.get(cacheKey)!;
+      return;
+    }
+
     let wasmBuffer: Uint8Array;
     if (wasmInput instanceof Uint8Array) {
       wasmBuffer = wasmInput;
@@ -630,7 +637,9 @@ export class Workflow {
       wasmBuffer = new Uint8Array(fs.readFileSync(wasmInput));
     }
     const decompressedBytes = decompressWasmIfNeeded(wasmBuffer);
-    this.compiledModulePromise = WebAssembly.compile(decompressedBytes as any);
+    const promise = WebAssembly.compile(decompressedBytes as any);
+    compiledModuleCache.set(cacheKey, promise);
+    this.compiledModulePromise = promise;
   }
 
   private connectNode(id: string): void {

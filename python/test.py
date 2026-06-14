@@ -119,6 +119,51 @@ class TestPythonSDK(unittest.TestCase):
         self.assertTrue('mapDecisionResult="singleEntry"' in xml)
         print("✓ Python SDK business rule task verified successfully!")
 
+    def test_closure_dsl(self):
+        print("Running Python SDK closure block DSL test...")
+        workflow = Workflow('closure-process', 'Closure Process')
+        
+        workflow.start('start').user('task1', 'User Approval').if_branch('approved == True', lambda b: (
+            b.service('publish', 'Publish Page', 'publish-topic', lambda st: (
+                st.wasm('./publish.wasm')
+            )).end('end_approved', 'Approved End')
+        )).else_branch(lambda b: (
+            b.service('reject', 'Notify Reject', 'reject-topic').end('end_rejected', 'Rejected End')
+        ))
+
+        xml = workflow.build_xml()
+        
+        self.assertTrue('id="closure-process"' in xml)
+        self.assertTrue('exclusiveGateway id="gw_task1_decision"' in xml)
+        self.assertTrue('serviceTask id="publish"' in xml)
+        self.assertTrue('wasmPath="./publish.wasm"' in xml)
+        self.assertTrue('serviceTask id="reject"' in xml)
+        print("✓ Python SDK closure block DSL test passed!")
+
+    def test_closure_dsl_decorator(self):
+        print("Running Python SDK closure block DSL decorator test...")
+        workflow = Workflow('closure-decorator', 'Closure Decorator Process')
+        
+        workflow.start('start').user('task1', 'User Approval')
+        
+        @workflow.if_branch('approved == True')
+        def then_branch(b):
+            b.service('publish', 'Publish Page', 'publish-topic', lambda st: st.wasm('./publish.wasm'))
+            b.end('end_approved', 'Approved End')
+            
+        @then_branch.else_branch()
+        def else_branch(b):
+            b.service('reject', 'Notify Reject', 'reject-topic')
+            b.end('end_rejected', 'Rejected End')
+
+        xml = workflow.build_xml()
+        
+        self.assertTrue('id="closure-decorator"' in xml)
+        self.assertTrue('exclusiveGateway id="gw_task1_decision"' in xml)
+        self.assertTrue('serviceTask id="publish"' in xml)
+        self.assertTrue('wasmPath="./publish.wasm"' in xml)
+        self.assertTrue('serviceTask id="reject"' in xml)
+        print("✓ Python SDK closure block DSL decorator test passed!")
+
 if __name__ == '__main__':
     unittest.main()
-

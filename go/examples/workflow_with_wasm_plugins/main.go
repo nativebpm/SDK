@@ -16,29 +16,25 @@ func main() {
 	workflow := nativebpm.NewWorkflow("wasm-demo", "Workflow with Guest WASM Plugins")
 
 	// Chain starting from start event
-	workflow.StartEvent("start").
-		Next("calculate").
-		Builder().
-		ServiceTask("calculate", "Calculate Totals", "payment_topic").
-		Wasm("./calculate_total.wasm"). // Configure WASM path explicitly
-		Next("aiCheck").
-		Builder().
-		AITask("aiCheck", "AI Fraud Guard").
-		Provider("google").
-		Model("gemini-2.5-flash").
-		Prompt("Analyze transaction for fraud: ${orderAmount}").
-		ResultVar("isFraudulent").
-		Next("gateway").
-		Builder().
-		ExclusiveGateway("gateway", "Fraud Gateway").
-		Condition("userTask", "${isFraudulent == true}").
-		Default("end").
-		Builder().
-		UserTask("userTask", "Manual Fraud Approval").
-		Assignee("security_officer").
-		Next("end").
-		Builder().
-		EndEvent("end", "Process Finished")
+	workflow.Start("start").
+		Service("calculate", "Calculate Totals", "payment_topic", func(st *nativebpm.ServiceTaskBuilder) {
+			st.Wasm("./calculate_total.wasm")
+		}).
+		AI("aiCheck", "AI Fraud Guard", func(ait *nativebpm.AITaskBuilder) {
+			ait.Provider("google").
+				Model("gemini-2.5-flash").
+				Prompt("Analyze transaction for fraud: ${orderAmount}").
+				ResultVar("isFraudulent")
+		}).
+		If("${isFraudulent == true}", func(b *nativebpm.Branch) {
+			b.User("userTask", "Manual Fraud Approval", func(ut *nativebpm.UserTaskBuilder) {
+				ut.Assignee("security_officer")
+			}).
+				End("end_fraud", "Process Finished")
+		}).
+		Else(func(b *nativebpm.Branch) {
+			b.End("end_ok", "Process Finished")
+		})
 
 	// 2. Pre-compile the WebAssembly builder core at initialization (e.g. from local core.wasm.br or raw core.wasm)
 	compilerPath := "../../core.wasm" // relative path to compiler binary in Go SDK folder

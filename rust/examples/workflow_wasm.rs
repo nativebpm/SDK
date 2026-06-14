@@ -9,18 +9,17 @@ async fn main() {
     let mut workflow = Workflow::new("native-demo", "Workflow as Code");
 
     // Chain starting from the start event
-    workflow.start_event("start")
-        .connect_to("gateway")
-        .exclusive_gateway("gateway", "Urgency Gateway")
-        .condition("reviewOrder", "${isUrgent == true}")
-        .default("notifyCustomer")
-        .builder()
-        .service_task("notifyCustomer", "Send Confirmation Email", "email_topic")
-        .connect_to("end")
-        .user_task("reviewOrder", "Review Order Details")
-        .assignee("sales_representative")
-        .connect_to("end")
-        .end_event("end", "Process Finished");
+    workflow.start("start")
+        .if_branch("${isUrgent == true}", |b| {
+            b.user("reviewOrder", "Review Order Details", |ut| {
+                ut.assignee("sales_representative")
+            })
+            .end("end_review", "Process Finished");
+        })
+        .else_branch(|b| {
+            b.service("notifyCustomer", "Send Confirmation Email", "email_topic", |st| st)
+                .end("end_default", "Process Finished");
+        });
 
     // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
     let bpmn_xml = match workflow.build_xml() {

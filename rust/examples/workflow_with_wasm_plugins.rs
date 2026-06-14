@@ -9,25 +9,25 @@ async fn main() {
     let mut workflow = Workflow::new("wasm-demo", "Workflow with Guest WASM Plugins");
 
     // Chain starting from the start event
-    workflow.start_event("start")
-        .connect_to("calculate")
-        .service_task("calculate", "Calculate Totals", "payment_topic")
-        .wasm("./calculate_total.wasm")
-        .connect_to("aiCheck")
-        .ai_task("aiCheck", "AI Fraud Guard")
-        .provider("google")
-        .model("gemini-2.5-flash")
-        .prompt("Analyze transaction for fraud: ${orderAmount}")
-        .result_var("isFraudulent")
-        .connect_to("gateway")
-        .exclusive_gateway("gateway", "Fraud Gateway")
-        .condition("userTask", "${isFraudulent == true}")
-        .default("end")
-        .builder()
-        .user_task("userTask", "Manual Fraud Approval")
-        .assignee("security_officer")
-        .connect_to("end")
-        .end_event("end", "Process Finished");
+    workflow.start("start")
+        .service("calculate", "Calculate Totals", "payment_topic", |st| {
+            st.wasm("./calculate_total.wasm")
+        })
+        .ai("aiCheck", "AI Fraud Guard", |ait| {
+            ait.provider("google")
+                .model("gemini-2.5-flash")
+                .prompt("Analyze transaction for fraud: ${orderAmount}")
+                .result_var("isFraudulent")
+        })
+        .if_branch("${isFraudulent == true}", |b| {
+            b.user("userTask", "Manual Fraud Approval", |ut| {
+                ut.assignee("security_officer")
+            })
+            .end("end_fraud", "Process Finished");
+        })
+        .else_branch(|b| {
+            b.end("end_ok", "Process Finished");
+        });
 
     // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
     let bpmn_xml = match workflow.build_xml() {

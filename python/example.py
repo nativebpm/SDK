@@ -4,7 +4,7 @@ import os
 # Set PYTHONPATH to current directory so nativebpm can be imported
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from examples import workflow_wasm, workflow_native
+from examples import workflow_wasm, workflow_with_wasm_plugins
 
 def main():
     print("==================================================")
@@ -16,8 +16,8 @@ def main():
     
     print("\n--------------------------------------------------\n")
     
-    # 2. Run Native-based Workflow example
-    workflow_native.main()
+    # 2. Run Workflow with WASM plugins example
+    workflow_with_wasm_plugins.main()
     
     print("==================================================")
     print("🎉 ALL EXAMPLES FINISHED")

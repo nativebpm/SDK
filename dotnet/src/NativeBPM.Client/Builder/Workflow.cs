@@ -15,6 +15,8 @@ namespace NativeBPM.Client.Builder
         private readonly string name;
         private readonly List<Dictionary<string, object>> nodes = new();
         private readonly List<Dictionary<string, object>> flows = new();
+        private string currentNodeID = "";
+        internal List<string> PendingMerges { get; } = new();
 
         private Exception? err;
         private Engine? engine;
@@ -907,6 +909,235 @@ namespace NativeBPM.Client.Builder
                 return Convert.ToString(val, System.Globalization.CultureInfo.InvariantCulture);
             }
             return val.ToString() ?? "-";
+        }
+
+        private void ConnectNode(string nodeId)
+        {
+            if (PendingMerges.Count > 0)
+            {
+                foreach (var sourceId in PendingMerges)
+                {
+                    this.SequenceFlow(sourceId, nodeId);
+                }
+                PendingMerges.Clear();
+            }
+            else if (!string.IsNullOrEmpty(currentNodeID) && currentNodeID != nodeId)
+            {
+                this.SequenceFlow(currentNodeID, nodeId);
+            }
+            currentNodeID = nodeId;
+        }
+
+        public Workflow Start(string id)
+        {
+            this.StartEvent(id);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Workflow End(string id, string name)
+        {
+            this.EndEvent(id, name);
+            ConnectNode(id);
+            this.currentNodeID = "";
+            return this;
+        }
+
+        public Workflow User(string id, string name, Action<UserTaskBuilder>? config = null)
+        {
+            var builder = this.UserTask(id, name);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Workflow Service(string id, string name, string topic, Action<ServiceTaskBuilder>? config = null)
+        {
+            var builder = this.ServiceTask(id, name, topic);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Workflow Ai(string id, string name, Action<AITaskBuilder>? config = null)
+        {
+            var builder = this.AITask(id, name);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public IfElseBuilder If(string condition, Action<Branch> thenFn)
+        {
+            string gwID = "gw_" + this.currentNodeID + "_decision";
+            this.ExclusiveGateway(gwID, "Decision Gateway");
+
+            if (!string.IsNullOrEmpty(currentNodeID))
+            {
+                this.SequenceFlow(currentNodeID, gwID);
+            }
+
+            Branch thenBranch = new Branch(this, gwID, gwID, true, condition);
+            thenFn(thenBranch);
+
+            if (!thenBranch.HasEnded && thenBranch.currentNodeID != gwID)
+            {
+                this.PendingMerges.Add(thenBranch.currentNodeID);
+            }
+
+            return new IfElseBuilder(this, gwID);
+        }
+    }
+
+    public class Branch
+    {
+        public Workflow Workflow { get; }
+        private readonly string gatewayID;
+        public string currentNodeID { get; set; }
+        private readonly bool isConditional;
+        private readonly string condition;
+        public bool HasEnded { get; set; } = false;
+
+        public Branch(Workflow workflow, string gatewayID, string currentNodeID, bool isConditional, string condition)
+        {
+            this.Workflow = workflow;
+            this.gatewayID = gatewayID;
+            this.currentNodeID = currentNodeID;
+            this.isConditional = isConditional;
+            this.condition = condition;
+        }
+
+        private void ConnectNode(string nodeId)
+        {
+            if (HasEnded) return;
+
+            var merges = Workflow.PendingMerges;
+            if (merges.Count > 0)
+            {
+                foreach (var sourceId in merges)
+                {
+                    Workflow.SequenceFlow(sourceId, nodeId);
+                }
+                merges.Clear();
+                this.currentNodeID = nodeId;
+                return;
+            }
+
+            if (this.currentNodeID == this.gatewayID)
+            {
+                if (isConditional)
+                {
+                    Workflow.SequenceFlowWithCondition(this.gatewayID, nodeId, this.condition);
+                }
+                else
+                {
+                    Workflow.SequenceFlow(this.gatewayID, nodeId);
+                }
+            }
+            else if (!string.IsNullOrEmpty(this.currentNodeID) && this.currentNodeID != nodeId)
+            {
+                Workflow.SequenceFlow(this.currentNodeID, nodeId);
+            }
+            this.currentNodeID = nodeId;
+        }
+
+        public Branch User(string id, string name, Action<UserTaskBuilder>? config = null)
+        {
+            var builder = Workflow.UserTask(id, name);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Branch Service(string id, string name, string topic, Action<ServiceTaskBuilder>? config = null)
+        {
+            var builder = Workflow.ServiceTask(id, name, topic);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Branch Ai(string id, string name, Action<AITaskBuilder>? config = null)
+        {
+            var builder = Workflow.AITask(id, name);
+            config?.Invoke(builder);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Branch End(string id, string name)
+        {
+            Workflow.EndEvent(id, name);
+            ConnectNode(id);
+            this.HasEnded = true;
+            return this;
+        }
+
+        public IfElseBranchBuilder If(string condition, Action<Branch> thenFn)
+        {
+            string gwID = "gw_" + this.currentNodeID + "_decision";
+            Workflow.ExclusiveGateway(gwID, "Decision Gateway");
+            ConnectNode(gwID);
+
+            Branch thenBranch = new Branch(Workflow, gwID, gwID, true, condition);
+            thenFn(thenBranch);
+
+            if (!thenBranch.HasEnded && thenBranch.currentNodeID != gwID)
+            {
+                Workflow.PendingMerges.Add(thenBranch.currentNodeID);
+            }
+
+            return new IfElseBranchBuilder(this, gwID);
+        }
+    }
+
+    public class IfElseBuilder
+    {
+        private readonly Workflow workflow;
+        private readonly string gatewayID;
+
+        public IfElseBuilder(Workflow workflow, string gatewayID)
+        {
+            this.workflow = workflow;
+            this.gatewayID = gatewayID;
+        }
+
+        public Workflow Else(Action<Branch> elseFn)
+        {
+            Branch elseBranch = new Branch(workflow, gatewayID, gatewayID, false, "");
+            elseFn(elseBranch);
+
+            if (!elseBranch.HasEnded && elseBranch.currentNodeID != gatewayID)
+            {
+                workflow.PendingMerges.Add(elseBranch.currentNodeID);
+            }
+
+            return workflow;
+        }
+    }
+
+    public class IfElseBranchBuilder
+    {
+        private readonly Branch branch;
+        private readonly string gatewayID;
+
+        public IfElseBranchBuilder(Branch branch, string gatewayID)
+        {
+            this.branch = branch;
+            this.gatewayID = gatewayID;
+        }
+
+        public Branch Else(Action<Branch> elseFn)
+        {
+            Branch elseBranch = new Branch(branch.Workflow, gatewayID, gatewayID, false, "");
+            elseFn(elseBranch);
+
+            if (!elseBranch.HasEnded && elseBranch.currentNodeID != gatewayID)
+            {
+                branch.Workflow.PendingMerges.Add(elseBranch.currentNodeID);
+            }
+
+            return branch;
         }
     }
 }

@@ -11,25 +11,16 @@ echo "🔨 Building workflow dynamically using Fluent API...\n";
 $workflow = new Workflow("native-demo", "Workflow as Code");
 
 // Chain starting from the start event
-$workflow->startEvent("start")
-    ->next("gateway");
-
-// Configure exclusive gateway with transition conditions and default flow
-$workflow->exclusiveGateway("gateway", "Urgency Gateway")
-    ->condition("reviewOrder", '${isUrgent == true}')
-    ->defaultValue("notifyCustomer");
-
-// Add standard Service Task. Since no `->wasm(...)` call is made,
-// this task is executed natively as a topic-based worker queue execution.
-$workflow->serviceTask("notifyCustomer", "Send Confirmation Email", "email_topic")
-    ->next("end");
-
-// Add User Task and chain to the end event
-$workflow->userTask("reviewOrder", "Review Order Details")
-    ->assignee("sales_representative")
-    ->next("end");
-
-$workflow->endEvent("end", "Process Finished");
+$workflow->start("start")
+    ->if('${isUrgent == true}', function($b) {
+        $b->user("reviewOrder", "Review Order Details", function($ut) {
+            $ut->assignee("sales_representative");
+        })->end("end_review", "Process Finished");
+    })
+    ->else(function($b) {
+        $b->service("notifyCustomer", "Send Confirmation Email", "email_topic")
+          ->end("end_default", "Process Finished");
+    });
 
 $bpmnXml = $workflow->buildXML();
 echo "✓ Successfully compiled native workflow AST to BPMN 2.0 XML.\n";

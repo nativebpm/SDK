@@ -16,23 +16,17 @@ func main() {
 	workflow := nativebpm.NewWorkflow("native-demo", "Workflow as Code")
 
 	// Chain starting from the start event
-	workflow.StartEvent("start").
-		Next("gateway").
-		Builder().
-		ExclusiveGateway("gateway", "Urgency Gateway").
-		Condition("reviewOrder", "${isUrgent == true}").
-		Default("notifyCustomer")
-
-	// Add standard Service Task. Since no `.Wasm(...)` call is made,
-	// this task is executed natively as a topic-based worker queue execution.
-	workflow.ServiceTask("notifyCustomer", "Send Confirmation Email", "email_topic").
-		Next("end").
-		Builder().
-		UserTask("reviewOrder", "Review Order Details").
-		Assignee("sales_representative").
-		Next("end").
-		Builder().
-		EndEvent("end", "Process Finished")
+	workflow.Start("start").
+		If("${isUrgent == true}", func(b *nativebpm.Branch) {
+			b.User("reviewOrder", "Review Order Details", func(ut *nativebpm.UserTaskBuilder) {
+				ut.Assignee("sales_representative")
+			}).
+				End("end_review", "Process Finished")
+		}).
+		Else(func(b *nativebpm.Branch) {
+			b.Service("notifyCustomer", "Send Confirmation Email", "email_topic").
+				End("end_default", "Process Finished")
+		})
 
 	// Compile the workflow AST to standard BPMN 2.0 XML using the default embedded Go engine
 	bpmnXML, err := workflow.BuildXML(ctx)

@@ -9,19 +9,17 @@ class Workflow {
     private array $flows = [];
     private ?\Throwable $err = null;
     private ?string $decompressedWasmBytes = null;
+    private string $currentNodeID = '';
+    public array $pendingMerges = [];
 
     public function __construct(string $id, string $name, $wasmInput = null) {
         $this->id = $id;
         $this->name = $name;
         if ($wasmInput !== null) {
             try {
-                if (is_string($wasmInput)) {
-                    if (file_exists($wasmInput)) {
-                        $data = file_get_contents($wasmInput);
-                        $this->decompressedWasmBytes = self::decompressWasmIfNeeded($data);
-                    } else {
-                        throw new \InvalidArgumentException("Wasm file path does not exist: $wasmInput");
-                    }
+                if (is_string($wasmInput) && strlen($wasmInput) < 1000 && file_exists($wasmInput)) {
+                    $data = file_get_contents($wasmInput);
+                    $this->decompressedWasmBytes = self::decompressWasmIfNeeded($data);
                 } else if (is_string($wasmInput) || (is_object($wasmInput) && method_exists($wasmInput, '__toString')) || is_scalar($wasmInput)) {
                     // String/binary input
                     $this->decompressedWasmBytes = self::decompressWasmIfNeeded((string)$wasmInput);
@@ -172,6 +170,16 @@ class Workflow {
         return new CallActivityBuilder($this, $id);
     }
 
+    public function businessRuleTask(string $id, string $name, string $decisionRef): BusinessRuleTaskBuilder {
+        $this->nodes[] = [
+            'type' => 'businessRuleTask',
+            'id' => $id,
+            'name' => $name,
+            'decisionRef' => $decisionRef
+        ];
+        return new BusinessRuleTaskBuilder($this, $id);
+    }
+
     public function sequenceFlow(string $source, string $target): Workflow {
         $this->flows[] = [
             'id' => "flow-$source-$target",
@@ -260,8 +268,8 @@ class Workflow {
                 2 => ["pipe", "w"]  // stderr
             ];
 
-            // Execute wasmtime run --cli tempWasmFile
-            $cmd = "wasmtime run --cli " . escapeshellarg($tempWasmFile);
+            // Execute wasmtime run tempWasmFile --cli
+            $cmd = "wasmtime run " . escapeshellarg($tempWasmFile) . " --cli";
             $process = proc_open($cmd, $descriptorspec, $pipes);
 
             if (!is_resource($process)) {
@@ -299,6 +307,75 @@ class Workflow {
                 unlink($tempWasmFile);
             }
         }
+    }
+
+    private function connectNode(string $nodeId): void {
+        if (count($this->pendingMerges) > 0) {
+            foreach ($this->pendingMerges as $sourceId) {
+                $this->sequenceFlow($sourceId, $nodeId);
+            }
+            $this->pendingMerges = [];
+        } else if ($this->currentNodeID !== '' && $this->currentNodeID !== $nodeId) {
+            $this->sequenceFlow($this->currentNodeID, $nodeId);
+        }
+        $this->currentNodeID = $nodeId;
+    }
+
+    public function start(string $id): Workflow {
+        $this->startEvent($id);
+        $this->connectNode($id);
+        return $this;
+    }
+
+    public function end(string $id, string $name): Workflow {
+        $this->endEvent($id, $name);
+        $this->connectNode($id);
+        $this->currentNodeID = '';
+        return $this;
+    }
+
+    public function user(string $id, string $name, ?callable $config = null): Workflow {
+        $builder = $this->userTask($id, $name);
+        if ($config !== null) {
+            $config($builder);
+        }
+        $this->connectNode($id);
+        return $this;
+    }
+
+    public function service(string $id, string $name, string $topic, ?callable $config = null): Workflow {
+        $builder = $this->serviceTask($id, $name, $topic);
+        if ($config !== null) {
+            $config($builder);
+        }
+        $this->connectNode($id);
+        return $this;
+    }
+
+    public function ai(string $id, string $name, ?callable $config = null): Workflow {
+        $builder = $this->aiTask($id, $name);
+        if ($config !== null) {
+            $config($builder);
+        }
+        $this->connectNode($id);
+        return $this;
+    }
+
+    public function if(string $condition, callable $thenFn): IfElseBuilder {
+        $gwID = "gw_" . $this->currentNodeID . "_decision";
+        $this->exclusiveGateway($gwID, "Decision Gateway");
+        if ($this->currentNodeID !== '') {
+            $this->sequenceFlow($this->currentNodeID, $gwID);
+        }
+
+        $thenBranch = new Branch($this, $gwID, $gwID, true, $condition);
+        $thenFn($thenBranch);
+
+        if (!$thenBranch->hasEnded && $thenBranch->currentNodeID !== $gwID) {
+            $this->pendingMerges[] = $thenBranch->currentNodeID;
+        }
+
+        return new IfElseBuilder($this, $gwID);
     }
 }
 
@@ -662,8 +739,8 @@ class CallActivityBuilder {
 }
 
 class BusinessRuleTaskBuilder {
-    private Workflow $workflow;
-    private string $id;
+    public Workflow $workflow;
+    public string $id;
 
     public function __construct(Workflow $workflow, string $id) {
         $this->workflow = $workflow;
@@ -854,5 +931,138 @@ class DMNRuleBuilder {
             return $val ? "true" : "false";
         }
         return (string)$val;
+    }
+}
+
+class Branch {
+    public Workflow $workflow;
+    private string $gatewayID;
+    public string $currentNodeID;
+    private bool $isConditional;
+    private string $condition;
+    public bool $hasEnded = false;
+
+    public function __construct(Workflow $workflow, string $gatewayID, string $currentNodeID, bool $isConditional, string $condition) {
+        $this->workflow = $workflow;
+        $this->gatewayID = $gatewayID;
+        $this->currentNodeID = $currentNodeID;
+        $this->isConditional = $isConditional;
+        $this->condition = $condition;
+    }
+
+    private function connectNode(string $nodeId): void {
+        if ($this->hasEnded) return;
+
+        $merges = $this->workflow->pendingMerges;
+        if (count($merges) > 0) {
+            foreach ($merges as $sourceId) {
+                $this->workflow->sequenceFlow($sourceId, $nodeId);
+            }
+            $this->workflow->pendingMerges = [];
+            $this->currentNodeID = $nodeId;
+            return;
+        }
+
+        if ($this->currentNodeID === $this->gatewayID) {
+            if ($this->isConditional) {
+                $this->workflow->sequenceFlowWithCondition($this->gatewayID, $nodeId, $this->condition);
+            } else {
+                $this->workflow->sequenceFlow($this->gatewayID, $nodeId);
+            }
+        } else if ($this->currentNodeID !== '' && $this->currentNodeID !== $nodeId) {
+            $this->workflow->sequenceFlow($this->currentNodeID, $nodeId);
+        }
+        $this->currentNodeID = $nodeId;
+    }
+
+    public function user(string $id, string $name, ?callable $config = null): Branch {
+        $builder = $this->workflow->userTask($id, $name);
+        if ($config !== null) {
+            $config($builder);
+        }
+        $this->connectNode($id);
+        return $this;
+    }
+
+    public function service(string $id, string $name, string $topic, ?callable $config = null): Branch {
+        $builder = $this->workflow->serviceTask($id, $name, $topic);
+        if ($config !== null) {
+            $config($builder);
+        }
+        $this->connectNode($id);
+        return $this;
+    }
+
+    public function ai(string $id, string $name, ?callable $config = null): Branch {
+        $builder = $this->workflow->aiTask($id, $name);
+        if ($config !== null) {
+            $config($builder);
+        }
+        $this->connectNode($id);
+        return $this;
+    }
+
+    public function end(string $id, string $name): Branch {
+        $this->workflow->endEvent($id, $name);
+        $this->connectNode($id);
+        $this->hasEnded = true;
+        return $this;
+    }
+
+    public function if(string $condition, callable $thenFn): IfElseBranchBuilder {
+        $gwID = "gw_" . $this->currentNodeID . "_decision";
+        $this->workflow->exclusiveGateway($gwID, "Decision Gateway");
+        $this->connectNode($gwID);
+
+        $thenBranch = new Branch($this->workflow, $gwID, $gwID, true, $condition);
+        $thenFn($thenBranch);
+
+        if (!$thenBranch->hasEnded && $thenBranch->currentNodeID !== $gwID) {
+            $this->workflow->pendingMerges[] = $thenBranch->currentNodeID;
+        }
+
+        return new IfElseBranchBuilder($this, $gwID);
+    }
+}
+
+class IfElseBuilder {
+    private Workflow $workflow;
+    private string $gatewayID;
+
+    public function __construct(Workflow $workflow, string $gatewayID) {
+        $this->workflow = $workflow;
+        $this->gatewayID = $gatewayID;
+    }
+
+    public function else(callable $elseFn): Workflow {
+        $elseBranch = new Branch($this->workflow, $this->gatewayID, $this->gatewayID, false, "");
+        $elseFn($elseBranch);
+
+        if (!$elseBranch->hasEnded && $elseBranch->currentNodeID !== $this->gatewayID) {
+            $this->workflow->pendingMerges[] = $elseBranch->currentNodeID;
+        }
+
+        return $this->workflow;
+    }
+}
+
+class IfElseBranchBuilder {
+    private Branch $branch;
+    private string $gatewayID;
+
+    public function __construct(Branch $branch, string $gatewayID) {
+        $this->branch = $branch;
+        $this->gatewayID = $gatewayID;
+    }
+
+    public function else(callable $elseFn): Branch {
+        $elseBranch = new Branch($this->branch->workflow, $this->gatewayID, $this->gatewayID, false, "");
+        $elseFn($elseBranch);
+
+        if (!$elseBranch->hasEnded && $elseBranch->currentNodeID !== $this->gatewayID) {
+            $this->branch->workflow->pendingMerges[] = $elseBranch->currentNodeID;
+        }
+
+        return $this->branch;
     }
 }

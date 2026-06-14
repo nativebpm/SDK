@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.function.Consumer;
 
 public class Workflow {
     private final String id;
@@ -29,6 +30,8 @@ public class Workflow {
 
     private Throwable err;
     private WasmModule compiledModule;
+    private String currentNodeID = "";
+    private final List<String> pendingMerges = new ArrayList<>();
 
     public Workflow(String id, String name, Object... wasmInput) {
         this.id = id;
@@ -112,6 +115,232 @@ public class Workflow {
 
     public Workflow builder() {
         return this;
+    }
+
+    public static class Branch {
+        private final Workflow workflow;
+        private final String gatewayID;
+        private String currentNodeID;
+        private final boolean isConditional;
+        private final String condition;
+        private boolean hasEnded = false;
+
+        public Branch(Workflow workflow, String gatewayID, String currentNodeID, boolean isConditional, String condition) {
+            this.workflow = workflow;
+            this.gatewayID = gatewayID;
+            this.currentNodeID = currentNodeID;
+            this.isConditional = isConditional;
+            this.condition = condition;
+        }
+
+        private void connectNode(String nodeId) {
+            if (hasEnded) return;
+
+            if (!workflow.pendingMerges.isEmpty()) {
+                for (String sourceId : workflow.pendingMerges) {
+                    workflow.sequenceFlow(sourceId, nodeId);
+                }
+                workflow.pendingMerges.clear();
+                this.currentNodeID = nodeId;
+                return;
+            }
+
+            if (this.currentNodeID.equals(this.gatewayID)) {
+                if (isConditional) {
+                    workflow.sequenceFlowWithCondition(this.gatewayID, nodeId, this.condition);
+                } else {
+                    workflow.sequenceFlow(this.gatewayID, nodeId);
+                }
+            } else if (!this.currentNodeID.isEmpty() && !this.currentNodeID.equals(nodeId)) {
+                workflow.sequenceFlow(this.currentNodeID, nodeId);
+            }
+            this.currentNodeID = nodeId;
+        }
+
+        public Branch user(String id, String name) {
+            return user(id, name, null);
+        }
+
+        public Branch user(String id, String name, Consumer<UserTaskBuilder> config) {
+            UserTaskBuilder builder = workflow.userTask(id, name);
+            if (config != null) {
+                config.accept(builder);
+            }
+            connectNode(id);
+            return this;
+        }
+
+        public Branch service(String id, String name, String topic) {
+            return service(id, name, topic, null);
+        }
+
+        public Branch service(String id, String name, String topic, Consumer<ServiceTaskBuilder> config) {
+            ServiceTaskBuilder builder = workflow.serviceTask(id, name, topic);
+            if (config != null) {
+                config.accept(builder);
+            }
+            connectNode(id);
+            return this;
+        }
+
+        public Branch ai(String id, String name) {
+            return ai(id, name, null);
+        }
+
+        public Branch ai(String id, String name, Consumer<AITaskBuilder> config) {
+            AITaskBuilder builder = workflow.aiTask(id, name);
+            if (config != null) {
+                config.accept(builder);
+            }
+            connectNode(id);
+            return this;
+        }
+
+        public Branch end(String id, String name) {
+            workflow.endEvent(id, name);
+            connectNode(id);
+            this.hasEnded = true;
+            return this;
+        }
+
+        public IfElseBranchBuilder ifBranch(String condition, Consumer<Branch> thenFn) {
+            String gwID = "gw_" + this.currentNodeID + "_decision";
+            workflow.exclusiveGateway(gwID, "Decision Gateway");
+            connectNode(gwID);
+
+            Branch thenBranch = new Branch(workflow, gwID, gwID, true, condition);
+            thenFn.accept(thenBranch);
+
+            if (!thenBranch.hasEnded && !thenBranch.currentNodeID.equals(gwID)) {
+                workflow.pendingMerges.add(thenBranch.currentNodeID);
+            }
+
+            return new IfElseBranchBuilder(this, gwID);
+        }
+    }
+
+    public static class IfElseBuilder {
+        private final Workflow workflow;
+        private final String gatewayID;
+
+        public IfElseBuilder(Workflow workflow, String gatewayID) {
+            this.workflow = workflow;
+            this.gatewayID = gatewayID;
+        }
+
+        public Workflow elseBranch(Consumer<Branch> elseFn) {
+            Branch elseBranch = new Branch(workflow, gatewayID, gatewayID, false, "");
+            elseFn.accept(elseBranch);
+
+            if (!elseBranch.hasEnded && !elseBranch.currentNodeID.equals(gatewayID)) {
+                workflow.pendingMerges.add(elseBranch.currentNodeID);
+            }
+
+            return workflow;
+        }
+    }
+
+    public static class IfElseBranchBuilder {
+        private final Branch branch;
+        private final String gatewayID;
+
+        public IfElseBranchBuilder(Branch branch, String gatewayID) {
+            this.branch = branch;
+            this.gatewayID = gatewayID;
+        }
+
+        public Branch elseBranch(Consumer<Branch> elseFn) {
+            Branch elseBranch = new Branch(branch.workflow, gatewayID, gatewayID, false, "");
+            elseFn.accept(elseBranch);
+
+            if (!elseBranch.hasEnded && !elseBranch.currentNodeID.equals(gatewayID)) {
+                branch.workflow.pendingMerges.add(elseBranch.currentNodeID);
+            }
+
+            return branch;
+        }
+    }
+
+    private void connectNode(String nodeId) {
+        if (!pendingMerges.isEmpty()) {
+            for (String sourceId : pendingMerges) {
+                this.sequenceFlow(sourceId, nodeId);
+            }
+            pendingMerges.clear();
+        } else if (!currentNodeID.isEmpty() && !currentNodeID.equals(nodeId)) {
+            this.sequenceFlow(currentNodeID, nodeId);
+        }
+        currentNodeID = nodeId;
+    }
+
+    public Workflow start(String id) {
+        this.startEvent(id);
+        connectNode(id);
+        return this;
+    }
+
+    public Workflow end(String id, String name) {
+        this.endEvent(id, name);
+        connectNode(id);
+        this.currentNodeID = "";
+        return this;
+    }
+
+    public Workflow user(String id, String name) {
+        return user(id, name, null);
+    }
+
+    public Workflow user(String id, String name, Consumer<UserTaskBuilder> config) {
+        UserTaskBuilder builder = this.userTask(id, name);
+        if (config != null) {
+            config.accept(builder);
+        }
+        connectNode(id);
+        return this;
+    }
+
+    public Workflow service(String id, String name, String topic) {
+        return service(id, name, topic, null);
+    }
+
+    public Workflow service(String id, String name, String topic, Consumer<ServiceTaskBuilder> config) {
+        ServiceTaskBuilder builder = this.serviceTask(id, name, topic);
+        if (config != null) {
+            config.accept(builder);
+        }
+        connectNode(id);
+        return this;
+    }
+
+    public Workflow ai(String id, String name) {
+        return ai(id, name, null);
+    }
+
+    public Workflow ai(String id, String name, Consumer<AITaskBuilder> config) {
+        AITaskBuilder builder = this.aiTask(id, name);
+        if (config != null) {
+            config.accept(builder);
+        }
+        connectNode(id);
+        return this;
+    }
+
+    public IfElseBuilder ifBranch(String condition, Consumer<Branch> thenFn) {
+        String gwID = "gw_" + this.currentNodeID + "_decision";
+        this.exclusiveGateway(gwID, "Decision Gateway");
+
+        if (!currentNodeID.isEmpty()) {
+            this.sequenceFlow(currentNodeID, gwID);
+        }
+
+        Branch thenBranch = new Branch(this, gwID, gwID, true, condition);
+        thenFn.accept(thenBranch);
+
+        if (!thenBranch.hasEnded && !thenBranch.currentNodeID.equals(gwID)) {
+            this.pendingMerges.add(thenBranch.currentNodeID);
+        }
+
+        return new IfElseBuilder(this, gwID);
     }
 
     public StartEventBuilder startEvent(String id) {

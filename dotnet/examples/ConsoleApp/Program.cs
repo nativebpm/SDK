@@ -87,21 +87,16 @@ namespace ConsoleApp
             Console.WriteLine("🔨 Building workflow dynamically using Fluent API...");
             using var workflow = new Workflow("native-demo", "Workflow as Code");
 
-            workflow.StartEvent("start")
-                .Next("gateway");
-
-            workflow.ExclusiveGateway("gateway", "Urgency Gateway")
-                .Condition("reviewOrder", "${isUrgent == true}")
-                .DefaultValue("notifyCustomer");
-
-            workflow.ServiceTask("notifyCustomer", "Send Confirmation Email", "email_topic")
-                .Next("end");
-
-            workflow.UserTask("reviewOrder", "Review Order Details")
-                .Assignee("sales_representative")
-                .Next("end");
-
-            workflow.EndEvent("end", "Process Finished");
+            workflow.Start("start")
+                .If("${isUrgent == true}", b => {
+                    b.User("reviewOrder", "Review Order Details", ut => {
+                        ut.Assignee("sales_representative");
+                    }).End("end_review", "Process Finished");
+                })
+                .Else(b => {
+                    b.Service("notifyCustomer", "Send Confirmation Email", "email_topic")
+                     .End("end_default", "Process Finished");
+                });
 
             string bpmnXml = workflow.BuildXml();
             Console.WriteLine("✓ Successfully compiled native workflow AST to BPMN 2.0 XML.");
@@ -161,29 +156,24 @@ namespace ConsoleApp
             Console.WriteLine("🔨 Building workflow dynamically using Fluent API...");
             using var workflow = new Workflow("wasm-demo", "Workflow with Guest WASM Plugins");
 
-            workflow.StartEvent("start")
-                .Next("calculate");
-
-            workflow.ServiceTask("calculate", "Calculate Totals", "payment_topic")
-                .Wasm("./calculate_total.wasm")
-                .Next("aiCheck");
-
-            workflow.AITask("aiCheck", "AI Fraud Guard")
-                .Provider("google")
-                .Model("gemini-2.5-flash")
-                .Prompt("Analyze transaction for fraud: ${orderAmount}")
-                .ResultVar("isFraudulent")
-                .Next("gateway");
-
-            workflow.ExclusiveGateway("gateway", "Fraud Gateway")
-                .Condition("userTask", "${isFraudulent == true}")
-                .DefaultValue("end");
-
-            workflow.UserTask("userTask", "Manual Fraud Approval")
-                .Assignee("security_officer")
-                .Next("end");
-
-            workflow.EndEvent("end", "Process Finished");
+            workflow.Start("start")
+                .Service("calculate", "Calculate Totals", "payment_topic", st => {
+                    st.Wasm("./calculate_total.wasm");
+                })
+                .Ai("aiCheck", "AI Fraud Guard", ait => {
+                    ait.Provider("google")
+                       .Model("gemini-2.5-flash")
+                       .Prompt("Analyze transaction for fraud: ${orderAmount}")
+                       .ResultVar("isFraudulent");
+                })
+                .If("${isFraudulent == true}", b => {
+                    b.User("userTask", "Manual Fraud Approval", ut => {
+                        ut.Assignee("security_officer");
+                    }).End("end_fraud", "Process Finished");
+                })
+                .Else(b => {
+                    b.End("end_ok", "Process Finished");
+                });
 
             string bpmnXml = workflow.BuildXml();
             Console.WriteLine("✓ Successfully compiled WASM workflow AST to BPMN 2.0 XML.");

@@ -30,11 +30,15 @@ export interface ValidationResult {
 }
 
 async function loadWasm(wasmPath: string): Promise<{ instance: WebAssembly.Instance; wasi: WASI }> {
+  const nullDevice = process.platform === 'win32' ? 'NUL' : '/dev/null';
+  const fd = fs.openSync(nullDevice, 'r');
+
   const wasi = new WASI({
     version: 'preview1',
     args: [],
     env: {},
-    preopens: {}
+    preopens: {},
+    stdin: fd
   });
 
   const wasmBuffer = fs.readFileSync(wasmPath);
@@ -44,6 +48,7 @@ async function loadWasm(wasmPath: string): Promise<{ instance: WebAssembly.Insta
   });
 
   wasi.start(instance);
+  fs.closeSync(fd);
   return { instance, wasi };
 }
 

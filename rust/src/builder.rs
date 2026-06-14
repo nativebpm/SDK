@@ -58,6 +58,10 @@ pub struct Workflow {
     pub name: String,
     pub nodes: Vec<serde_json::Value>,
     pub flows: Vec<serde_json::Value>,
+    #[serde(skip)]
+    pub current_node_id: String,
+    #[serde(skip)]
+    pub pending_merges: Vec<String>,
 }
 
 impl Workflow {
@@ -67,6 +71,8 @@ impl Workflow {
             name: name.to_string(),
             nodes: vec![],
             flows: vec![],
+            current_node_id: "".to_string(),
+            pending_merges: vec![],
         }
     }
 
@@ -777,6 +783,257 @@ fn format_dmn_value(val: serde_json::Value) -> String {
     }
 }
 
+// Closure-based DSL extensions for Workflow
+impl Workflow {
+    fn connect_node(&mut self, node_id: &str) {
+        if !self.pending_merges.is_empty() {
+            let merges = self.pending_merges.clone();
+            for source_id in &merges {
+                self.sequence_flow(source_id, node_id);
+            }
+            self.pending_merges.clear();
+        } else if !self.current_node_id.is_empty() && self.current_node_id != node_id {
+            let current = self.current_node_id.clone();
+            self.sequence_flow(&current, node_id);
+        }
+        self.current_node_id = node_id.to_string();
+    }
+
+    pub fn start(&mut self, node_id: &str) -> &mut Self {
+        self.start_event(node_id);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn end(&mut self, node_id: &str, name: &str) -> &mut Self {
+        self.end_event(node_id, name);
+        self.connect_node(node_id);
+        self.current_node_id = "".to_string();
+        self
+    }
+
+    pub fn user<F>(&mut self, node_id: &str, name: &str, config: F) -> &mut Self
+    where
+        F: FnOnce(UserTaskBuilder<'_>) -> UserTaskBuilder<'_>
+    {
+        let builder = self.user_task(node_id, name);
+        let _ = config(builder);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn service<F>(&mut self, node_id: &str, name: &str, topic: &str, config: F) -> &mut Self
+    where
+        F: FnOnce(ServiceTaskBuilder<'_>) -> ServiceTaskBuilder<'_>
+    {
+        let builder = self.service_task(node_id, name, topic);
+        let _ = config(builder);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn ai<F>(&mut self, node_id: &str, name: &str, config: F) -> &mut Self
+    where
+        F: FnOnce(AITaskBuilder<'_>) -> AITaskBuilder<'_>
+    {
+        let builder = self.ai_task(node_id, name);
+        let _ = config(builder);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn if_branch<F>(&mut self, condition: &str, then_fn: F) -> IfElseBuilder<'_>
+    where
+        F: FnOnce(&mut Branch<'_>)
+    {
+        let gw_id = format!("gw_{}_decision", self.current_node_id);
+        self.exclusive_gateway(&gw_id, "Decision Gateway");
+        self.connect_node(&gw_id);
+
+        let mut then_b = Branch {
+            workflow: self,
+            gateway_id: gw_id.clone(),
+            current_node_id: gw_id.clone(),
+            is_conditional: true,
+            condition: Some(condition.to_string()),
+            has_ended: false,
+        };
+        then_fn(&mut then_b);
+
+        if !then_b.has_ended && then_b.current_node_id != gw_id {
+            then_b.workflow.pending_merges.push(then_b.current_node_id);
+        }
+
+        IfElseBuilder {
+            workflow: then_b.workflow,
+            gateway_id: gw_id,
+        }
+    }
+}
+
+pub struct Branch<'a> {
+    pub workflow: &'a mut Workflow,
+    pub gateway_id: String,
+    pub current_node_id: String,
+    pub is_conditional: bool,
+    pub condition: Option<String>,
+    pub has_ended: bool,
+}
+
+impl<'a> Branch<'a> {
+    fn connect_node(&mut self, node_id: &str) {
+        if self.has_ended {
+            return;
+        }
+
+        let merges = self.workflow.pending_merges.clone();
+        if !merges.is_empty() {
+            for source_id in &merges {
+                self.workflow.sequence_flow(source_id, node_id);
+            }
+            self.workflow.pending_merges.clear();
+            self.current_node_id = node_id.to_string();
+            return;
+        }
+
+        if self.current_node_id == self.gateway_id {
+            let gateway_id = self.gateway_id.clone();
+            if self.is_conditional {
+                let cond = self.condition.as_deref().unwrap_or("");
+                self.workflow.sequence_flow_with_condition(&gateway_id, node_id, cond);
+            } else {
+                self.workflow.sequence_flow(&gateway_id, node_id);
+            }
+        } else if !self.current_node_id.is_empty() && self.current_node_id != node_id {
+            let current = self.current_node_id.clone();
+            self.workflow.sequence_flow(&current, node_id);
+        }
+
+        self.current_node_id = node_id.to_string();
+    }
+
+    pub fn user<F>(&mut self, node_id: &str, name: &str, config: F) -> &mut Self
+    where
+        F: FnOnce(UserTaskBuilder<'_>) -> UserTaskBuilder<'_>
+    {
+        let builder = self.workflow.user_task(node_id, name);
+        let _ = config(builder);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn service<F>(&mut self, node_id: &str, name: &str, topic: &str, config: F) -> &mut Self
+    where
+        F: FnOnce(ServiceTaskBuilder<'_>) -> ServiceTaskBuilder<'_>
+    {
+        let builder = self.workflow.service_task(node_id, name, topic);
+        let _ = config(builder);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn ai<F>(&mut self, node_id: &str, name: &str, config: F) -> &mut Self
+    where
+        F: FnOnce(AITaskBuilder<'_>) -> AITaskBuilder<'_>
+    {
+        let builder = self.workflow.ai_task(node_id, name);
+        let _ = config(builder);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn end(&mut self, node_id: &str, name: &str) -> &mut Self {
+        self.workflow.end_event(node_id, name);
+        self.connect_node(node_id);
+        self.has_ended = true;
+        self
+    }
+
+    pub fn if_branch<F>(&mut self, condition: &str, then_fn: F) -> IfElseBranchBuilder<'_, 'a>
+    where
+        F: FnOnce(&mut Branch<'_>)
+    {
+        let gw_id = format!("gw_{}_decision", self.current_node_id);
+        self.workflow.exclusive_gateway(&gw_id, "Decision Gateway");
+        self.connect_node(&gw_id);
+
+        let mut then_b = Branch {
+            workflow: &mut *self.workflow,
+            gateway_id: gw_id.clone(),
+            current_node_id: gw_id.clone(),
+            is_conditional: true,
+            condition: Some(condition.to_string()),
+            has_ended: false,
+        };
+        then_fn(&mut then_b);
+
+        if !then_b.has_ended && then_b.current_node_id != gw_id {
+            then_b.workflow.pending_merges.push(then_b.current_node_id);
+        }
+
+        IfElseBranchBuilder {
+            branch: self,
+            gateway_id: gw_id,
+        }
+    }
+}
+
+pub struct IfElseBuilder<'a> {
+    pub workflow: &'a mut Workflow,
+    pub gateway_id: String,
+}
+
+impl<'a> IfElseBuilder<'a> {
+    pub fn else_branch<F>(self, else_fn: F) -> &'a mut Workflow
+    where
+        F: FnOnce(&mut Branch<'_>)
+    {
+        let mut else_b = Branch {
+            workflow: self.workflow,
+            gateway_id: self.gateway_id.clone(),
+            current_node_id: self.gateway_id.clone(),
+            is_conditional: false,
+            condition: None,
+            has_ended: false,
+        };
+        else_fn(&mut else_b);
+
+        if !else_b.has_ended && else_b.current_node_id != self.gateway_id {
+            else_b.workflow.pending_merges.push(else_b.current_node_id);
+        }
+
+        else_b.workflow
+    }
+}
+
+pub struct IfElseBranchBuilder<'b, 'a> {
+    pub branch: &'b mut Branch<'a>,
+    pub gateway_id: String,
+}
+
+impl<'b, 'a> IfElseBranchBuilder<'b, 'a> {
+    pub fn else_branch<F>(self, else_fn: F) -> &'b mut Branch<'a>
+    where
+        F: FnOnce(&mut Branch<'_>)
+    {
+        let mut else_b = Branch {
+            workflow: &mut *self.branch.workflow,
+            gateway_id: self.gateway_id.clone(),
+            current_node_id: self.gateway_id.clone(),
+            is_conditional: false,
+            condition: None,
+            has_ended: false,
+        };
+        else_fn(&mut else_b);
+
+        if !else_b.has_ended && else_b.current_node_id != self.gateway_id {
+            else_b.workflow.pending_merges.push(else_b.current_node_id);
+        }
+
+        self.branch
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -798,6 +1055,32 @@ mod tests {
         assert!(xml_str.contains("id=\"start\""));
         assert!(xml_str.contains("id=\"task1\""));
         assert!(xml_str.contains("id=\"end\""));
+    }
+
+    #[test]
+    fn test_workflow_builder_closure_dsl() {
+        let mut w = Workflow::new("test-process-dsl", "Test Process DSL");
+        w.start("start")
+            .user("task1", "User Task 1", |t| t.assignee("admin"))
+            .if_branch("${is_urgent == true}", |b| {
+                b.service("task2", "Urgent Task", "urgent_topic", |s| s)
+                    .end("end_urgent", "Urgent Finished");
+            })
+            .else_branch(|b| {
+                b.service("task3", "Normal Task", "normal_topic", |s| s)
+                    .end("end_normal", "Normal Finished");
+            });
+
+        let xml = w.build_xml();
+        assert!(xml.is_ok(), "failed to build xml: {:?}", xml.err());
+        let xml_str = xml.unwrap();
+        assert!(xml_str.contains("id=\"test-process-dsl\""));
+        assert!(xml_str.contains("id=\"start\""));
+        assert!(xml_str.contains("id=\"task1\""));
+        assert!(xml_str.contains("id=\"task2\""));
+        assert!(xml_str.contains("id=\"task3\""));
+        assert!(xml_str.contains("id=\"end_urgent\""));
+        assert!(xml_str.contains("id=\"end_normal\""));
     }
 
     #[test]

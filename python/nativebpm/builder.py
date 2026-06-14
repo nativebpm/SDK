@@ -407,6 +407,120 @@ class DMNRuleBuilder:
 
 _COMPILER_CACHE = {}
 
+class Branch:
+    def __init__(self, workflow: 'Workflow', gateway_id: str, current_node_id: str, is_conditional: bool, condition: Optional[str] = None):
+        self._workflow = workflow
+        self._gateway_id = gateway_id
+        self._current_node_id = current_node_id
+        self._is_conditional = is_conditional
+        self._condition = condition
+        self._has_ended = False
+
+    def _connect_node(self, node_id: str):
+        if self._has_ended:
+            return
+        
+        merges = self._workflow._pending_merges
+        if merges:
+            for source_id in merges:
+                self._workflow.sequence_flow(source_id, node_id)
+            self._workflow._pending_merges = []
+            self._current_node_id = node_id
+            return
+
+        if self._current_node_id == self._gateway_id:
+            if self._is_conditional:
+                self._workflow.sequence_flow_with_condition(self._gateway_id, node_id, self._condition or "")
+            else:
+                self._workflow.sequence_flow(self._gateway_id, node_id)
+        elif self._current_node_id and self._current_node_id != node_id:
+            self._workflow.sequence_flow(self._current_node_id, node_id)
+        
+        self._current_node_id = node_id
+
+    def user(self, node_id: str, name: str, config=None) -> 'Branch':
+        builder = self._workflow.user_task(node_id, name)
+        if config:
+            config(builder)
+        self._connect_node(node_id)
+        return self
+
+    def service(self, node_id: str, name: str, topic: str, config=None) -> 'Branch':
+        builder = self._workflow.service_task(node_id, name, topic)
+        if config:
+            config(builder)
+        self._connect_node(node_id)
+        return self
+
+    def ai(self, node_id: str, name: str, config=None) -> 'Branch':
+        builder = self._workflow.ai_task(node_id, name)
+        if config:
+            config(builder)
+        self._connect_node(node_id)
+        return self
+
+    def end(self, node_id: str, name: str) -> 'Branch':
+        self._workflow.end_event(node_id, name)
+        self._connect_node(node_id)
+        self._has_ended = True
+        return self
+
+    def if_branch(self, condition: str, then_fn=None):
+        if then_fn is None:
+            def decorator(func):
+                return self.if_branch(condition, func)
+            return decorator
+
+        gw_id = f"gw_{self._current_node_id}_decision"
+        self._workflow.exclusive_gateway(gw_id, "Decision Gateway")
+        self._connect_node(gw_id)
+
+        then_branch = Branch(self._workflow, gw_id, gw_id, True, condition)
+        then_fn(then_branch)
+
+        if not then_branch._has_ended and then_branch._current_node_id != gw_id:
+            self._workflow._pending_merges.append(then_branch._current_node_id)
+
+        return IfElseBranchBuilder(self, gw_id)
+
+class IfElseBuilder:
+    def __init__(self, workflow: 'Workflow', gateway_id: str):
+        self._workflow = workflow
+        self._gateway_id = gateway_id
+
+    def else_branch(self, else_fn=None) -> 'Workflow':
+        if else_fn is None:
+            def decorator(func):
+                return self.else_branch(func)
+            return decorator
+
+        else_branch = Branch(self._workflow, self._gateway_id, self._gateway_id, False)
+        else_fn(else_branch)
+
+        if not else_branch._has_ended and else_branch._current_node_id != self._gateway_id:
+            self._workflow._pending_merges.append(else_branch._current_node_id)
+
+        return self._workflow
+
+class IfElseBranchBuilder:
+    def __init__(self, branch: Branch, gateway_id: str):
+        self._branch = branch
+        self._gateway_id = gateway_id
+
+    def else_branch(self, else_fn=None) -> Branch:
+        if else_fn is None:
+            def decorator(func):
+                return self.else_branch(func)
+            return decorator
+
+        else_branch = Branch(self._branch._workflow, self._gateway_id, self._gateway_id, False)
+        else_fn(else_branch)
+
+        if not else_branch._has_ended and else_branch._current_node_id != self._gateway_id:
+            self._branch._workflow._pending_merges.append(else_branch._current_node_id)
+
+        return self._branch
+
 class Workflow:
     def __init__(self, id_str: str, name: str, wasm_input: Optional[Any] = None):
         self._id = id_str
@@ -415,6 +529,8 @@ class Workflow:
         self._flows: List[Dict[str, Any]] = []
         self._engine = None
         self._compiled_module = None
+        self._current_node_id = ""
+        self._pending_merges: List[str] = []
 
         if wasm_input is not None:
             self.init_compiler(wasm_input)
@@ -454,6 +570,65 @@ class Workflow:
         _COMPILER_CACHE[cache_key] = (engine, compiled_module)
         self._engine = engine
         self._compiled_module = compiled_module
+
+    def _connect_node(self, node_id: str):
+        if self._pending_merges:
+            for source_id in self._pending_merges:
+                self.sequence_flow(source_id, node_id)
+            self._pending_merges = []
+        elif self._current_node_id and self._current_node_id != node_id:
+            self.sequence_flow(self._current_node_id, node_id)
+        self._current_node_id = node_id
+
+    def start(self, node_id: str) -> 'Workflow':
+        self.start_event(node_id)
+        self._connect_node(node_id)
+        return self
+
+    def end(self, node_id: str, name: str) -> 'Workflow':
+        self.end_event(node_id, name)
+        self._connect_node(node_id)
+        self._current_node_id = ""
+        return self
+
+    def user(self, node_id: str, name: str, config=None) -> 'Workflow':
+        builder = self.user_task(node_id, name)
+        if config:
+            config(builder)
+        self._connect_node(node_id)
+        return self
+
+    def service(self, node_id: str, name: str, topic: str, config=None) -> 'Workflow':
+        builder = self.service_task(node_id, name, topic)
+        if config:
+            config(builder)
+        self._connect_node(node_id)
+        return self
+
+    def ai(self, node_id: str, name: str, config=None) -> 'Workflow':
+        builder = self.ai_task(node_id, name)
+        if config:
+            config(builder)
+        self._connect_node(node_id)
+        return self
+
+    def if_branch(self, condition: str, then_fn=None):
+        if then_fn is None:
+            def decorator(func):
+                return self.if_branch(condition, func)
+            return decorator
+
+        gw_id = f"gw_{self._current_node_id}_decision"
+        self.exclusive_gateway(gw_id, "Decision Gateway")
+        self._connect_node(gw_id)
+
+        then_branch = Branch(self, gw_id, gw_id, True, condition)
+        then_fn(then_branch)
+
+        if not then_branch._has_ended and then_branch._current_node_id != gw_id:
+            self._pending_merges.append(then_branch._current_node_id)
+
+        return IfElseBuilder(self, gw_id)
 
     def start_event(self, node_id: str) -> StartEventBuilder:
         self._nodes.append({'type': 'startEvent', 'id': node_id, 'name': 'Start'})

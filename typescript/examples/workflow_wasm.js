@@ -3,32 +3,18 @@ import { Workflow, Client } from '../dist/index.js';
 export async function run() {
   console.log("=== NativeBPM TS SDK: Workflow as Code ===");
 
-  // 1. Build workflow as code (without WASM tasks)
+  // 1. Build workflow as code (without WASM tasks) using closure DSL
   const workflow = new Workflow('native-demo', 'Workflow as Code');
-  workflow.startEvent('start');
-  
-  // Add a standard Service Task. Since no `.wasm(...)` call is made,
-  // this task is executed natively as a topic-based worker queue execution.
-  workflow.serviceTask('notifyCustomer', 'Send Confirmation Email', 'email_topic');
-  
-  // Add an exclusive gateway to show transition conditions
-  workflow.exclusiveGateway('gateway', 'Urgency Gateway');
-  
-  // Add a User (human) task for standard workflow steps
-  workflow.userTask('reviewOrder', 'Review Order Details')
-    .assignee('sales_representative');
-      
-  workflow.endEvent('end', 'Process Finished');
-  
-  // Connect elements with sequence flows
-  workflow.sequenceFlow('start', 'gateway');
-  
-  // transition conditions configured as process expressions (e.g. ${isUrgent == true})
-  workflow.sequenceFlowWithCondition('gateway', 'reviewOrder', '${isUrgent == true}');
-  workflow.sequenceFlowWithCondition('gateway', 'notifyCustomer', '${isUrgent == false}');
-  
-  workflow.sequenceFlow('notifyCustomer', 'end');
-  workflow.sequenceFlow('reviewOrder', 'end');
+  workflow.start('start')
+    .if('${isUrgent == true}', b => {
+      b.user('reviewOrder', 'Review Order Details', ut => {
+        ut.assignee('sales_representative');
+      }).end('end_review', 'Process Finished');
+    })
+    .else(b => {
+      b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic')
+       .end('end_default', 'Process Finished');
+    });
   
   // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
   const bpmnXML = await workflow.buildXML();

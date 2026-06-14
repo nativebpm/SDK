@@ -220,5 +220,34 @@ namespace NativeBPM.Client.Test.Builder
             Assert.Contains("mapDecisionResult=\"singleEntry\"", xml);
             Console.WriteLine("✓ .NET SDK business rule task verified successfully!");
         }
+
+        [Fact]
+        public void TestClosureDsl()
+        {
+            Console.WriteLine("Running .NET SDK closure block DSL test...");
+            byte[] rawBytes = GetWasmBytes();
+            using var workflow = new Workflow("closure-process", "Closure Process", rawBytes);
+
+            workflow.Start("start")
+                .User("task1", "User Approval")
+                .If("approved == true", b => {
+                    b.Service("publish", "Publish Page", "publish-topic", st => {
+                        st.Wasm("./publish.wasm");
+                    }).End("end_approved", "Approved End");
+                })
+                .Else(b => {
+                    b.Service("reject", "Notify Reject", "reject-topic")
+                     .End("end_rejected", "Rejected End");
+                });
+
+            string xml = workflow.BuildXml();
+            Assert.NotNull(xml);
+            Assert.Contains("id=\"closure-process\"", xml);
+            Assert.Contains("exclusiveGateway id=\"gw_task1_decision\"", xml);
+            Assert.Contains("serviceTask id=\"publish\"", xml);
+            Assert.Contains("wasmPath=\"./publish.wasm\"", xml);
+            Assert.Contains("serviceTask id=\"reject\"", xml);
+            Console.WriteLine("✓ .NET SDK closure block DSL test passed!");
+        }
     }
 }

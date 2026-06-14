@@ -135,4 +135,36 @@ class WorkflowTest extends TestCase
         self::assertStringContainsString("mapDecisionResult=\"singleEntry\"", $xml);
         echo "✓ PHP SDK business rule task verified successfully!\n";
     }
+
+    public function testClosureDsl()
+    {
+        echo "Running PHP SDK closure DSL test...\n";
+        $workflow = new Workflow("test-process-dsl", "Test Process DSL");
+
+        $workflow->start("start")
+            ->user("task1", "User Task 1", function($ut) {
+                $ut->assignee("admin");
+            })
+            ->if('${is_urgent == true}', function($b) {
+                $b->service("task2", "Urgent Task", "urgent_topic")
+                    ->end("end_urgent", "Urgent Finished");
+            })
+            ->else(function($b) {
+                $b->service("task3", "Normal Task", "normal_topic")
+                    ->end("end_normal", "Normal Finished");
+            });
+
+        $xml = $workflow->buildXML();
+        self::assertNotNull($xml);
+        self::assertStringContainsString("id=\"test-process-dsl\"", $xml);
+        self::assertStringContainsString("<startEvent id=\"start\"", $xml);
+        self::assertStringContainsString("<userTask id=\"task1\"", $xml);
+        self::assertStringContainsString("assignee=\"admin\"", $xml);
+        self::assertStringContainsString("<serviceTask id=\"task2\"", $xml);
+        self::assertStringContainsString("<serviceTask id=\"task3\"", $xml);
+        self::assertStringContainsString("<endEvent id=\"end_urgent\"", $xml);
+        self::assertStringContainsString("<endEvent id=\"end_normal\"", $xml);
+        echo "✓ PHP SDK closure DSL assertions passed successfully!\n";
+    }
 }
+

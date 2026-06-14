@@ -6,11 +6,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const defaultSchemaWasmPath = path.resolve(__dirname, 'jsonschema.wasm');
 async function loadWasm(wasmPath) {
+    const nullDevice = process.platform === 'win32' ? 'NUL' : '/dev/null';
+    const fd = fs.openSync(nullDevice, 'r');
     const wasi = new WASI({
         version: 'preview1',
         args: [],
         env: {},
-        preopens: {}
+        preopens: {},
+        stdin: fd
     });
     const wasmBuffer = fs.readFileSync(wasmPath);
     const wasmModule = await WebAssembly.compile(wasmBuffer);
@@ -18,6 +21,7 @@ async function loadWasm(wasmPath) {
         wasi_snapshot_preview1: wasi.wasiImport
     });
     wasi.start(instance);
+    fs.closeSync(fd);
     return { instance, wasi };
 }
 export async function validateJSON(schema, data, wasmPath) {

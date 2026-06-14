@@ -8,25 +8,15 @@ def main():
     workflow = Workflow('native-demo', 'Workflow as Code')
     
     # Chain starting from the start event
-    workflow.start_event('start').next('gateway')
-    
-    # Configure exclusive gateway with transition conditions and default flow
-    workflow.exclusive_gateway('gateway', 'Urgency Gateway')\
-        .condition('reviewOrder', '${isUrgent == true}')\
-        .default('notifyCustomer')
-    
-    # Add standard Service Task. Since no `.wasm(...)` call is made,
-    # this task is executed natively as a topic-based worker queue execution.
-    workflow.service_task('notifyCustomer', 'Send Confirmation Email', 'email_topic')\
-        .next('end')
-    
-    # Add User Task and chain to the end event
-    workflow.user_task('reviewOrder', 'Review Order Details')\
-        .assignee('sales_representative')\
-        .next('end')
+    workflow.start('start').if_branch('${isUrgent == True}', lambda b: (
+        b.user('reviewOrder', 'Review Order Details', lambda ut: (
+            ut.assignee('sales_representative')
+        )).end('end_review', 'Process Finished')
+    )).else_branch(lambda b: (
+        b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic')
+         .end('end_default', 'Process Finished')
+    ))
         
-    workflow.end_event('end', 'Process Finished')
-    
     # Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
     bpmn_xml = workflow.build_xml()
     print("✓ Successfully compiled native workflow AST to BPMN 2.0 XML.")
