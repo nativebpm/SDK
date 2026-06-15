@@ -247,4 +247,36 @@ func TestBlockClosureDSL(t *testing.T) {
 	}
 }
 
+func TestImplicitBackEdges(t *testing.T) {
+	ctx := context.Background()
+	wf := NewWorkflow("back-edge-process", "Back Edge Process")
+
+	// We declare step1, then step2, then in when block we declare step1 again (creating a back-edge)
+	wf.User("step1", "User Step 1").
+		User("step2", "User Step 2").
+		When(V("approved").Eq(false)).
+		Then(func(flow *Branch) {
+			flow.User("step1", "User Step 1") // implicit loop back to step1
+		}).
+		Otherwise(func(flow *Branch) {
+			flow.End("end", "End Process")
+		})
+
+	xml, err := wf.BuildXML(ctx)
+	if err != nil {
+		t.Fatalf("failed to compile XML: %v", err)
+	}
+
+	// Verify only ONE declaration of userTask id="step1" exists in the XML
+	declCount := strings.Count(xml, "<userTask id=\"step1\"")
+	if declCount != 1 {
+		t.Errorf("expected exactly 1 declaration of userTask 'step1', got %d. XML:\n%s", declCount, xml)
+	}
+
+	// Check that we have a sequence flow going back from the gateway to step1
+	if !strings.Contains(xml, "targetRef=\"step1\"") {
+		t.Errorf("expected sequence flow targeting 'step1' (back-edge), XML:\n%s", xml)
+	}
+}
+
 

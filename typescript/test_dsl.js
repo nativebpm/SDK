@@ -34,7 +34,36 @@ async function testDSL() {
   console.log("✓ TypeScript closure block DSL tests passed!");
 }
 
-testDSL().catch(err => {
+async function testImplicitBackEdges() {
+  console.log("Running TypeScript implicit back-edges tests...");
+
+  const workflow = new Workflow('ts-back-edge-process', 'TS Back Edge Process');
+  workflow
+    .user('step1', 'User Step 1')
+    .user('step2', 'User Step 2')
+    .when(v('approved').eq(false))
+    .then((flow) => {
+      flow.user('step1', 'User Step 1');
+    })
+    .otherwise((flow) => {
+      flow.end('end', 'End Process');
+    });
+
+  const xml = await workflow.buildXML(wasmPath);
+
+  const declCount = (xml.match(/<userTask id="step1"/g) || []).length;
+  assert.strictEqual(declCount, 1, "Should declare userTask 'step1' exactly once");
+  assert.ok(xml.includes('targetRef="step1"'), "Should contain back-edge sequence flow targeting step1");
+
+  console.log("✓ TypeScript implicit back-edges tests passed!");
+}
+
+async function main() {
+  await testDSL();
+  await testImplicitBackEdges();
+}
+
+main().catch(err => {
   console.error("TS DSL test failed:", err);
   process.exit(1);
 });

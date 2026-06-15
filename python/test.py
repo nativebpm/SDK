@@ -163,5 +163,30 @@ class TestPythonSDK(unittest.TestCase):
         self.assertTrue('serviceTask id="reject"' in xml)
         print("✓ Python SDK closure block DSL decorator test passed!")
 
+    def test_implicit_back_edges(self):
+        print("Running Python SDK implicit back-edges test...")
+        workflow = Workflow('back-edge-process', 'Back Edge Process')
+
+        workflow.user('step1', 'User Step 1')\
+                .user('step2', 'User Step 2')\
+                .when(v('approved').eq(False))\
+                .then(lambda b: (
+                    b.user('step1', 'User Step 1')
+                ))\
+                .otherwise(lambda b: (
+                    b.end('end', 'End Process')
+                ))
+
+        xml = workflow.build_xml()
+        self.assertTrue('id="back-edge-process"' in xml)
+        
+        # Verify only 1 declaration of userTask id="step1" exists
+        decl_count = xml.count('<userTask id="step1"')
+        self.assertEqual(decl_count, 1)
+
+        # Check for sequence flow targeting step1 (back-edge)
+        self.assertTrue('targetRef="step1"' in xml)
+        print("✓ Python SDK implicit back-edges test passed!")
+
 if __name__ == '__main__':
     unittest.main()
