@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import static com.nativebpm.client.builder.Workflow.V;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,9 +35,7 @@ public class WorkflowDSLTest {
 
         workflow.user("task1", "User Approval")
                 .when(V("approved").eq(true)).then(b -> {
-                    b.service("publish", "Publish Page", "publish-topic", st -> {
-                        st.wasm("./publish.wasm");
-                    });
+                    b.service("publish", "Publish Page", "publish-topic", Map.of("wasm", "./publish.wasm"));
                 })
                 .otherwise(b -> {
                     b.service("reject", "Notify Reject", "reject-topic");

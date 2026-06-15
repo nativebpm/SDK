@@ -3,10 +3,7 @@ use serde::{Deserialize, Serialize};
 use wasmtime::*;
 use wasmtime_wasi::{WasiCtxBuilder, preview1::WasiP1Ctx};
 
-
-
 const DEFAULT_WASM_BYTES: &[u8] = include_bytes!("core.wasm");
-
 
 pub fn decompress_wasm_if_needed(data: &[u8]) -> Result<Vec<u8>, String> {
     if data.len() >= 4 && &data[0..4] == b"\x00asm" {
@@ -112,6 +109,36 @@ impl serde::Serialize for Workflow {
     }
 }
 
+fn populate_node_properties(node: &mut serde_json::Value, opts: serde_json::Value) {
+    if let (Some(node_obj), Some(opts_obj)) = (node.as_object_mut(), opts.as_object()) {
+        for (k, v) in opts_obj {
+            let mut target_key = k.clone();
+            if k == "wasm" {
+                target_key = "wasmPath".to_string();
+            } else if k == "result_variable" {
+                target_key = "resultVar".to_string();
+            } else if k.contains('_') {
+                let parts: Vec<&str> = k.split('_').collect();
+                let mut camel = parts[0].to_string();
+                for part in parts.iter().skip(1) {
+                    let mut chars = part.chars();
+                    if let Some(first) = chars.next() {
+                        camel.push_str(&first.to_uppercase().to_string());
+                        camel.push_str(chars.as_str());
+                    }
+                }
+                target_key = camel;
+                if target_key == "wasm" {
+                    target_key = "wasmPath".to_string();
+                } else if target_key == "resultVariable" {
+                    target_key = "resultVar".to_string();
+                }
+            }
+            node_obj.insert(target_key, v.clone());
+        }
+    }
+}
+
 impl Workflow {
     pub fn new(id: &str, name: &str) -> Self {
         Workflow {
@@ -128,13 +155,14 @@ impl Workflow {
         self
     }
 
-    pub fn start_event(&mut self, node_id: &str) -> StartEventBuilder<'_> {
+    pub fn start_event(&mut self, node_id: &str) -> &mut Self {
         self.nodes.push(serde_json::json!({
             "type": "startEvent",
             "id": node_id,
             "name": "Start"
         }));
-        StartEventBuilder { workflow: self, id: node_id.to_string() }
+        self.current_node_id = node_id.to_string();
+        self
     }
 
     pub fn end_event(&mut self, node_id: &str, name: &str) -> &mut Self {
@@ -146,79 +174,89 @@ impl Workflow {
         self
     }
 
-    pub fn service_task(&mut self, node_id: &str, name: &str, topic: &str) -> ServiceTaskBuilder<'_> {
-        self.nodes.push(serde_json::json!({
+    pub fn service_task(&mut self, node_id: &str, name: &str, topic: &str, options: serde_json::Value) -> &mut Self {
+        let mut node = serde_json::json!({
             "type": "serviceTask",
             "id": node_id,
             "name": name,
             "topic": topic
-        }));
-        ServiceTaskBuilder { workflow: self, id: node_id.to_string() }
+        });
+        populate_node_properties(&mut node, options);
+        self.nodes.push(node);
+        self
     }
 
-    pub fn ai_task(&mut self, node_id: &str, name: &str) -> AITaskBuilder<'_> {
-        self.nodes.push(serde_json::json!({
+    pub fn ai_task(&mut self, node_id: &str, name: &str, options: serde_json::Value) -> &mut Self {
+        let mut node = serde_json::json!({
             "type": "aiServiceTask",
             "id": node_id,
             "name": name
-        }));
-        AITaskBuilder { workflow: self, id: node_id.to_string() }
+        });
+        populate_node_properties(&mut node, options);
+        self.nodes.push(node);
+        self
     }
 
-    pub fn user_task(&mut self, node_id: &str, name: &str) -> UserTaskBuilder<'_> {
-        self.nodes.push(serde_json::json!({
+    pub fn user_task(&mut self, node_id: &str, name: &str, options: serde_json::Value) -> &mut Self {
+        let mut node = serde_json::json!({
             "type": "userTask",
             "id": node_id,
             "name": name
-        }));
-        UserTaskBuilder { workflow: self, id: node_id.to_string() }
+        });
+        populate_node_properties(&mut node, options);
+        self.nodes.push(node);
+        self
     }
 
-    pub fn exclusive_gateway(&mut self, node_id: &str, name: &str) -> ExclusiveGatewayBuilder<'_> {
+    pub fn exclusive_gateway(&mut self, node_id: &str, name: &str) -> &mut Self {
         self.nodes.push(serde_json::json!({
             "type": "exclusiveGateway",
             "id": node_id,
             "name": name
         }));
-        ExclusiveGatewayBuilder { workflow: self, id: node_id.to_string() }
+        self
     }
 
-    pub fn parallel_gateway(&mut self, node_id: &str, name: &str) -> ParallelGatewayBuilder<'_> {
+    pub fn parallel_gateway(&mut self, node_id: &str, name: &str) -> &mut Self {
         self.nodes.push(serde_json::json!({
             "type": "parallelGateway",
             "id": node_id,
             "name": name
         }));
-        ParallelGatewayBuilder { workflow: self, id: node_id.to_string() }
+        self
     }
 
-    pub fn event_based_gateway(&mut self, node_id: &str, name: &str) -> EventBasedGatewayBuilder<'_> {
+    pub fn event_based_gateway(&mut self, node_id: &str, name: &str) -> &mut Self {
         self.nodes.push(serde_json::json!({
             "type": "eventBasedGateway",
             "id": node_id,
             "name": name
         }));
-        EventBasedGatewayBuilder { workflow: self, id: node_id.to_string() }
+        self
     }
 
-    pub fn call_activity(&mut self, node_id: &str, name: &str, called_element: &str) -> CallActivityBuilder<'_> {
-        self.nodes.push(serde_json::json!({
+    pub fn call_activity(&mut self, node_id: &str, name: &str, called_element: &str, options: serde_json::Value) -> &mut Self {
+        let mut node = serde_json::json!({
             "type": "callActivity",
             "id": node_id,
             "name": name,
             "calledElement": called_element
-        }));
-        CallActivityBuilder { workflow: self, id: node_id.to_string() }
+        });
+        populate_node_properties(&mut node, options);
+        self.nodes.push(node);
+        self
     }
 
-    pub fn business_rule_task(&mut self, node_id: &str, name: &str, decision_ref: &str) -> BusinessRuleTaskBuilder<'_> {
-        self.nodes.push(serde_json::json!({
+    pub fn business_rule_task(&mut self, node_id: &str, name: &str, decision_ref: &str, options: serde_json::Value) -> &mut Self {
+        let mut node = serde_json::json!({
             "type": "businessRuleTask",
             "id": node_id,
             "name": name,
             "decisionRef": decision_ref
-        }));
-        BusinessRuleTaskBuilder { workflow: self, id: node_id.to_string() }
+        });
+        populate_node_properties(&mut node, options);
+        self.nodes.push(node);
+        self
     }
 
     pub fn sequence_flow(&mut self, source: &str, target: &str) -> &mut Self {
@@ -267,7 +305,6 @@ impl Workflow {
 
         let config = Config::new();
         let engine = Engine::new(&config).map_err(|e| e.to_string())?;
-
 
         let mut linker = Linker::new(&engine);
         wasmtime_wasi::preview1::add_to_linker_sync(&mut linker, |state: &mut WasiP1Ctx| state)
@@ -337,500 +374,6 @@ impl Workflow {
     }
 }
 
-pub struct StartEventBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> StartEventBuilder<'a> {
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct ServiceTaskBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> ServiceTaskBuilder<'a> {
-    pub fn wasm_path(self, path: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("wasmPath".to_string(), serde_json::json!(path));
-        }
-        self
-    }
-
-    pub fn wasm(self, path: &str) -> Self {
-        self.wasm_path(path)
-    }
-
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct AITaskBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> AITaskBuilder<'a> {
-    pub fn provider(self, p: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("provider".to_string(), serde_json::json!(p));
-        }
-        self
-    }
-
-    pub fn model(self, m: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("model".to_string(), serde_json::json!(m));
-        }
-        self
-    }
-
-    pub fn prompt(self, p: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("prompt".to_string(), serde_json::json!(p));
-        }
-        self
-    }
-
-    pub fn system_instruction(self, si: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("systemInstruction".to_string(), serde_json::json!(si));
-        }
-        self
-    }
-
-    pub fn response_schema(self, rs: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("responseSchema".to_string(), serde_json::json!(rs));
-        }
-        self
-    }
-
-    pub fn temperature(self, t: f64) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("temperature".to_string(), serde_json::json!(t));
-        }
-        self
-    }
-
-    pub fn result_var(self, rv: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("resultVar".to_string(), serde_json::json!(rv));
-        }
-        self
-    }
-
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct UserTaskBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> UserTaskBuilder<'a> {
-    pub fn assignee(self, a: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("assignee".to_string(), serde_json::json!(a));
-        }
-        self
-    }
-
-    pub fn candidate_groups(self, cg: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("candidateGroups".to_string(), serde_json::json!(cg));
-        }
-        self
-    }
-
-    pub fn due_date(self, d: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("dueDate".to_string(), serde_json::json!(d));
-        }
-        self
-    }
-
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct ExclusiveGatewayBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> ExclusiveGatewayBuilder<'a> {
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn next_with_condition(self, target_id: &str, condition: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow_with_condition(&self.id, target_id, condition);
-        self.workflow
-    }
-
-    pub fn condition(self, target_id: &str, cond: &str) -> Self {
-        self.workflow.sequence_flow_with_condition(&self.id, target_id, cond);
-        self
-    }
-
-    pub fn default(self, target_id: &str) -> Self {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct ParallelGatewayBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> ParallelGatewayBuilder<'a> {
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct EventBasedGatewayBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> EventBasedGatewayBuilder<'a> {
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct CallActivityBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> CallActivityBuilder<'a> {
-    pub fn in_val(self, source: &str, target: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            let in_vars = node.entry("inVariables".to_string()).or_insert_with(|| serde_json::Value::Array(vec![]));
-            if let Some(arr) = in_vars.as_array_mut() {
-                arr.push(serde_json::json!({
-                    "source": source,
-                    "target": target,
-                    "variables": "",
-                    "local": false
-                }));
-            }
-        }
-        self
-    }
-
-    pub fn in_all(self) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            let in_vars = node.entry("inVariables".to_string()).or_insert_with(|| serde_json::Value::Array(vec![]));
-            if let Some(arr) = in_vars.as_array_mut() {
-                arr.push(serde_json::json!({
-                    "source": "",
-                    "target": "",
-                    "variables": "all",
-                    "local": false
-                }));
-            }
-        }
-        self
-    }
-
-    pub fn out_val(self, source: &str, target: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            let out_vars = node.entry("outVariables".to_string()).or_insert_with(|| serde_json::Value::Array(vec![]));
-            if let Some(arr) = out_vars.as_array_mut() {
-                arr.push(serde_json::json!({
-                    "source": source,
-                    "target": target,
-                    "variables": ""
-                }));
-            }
-        }
-        self
-    }
-
-    pub fn out_all(self) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            let out_vars = node.entry("outVariables".to_string()).or_insert_with(|| serde_json::Value::Array(vec![]));
-            if let Some(arr) = out_vars.as_array_mut() {
-                arr.push(serde_json::json!({
-                    "source": "",
-                    "target": "",
-                    "variables": "all"
-                }));
-            }
-        }
-        self
-    }
-
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct BusinessRuleTaskBuilder<'a> {
-    workflow: &'a mut Workflow,
-    id: String,
-}
-
-impl<'a> BusinessRuleTaskBuilder<'a> {
-    pub fn map_decision_result(self, map_decision_result: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("mapDecisionResult".to_string(), serde_json::json!(map_decision_result));
-        }
-        self
-    }
-
-    pub fn result_variable(self, result_var: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("resultVar".to_string(), serde_json::json!(result_var));
-        }
-        self
-    }
-
-    pub fn hit_policy(self, hit_policy: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            node.insert("hitPolicy".to_string(), serde_json::json!(hit_policy));
-        }
-        self
-    }
-
-    pub fn input(self, expression: &str, type_str: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            let inputs = node.entry("inputs".to_string()).or_insert_with(|| serde_json::Value::Array(vec![]));
-            if let Some(arr) = inputs.as_array_mut() {
-                arr.push(serde_json::json!({
-                    "expression": expression,
-                    "type": type_str
-                }));
-            }
-        }
-        self
-    }
-
-    pub fn output(self, name: &str, type_str: &str) -> Self {
-        if let Some(node) = self.workflow.find_node_mut(&self.id) {
-            let outputs = node.entry("outputs".to_string()).or_insert_with(|| serde_json::Value::Array(vec![]));
-            if let Some(arr) = outputs.as_array_mut() {
-                arr.push(serde_json::json!({
-                    "name": name,
-                    "type": type_str
-                }));
-            }
-        }
-        self
-    }
-
-    pub fn rule(self) -> DMNRuleBuilder<'a> {
-        DMNRuleBuilder {
-            task_builder: self,
-            inputs: std::collections::HashMap::new(),
-            outputs: std::collections::HashMap::new(),
-        }
-    }
-
-    pub fn next(self, target_id: &str) -> &'a mut Workflow {
-        self.workflow.sequence_flow(&self.id, target_id);
-        self.workflow
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(self) -> &'a mut Workflow {
-        self.workflow
-    }
-}
-
-pub struct DMNRuleBuilder<'a> {
-    task_builder: BusinessRuleTaskBuilder<'a>,
-    inputs: std::collections::HashMap<String, String>,
-    outputs: std::collections::HashMap<String, String>,
-}
-
-impl<'a> DMNRuleBuilder<'a> {
-    pub fn when(mut self, expression: &str, val: serde_json::Value) -> Self {
-        self.inputs.insert(expression.to_string(), format_dmn_value(val));
-        self
-    }
-
-    pub fn then(mut self, name: &str, val: serde_json::Value) -> Self {
-        self.outputs.insert(name.to_string(), format_dmn_value(val));
-        self
-    }
-
-    fn commit(&mut self) {
-        let node = match self.task_builder.workflow.find_node_mut(&self.task_builder.id) {
-            Some(n) => n,
-            None => return,
-        };
-
-        let inputs_list = node.get("inputs").and_then(|v| v.as_array()).cloned().unwrap_or_default();
-        let outputs_list = node.get("outputs").and_then(|v| v.as_array()).cloned().unwrap_or_default();
-
-        let rules = node.entry("rules".to_string()).or_insert_with(|| serde_json::Value::Array(vec![]));
-        let rules_array = rules.as_array_mut().unwrap();
-
-
-        let mut rule_inputs = vec![];
-        for in_val in &inputs_list {
-            let expr = in_val.get("expression").and_then(|v| v.as_str()).unwrap_or("");
-            if let Some(val) = self.inputs.get(expr) {
-                rule_inputs.push(serde_json::Value::String(val.clone()));
-            } else {
-                rule_inputs.push(serde_json::Value::String("-".to_string()));
-            }
-        }
-
-        let mut rule_outputs = vec![];
-        for out_val in &outputs_list {
-            let name = out_val.get("name").and_then(|v| v.as_str()).unwrap_or("");
-            if let Some(val) = self.outputs.get(name) {
-                rule_outputs.push(serde_json::Value::String(val.clone()));
-            } else {
-                rule_outputs.push(serde_json::Value::String("-".to_string()));
-            }
-        }
-
-        rules_array.push(serde_json::json!({
-            "inputs": rule_inputs,
-            "outputs": rule_outputs
-        }));
-    }
-
-    pub fn rule(mut self) -> Self {
-        self.commit();
-        let task_builder = self.task_builder;
-        DMNRuleBuilder {
-            task_builder,
-            inputs: std::collections::HashMap::new(),
-            outputs: std::collections::HashMap::new(),
-        }
-    }
-
-    pub fn next(mut self, target_id: &str) -> &'a mut Workflow {
-        self.commit();
-        self.task_builder.next(target_id)
-    }
-
-    pub fn connect_to(self, target_id: &str) -> &'a mut Workflow {
-        self.next(target_id)
-    }
-
-    pub fn builder(mut self) -> &'a mut Workflow {
-        self.commit();
-        self.task_builder.builder()
-    }
-}
-
-fn format_dmn_value(val: serde_json::Value) -> String {
-    match val {
-        serde_json::Value::Null => "-".to_string(),
-        serde_json::Value::Bool(b) => if b { "true".to_string() } else { "false".to_string() },
-        serde_json::Value::Number(n) => n.to_string(),
-        serde_json::Value::String(s) => {
-            let trimmed = s.trim();
-            for op in &["<=", ">=", "!=", "<>", "<", ">"] {
-                if trimmed.starts_with(op) {
-                    return trimmed.to_string();
-                }
-            }
-            if trimmed == "true" || trimmed == "false" {
-                return trimmed.to_string();
-            }
-            if trimmed.parse::<f64>().is_ok() {
-                return trimmed.to_string();
-            }
-            format!("\"{}\"", trimmed)
-        }
-        _ => val.to_string(),
-    }
-}
-
 // Closure-based DSL extensions for Workflow
 impl Workflow {
     fn connect_node(&mut self, node_id: &str) {
@@ -877,32 +420,32 @@ impl Workflow {
         self
     }
 
-    pub fn user<F>(&mut self, node_id: &str, name: &str, config: F) -> &mut Self
-    where
-        F: FnOnce(UserTaskBuilder<'_>) -> UserTaskBuilder<'_>
-    {
-        let builder = self.user_task(node_id, name);
-        let _ = config(builder);
+    pub fn user(&mut self, node_id: &str, name: &str, options: serde_json::Value) -> &mut Self {
+        self.user_task(node_id, name, options);
         self.connect_node(node_id);
         self
     }
 
-    pub fn service<F>(&mut self, node_id: &str, name: &str, topic: &str, config: F) -> &mut Self
-    where
-        F: FnOnce(ServiceTaskBuilder<'_>) -> ServiceTaskBuilder<'_>
-    {
-        let builder = self.service_task(node_id, name, topic);
-        let _ = config(builder);
+    pub fn service(&mut self, node_id: &str, name: &str, topic: &str, options: serde_json::Value) -> &mut Self {
+        self.service_task(node_id, name, topic, options);
         self.connect_node(node_id);
         self
     }
 
-    pub fn ai<F>(&mut self, node_id: &str, name: &str, config: F) -> &mut Self
-    where
-        F: FnOnce(AITaskBuilder<'_>) -> AITaskBuilder<'_>
-    {
-        let builder = self.ai_task(node_id, name);
-        let _ = config(builder);
+    pub fn ai(&mut self, node_id: &str, name: &str, options: serde_json::Value) -> &mut Self {
+        self.ai_task(node_id, name, options);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn call(&mut self, node_id: &str, name: &str, called_element: &str, options: serde_json::Value) -> &mut Self {
+        self.call_activity(node_id, name, called_element, options);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn business_rule(&mut self, node_id: &str, name: &str, decision_ref: &str, options: serde_json::Value) -> &mut Self {
+        self.business_rule_task(node_id, name, decision_ref, options);
         self.connect_node(node_id);
         self
     }
@@ -964,32 +507,32 @@ impl<'a> Branch<'a> {
         self.current_node_id = node_id.to_string();
     }
 
-    pub fn user<F>(&mut self, node_id: &str, name: &str, config: F) -> &mut Self
-    where
-        F: FnOnce(UserTaskBuilder<'_>) -> UserTaskBuilder<'_>
-    {
-        let builder = self.workflow.user_task(node_id, name);
-        let _ = config(builder);
+    pub fn user(&mut self, node_id: &str, name: &str, options: serde_json::Value) -> &mut Self {
+        self.workflow.user_task(node_id, name, options);
         self.connect_node(node_id);
         self
     }
 
-    pub fn service<F>(&mut self, node_id: &str, name: &str, topic: &str, config: F) -> &mut Self
-    where
-        F: FnOnce(ServiceTaskBuilder<'_>) -> ServiceTaskBuilder<'_>
-    {
-        let builder = self.workflow.service_task(node_id, name, topic);
-        let _ = config(builder);
+    pub fn service(&mut self, node_id: &str, name: &str, topic: &str, options: serde_json::Value) -> &mut Self {
+        self.workflow.service_task(node_id, name, topic, options);
         self.connect_node(node_id);
         self
     }
 
-    pub fn ai<F>(&mut self, node_id: &str, name: &str, config: F) -> &mut Self
-    where
-        F: FnOnce(AITaskBuilder<'_>) -> AITaskBuilder<'_>
-    {
-        let builder = self.workflow.ai_task(node_id, name);
-        let _ = config(builder);
+    pub fn ai(&mut self, node_id: &str, name: &str, options: serde_json::Value) -> &mut Self {
+        self.workflow.ai_task(node_id, name, options);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn call(&mut self, node_id: &str, name: &str, called_element: &str, options: serde_json::Value) -> &mut Self {
+        self.workflow.call_activity(node_id, name, called_element, options);
+        self.connect_node(node_id);
+        self
+    }
+
+    pub fn business_rule(&mut self, node_id: &str, name: &str, decision_ref: &str, options: serde_json::Value) -> &mut Self {
+        self.workflow.business_rule_task(node_id, name, decision_ref, options);
         self.connect_node(node_id);
         self
     }
@@ -1145,11 +688,10 @@ mod tests {
     fn test_workflow_builder() {
         let mut w = Workflow::new("test-process", "Test Process");
         w.start_event("start")
-            .connect_to("task1")
-            .service_task("task1", "Service Task", "my-topic")
-            .wasm("core.wasm")
-            .connect_to("end")
+            .service_task("task1", "Service Task", "my-topic", serde_json::json!({ "wasm": "core.wasm" }))
             .end_event("end", "End");
+        w.sequence_flow("start", "task1");
+        w.sequence_flow("task1", "end");
 
         let xml = w.build_xml();
         assert!(xml.is_ok(), "failed to build xml: {:?}", xml.err());
@@ -1163,15 +705,15 @@ mod tests {
     #[test]
     fn test_workflow_builder_closure_dsl() {
         let mut w = Workflow::new("test-process-dsl", "Test Process DSL");
-        w.start("start")
-            .user("task1", "User Task 1", |t| t.assignee("admin"))
-            .when("${is_urgent == true}")
+        w.start()
+            .user("task1", "User Task 1", serde_json::json!({ "assignee": "admin" }))
+            .when("is_urgent == true")
             .then(|b| {
-                b.service("task2", "Urgent Task", "urgent_topic", |s| s)
+                b.service("task2", "Urgent Task", "urgent_topic", serde_json::json!({}))
                     .end("end_urgent", "Urgent Finished");
             })
             .otherwise(|b| {
-                b.service("task3", "Normal Task", "normal_topic", |s| s)
+                b.service("task3", "Normal Task", "normal_topic", serde_json::json!({}))
                     .end("end_normal", "Normal Finished");
             });
 
@@ -1192,13 +734,12 @@ mod tests {
     fn test_workflow_builder_benchmark() {
         let mut w = Workflow::new("benchmark-process", "Benchmark Process");
         w.start_event("start")
-            .connect_to("task1")
-            .service_task("task1", "Service Task", "my-topic")
-            .wasm("core.wasm")
-            .connect_to("end")
+            .service_task("task1", "Service Task", "my-topic", serde_json::json!({ "wasm": "core.wasm" }))
             .end_event("end", "End");
+        w.sequence_flow("start", "task1");
+        w.sequence_flow("task1", "end");
 
-        let iterations = 5; // Let's run 5 iterations to check the speed of WASM loading and compilation
+        let iterations = 5;
         let start = std::time::Instant::now();
         for _ in 0..iterations {
             let xml = w.build_xml().unwrap();
@@ -1228,7 +769,7 @@ impl ToCondition for String {
 
 impl ToCondition for Expression {
     fn to_condition(&self) -> String {
-        self.to_string()
+        self.to_condition()
     }
 }
 
@@ -1237,9 +778,15 @@ pub struct Expression {
     pub expr: String,
 }
 
+impl ToCondition for Expression {
+    fn to_condition(&self) -> String {
+        self.expr.clone()
+    }
+}
+
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "${{{}}}", self.expr)
+        write!(f, "{}", self.expr)
     }
 }
 
@@ -1276,4 +823,3 @@ impl Variable {
         Expression { expr: format!("{} <= {}", self.name, val) }
     }
 }
-

@@ -19,9 +19,7 @@ func main() {
 	workflow.
 		When(nativebpm.V("isUrgent").Eq(true)).
 		Then(func(flow *nativebpm.Branch) {
-			flow.User("reviewOrder", "Review Order Details", func(ut *nativebpm.UserTaskBuilder) {
-				ut.Assignee("sales_representative")
-			})
+			flow.User("reviewOrder", "Review Order Details", nativebpm.M{"assignee": "sales_representative"})
 		}).
 		Otherwise(func(flow *nativebpm.Branch) {
 			flow.Service("notifyCustomer", "Send Confirmation Email", "email_topic")

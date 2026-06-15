@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -35,23 +37,21 @@ public class WorkflowTest {
         System.out.println("Running Java SDK workflow compilation test...");
         Workflow workflow = new Workflow("test-process", "Test Process Schema");
 
-        workflow.startEvent("start");
+        workflow.start();
 
-        workflow.serviceTask("task1", "Service Task 1", "service-topic")
-                .wasm("./my_task.wasm");
+        workflow.service("task1", "Service Task 1", "service-topic", Map.of("wasm", "./my_task.wasm"));
 
         workflow.exclusiveGateway("gateway", "Join/Split");
 
-        workflow.userTask("userTask", "User Task Approve")
-                .assignee("boss");
+        workflow.user("userTask", "User Task Approve", Map.of("assignee", "boss"));
 
-        workflow.endEvent("end", "Process Completed");
+        workflow.end("end", "Process Completed");
 
         // Connect them
         workflow.sequenceFlow("start", "task1");
         workflow.sequenceFlow("task1", "gateway");
-        workflow.sequenceFlowWithCondition("gateway", "userTask", "${isApproved == true}");
-        workflow.sequenceFlowWithCondition("gateway", "end", "${isApproved == false}");
+        workflow.sequenceFlowWithCondition("gateway", "userTask", "isApproved == true");
+        workflow.sequenceFlowWithCondition("gateway", "end", "isApproved == false");
         workflow.sequenceFlow("userTask", "end");
 
         String xml = workflow.buildXML();
@@ -111,8 +111,7 @@ public class WorkflowTest {
         byte[] zipBytes = zipOut.toByteArray();
 
         Workflow workflow = new Workflow("compressed-test", "Compressed Test");
-        workflow.startEvent("start").next("end");
-        workflow.endEvent("end", "End");
+        workflow.start().end("end", "End");
 
         String xmlBr = workflow.buildXML(brBytes);
         assertTrue(xmlBr.contains("id=\"compressed-test\""));
@@ -132,76 +131,70 @@ public class WorkflowTest {
         System.out.println("Running Java SDK constructor compilation test...");
         byte[] rawBytes = getWasmBytes();
         Workflow workflow = new Workflow("init-test", "Init Test", rawBytes);
-        workflow.startEvent("start").next("end");
-        workflow.endEvent("end", "End");
+        workflow.start().end("end", "End");
 
         String xml = workflow.buildXML();
         assertTrue(xml.contains("id=\"init-test\""));
         System.out.println("✓ Java SDK constructor compilation verified successfully.");
      }
 
-     @Test
-     public void testLoadAndProfiling() throws Exception {
-         System.out.println("Running Java SDK load and profiling test...");
-         Runtime runtime = Runtime.getRuntime();
+    @Test
+    public void testLoadAndProfiling() throws Exception {
+        System.out.println("Running Java SDK load and profiling test...");
+        Runtime runtime = Runtime.getRuntime();
+        runtime.gc();
+        long baseline = runtime.totalMemory() - runtime.freeMemory();
+        System.out.println(String.format("Baseline Memory: %.2f MB", baseline / (1024.0 * 1024.0)));
+
+        byte[] rawBytes = getWasmBytes();
+
+        for (int i = 0; i < 200; i++) {
+            Workflow workflow = new Workflow("load-test-" + i, "Load Test " + i, rawBytes);
+            workflow.start().end("end", "End");
+            String xml = workflow.buildXML();
+            assertNotNull(xml);
+            
+            if ((i + 1) % 50 == 0) {
+                runtime.gc();
+                long current = runtime.totalMemory() - runtime.freeMemory();
+                System.out.println(String.format("Iteration %d/200 - Memory: %.2f MB", (i + 1), current / (1024.0 * 1024.0)));
+            }
+        }
          runtime.gc();
-         long baseline = runtime.totalMemory() - runtime.freeMemory();
-         System.out.println(String.format("Baseline Memory: %.2f MB", baseline / (1024.0 * 1024.0)));
+         long finalMem = runtime.totalMemory() - runtime.freeMemory();
+         System.out.println(String.format("Final Memory: %.2f MB (Delta: %.2f MB)", finalMem / (1024.0 * 1024.0), (finalMem - baseline) / (1024.0 * 1024.0)));
+         assertTrue((finalMem - baseline) / (1024.0 * 1024.0) < 50.0, "Java SDK memory delta is too high!");
+     }
 
+     @Test
+     public void testBusinessRuleTask() throws Exception {
+         System.out.println("Running Java SDK business rule task test...");
          byte[] rawBytes = getWasmBytes();
+         Workflow workflow = new Workflow("dmn-test", "DMN Test Process", rawBytes);
 
-         for (int i = 0; i < 200; i++) {
-             Workflow workflow = new Workflow("load-test-" + i, "Load Test " + i, rawBytes);
-             workflow.startEvent("start").next("end");
-             workflow.endEvent("end", "End");
-             String xml = workflow.buildXML();
-             assertNotNull(xml);
-             
-             if ((i + 1) % 50 == 0) {
-                 runtime.gc();
-                 long current = runtime.totalMemory() - runtime.freeMemory();
-                 System.out.println(String.format("Iteration %d/200 - Memory: %.2f MB", (i + 1), current / (1024.0 * 1024.0)));
-             }
-         }
-          runtime.gc();
-          long finalMem = runtime.totalMemory() - runtime.freeMemory();
-          System.out.println(String.format("Final Memory: %.2f MB (Delta: %.2f MB)", finalMem / (1024.0 * 1024.0), (finalMem - baseline) / (1024.0 * 1024.0)));
-          assertTrue((finalMem - baseline) / (1024.0 * 1024.0) < 50.0, "Java SDK memory delta is too high!");
-      }
+         workflow.start().businessRule("ruleTask", "Determine Discount", "determine_discount", Map.of(
+             "hitPolicy", "UNIQUE",
+             "inputs", List.of(
+                 Map.of("expression", "membership", "type", "string"),
+                 Map.of("expression", "age", "type", "number")
+             ),
+             "outputs", List.of(
+                 Map.of("name", "discount", "type", "number")
+             ),
+             "rules", List.of(
+                 Map.of("inputs", List.of("\"gold\"", ">= 18"), "outputs", List.of("20.0")),
+                 Map.of("inputs", List.of("\"silver\"", "-"), "outputs", List.of("10.0"))
+             ),
+             "resultVar", "discountVar",
+             "mapDecisionResult", "singleEntry"
+         )).end("end", "End");
 
-      @Test
-      public void testBusinessRuleTask() throws Exception {
-          System.out.println("Running Java SDK business rule task test...");
-          byte[] rawBytes = getWasmBytes();
-          Workflow workflow = new Workflow("dmn-test", "DMN Test Process", rawBytes);
-
-          workflow.startEvent("start")
-              .next("ruleTask");
-
-          workflow.businessRuleTask("ruleTask", "Determine Discount", "determine_discount")
-              .hitPolicy("UNIQUE")
-              .input("membership", "string")
-              .input("age", "number")
-              .output("discount", "number")
-              .rule()
-                  .when("membership", "gold")
-                  .when("age", ">= 18")
-                  .then("discount", 20.0)
-              .rule()
-                  .when("membership", "silver")
-                  .then("discount", 10.0)
-              .resultVariable("discountVar")
-              .mapDecisionResult("singleEntry")
-              .next("end");
-
-          workflow.endEvent("end", "End");
-
-          String xml = workflow.buildXML();
-          assertNotNull(xml);
-          assertTrue(xml.contains("businessRuleTask id=\"ruleTask\""));
-          assertTrue(xml.contains("decisionRef=\"determine_discount\""));
-          assertTrue(xml.contains("resultVariable=\"discountVar\""));
-          assertTrue(xml.contains("mapDecisionResult=\"singleEntry\""));
-          System.out.println("✓ Java SDK business rule task verified successfully!");
-      }
+         String xml = workflow.buildXML();
+         assertNotNull(xml);
+         assertTrue(xml.contains("businessRuleTask id=\"ruleTask\""));
+         assertTrue(xml.contains("decisionRef=\"determine_discount\""));
+         assertTrue(xml.contains("resultVariable=\"discountVar\""));
+         assertTrue(xml.contains("mapDecisionResult=\"singleEntry\""));
+         System.out.println("✓ Java SDK business rule task verified successfully!");
+     }
 }

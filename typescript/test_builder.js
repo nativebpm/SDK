@@ -14,9 +14,7 @@ async function testBuilder() {
 
   const workflow = new Workflow('ts-process', 'TS Process');
   workflow.startEvent('start');
-  workflow.serviceTask('task1', 'Service Task', 'my-topic')
-    .wasm('./payment.wasm')
-    .next('end');
+  workflow.serviceTask('task1', 'Service Task', 'my-topic', { wasm: './payment.wasm' });
   workflow.endEvent('end', 'End');
   workflow.sequenceFlow('start', 'task1');
 
@@ -56,23 +54,26 @@ async function testBuilder() {
   // Verify BusinessRuleTask / DMN Rules Compiler
   console.log("Running TypeScript business rule task DMN test...");
   const wfDmn = new Workflow('ts-dmn-process', 'TS DMN Process');
-  wfDmn.startEvent('start').next('ruleTask');
-  wfDmn.businessRuleTask('ruleTask', 'Determine Discount', 'determine_discount')
-    .hitPolicy('UNIQUE')
-    .input('membership', 'string')
-    .input('age', 'number')
-    .output('discount', 'number')
-    .rule()
-      .when('membership', 'gold')
-      .when('age', '>= 18')
-      .then('discount', 20.0)
-    .rule()
-      .when('membership', 'silver')
-      .then('discount', 10.0)
-    .resultVariable('discountVar')
-    .mapDecisionResult('singleEntry')
-    .next('end');
+  wfDmn.startEvent('start');
+  wfDmn.businessRuleTask('ruleTask', 'Determine Discount', 'determine_discount', {
+    hitPolicy: 'UNIQUE',
+    inputs: [
+      { expression: 'membership', type: 'string' },
+      { expression: 'age', type: 'number' }
+    ],
+    outputs: [
+      { name: 'discount', type: 'number' }
+    ],
+    rules: [
+      { inputs: ['"gold"', '>= 18'], outputs: ['20.0'] },
+      { inputs: ['"silver"', '-'], outputs: ['10.0'] }
+    ],
+    resultVar: 'discountVar',
+    mapDecisionResult: 'singleEntry'
+  });
   wfDmn.endEvent('end', 'End');
+  wfDmn.sequenceFlow('start', 'ruleTask');
+  wfDmn.sequenceFlow('ruleTask', 'end');
 
   const xmlDmn = await wfDmn.buildXML(wasmPath);
   assert.ok(xmlDmn.includes('businessRuleTask id="ruleTask"'), "XML should contain businessRuleTask");

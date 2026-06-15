@@ -21,23 +21,21 @@ class WorkflowTest extends TestCase
         echo "Running PHP SDK workflow compilation test...\n";
         $workflow = new Workflow("test-process", "Test Process Schema");
 
-        $workflow->startEvent("start");
+        $workflow->start();
 
-        $workflow->serviceTask("task1", "Service Task 1", "service-topic")
-            ->wasm("./my_task.wasm");
+        $workflow->service("task1", "Service Task 1", "service-topic", ["wasm" => "./my_task.wasm"]);
 
         $workflow->exclusiveGateway("gateway", "Join/Split");
 
-        $workflow->userTask("userTask", "User Task Approve")
-            ->assignee("boss");
+        $workflow->user("userTask", "User Task Approve", ["assignee" => "boss"]);
 
-        $workflow->endEvent("end", "Process Completed");
+        $workflow->end("end", "Process Completed");
 
         // Connect them
         $workflow->sequenceFlow("start", "task1");
         $workflow->sequenceFlow("task1", "gateway");
-        $workflow->sequenceFlowWithCondition("gateway", "userTask", '${isApproved == true}');
-        $workflow->sequenceFlowWithCondition("gateway", "end", '${isApproved == false}');
+        $workflow->sequenceFlowWithCondition("gateway", "userTask", 'isApproved == true');
+        $workflow->sequenceFlowWithCondition("gateway", "end", 'isApproved == false');
         $workflow->sequenceFlow("userTask", "end");
 
         $xml = $workflow->buildXML();
@@ -76,8 +74,7 @@ class WorkflowTest extends TestCase
         unlink($tempFile);
 
         $workflow = new Workflow("compressed-test", "Compressed Test");
-        $workflow->startEvent("start")->next("end");
-        $workflow->endEvent("end", "End");
+        $workflow->start()->end("end", "End");
 
         $xmlGz = $workflow->buildXML($gzBytes);
         self::assertStringContainsString("id=\"compressed-test\"", $xmlGz);
@@ -93,8 +90,7 @@ class WorkflowTest extends TestCase
         echo "Running PHP SDK constructor compilation test...\n";
         $rawBytes = $this->getWasmBytes();
         $workflow = new Workflow("init-test", "Init Test", $rawBytes);
-        $workflow->startEvent("start")->next("end");
-        $workflow->endEvent("end", "End");
+        $workflow->start()->end("end", "End");
 
         $xml = $workflow->buildXML();
         self::assertStringContainsString("id=\"init-test\"", $xml);
@@ -106,26 +102,22 @@ class WorkflowTest extends TestCase
         echo "Running PHP SDK business rule task test...\n";
         $workflow = new Workflow("dmn-test", "DMN Test Process");
 
-        $workflow->startEvent("start")
-            ->next("ruleTask");
-
-        $workflow->businessRuleTask("ruleTask", "Determine Discount", "determine_discount")
-            ->hitPolicy("UNIQUE")
-            ->input("membership", "string")
-            ->input("age", "number")
-            ->output("discount", "number")
-            ->rule()
-                ->when("membership", "gold")
-                ->when("age", ">= 18")
-                ->then("discount", 20.0)
-            ->rule()
-                ->when("membership", "silver")
-                ->then("discount", 10.0)
-            ->resultVariable("discountVar")
-            ->mapDecisionResult("singleEntry")
-            ->next("end");
-
-        $workflow->endEvent("end", "End");
+        $workflow->start()->businessRule("ruleTask", "Determine Discount", "determine_discount", [
+            "hitPolicy" => "UNIQUE",
+            "inputs" => [
+                ["expression" => "membership", "type" => "string"],
+                ["expression" => "age", "type" => "number"]
+            ],
+            "outputs" => [
+                ["name" => "discount", "type" => "number"]
+            ],
+            "rules" => [
+                ["inputs" => ['"gold"', ">= 18"], "outputs" => ["20.0"]],
+                ["inputs" => ['"silver"', "-"], "outputs" => ["10.0"]]
+            ],
+            "resultVar" => "discountVar",
+            "mapDecisionResult" => "singleEntry"
+        ])->end("end", "End");
 
         $xml = $workflow->buildXML();
         self::assertNotNull($xml);
@@ -141,9 +133,7 @@ class WorkflowTest extends TestCase
         echo "Running PHP SDK closure DSL test...\n";
         $workflow = new Workflow("test-process-dsl", "Test Process DSL");
 
-        $workflow->user("task1", "User Task 1", function($ut) {
-                $ut->assignee("admin");
-            })
+        $workflow->user("task1", "User Task 1", ["assignee" => "admin"])
             ->when(Workflow::v('is_urgent')->eq(true))->then(function($b) {
                 $b->service("task2", "Urgent Task", "urgent_topic");
             })
@@ -162,4 +152,3 @@ class WorkflowTest extends TestCase
         echo "✓ PHP SDK closure DSL assertions passed successfully!\n";
     }
 }
-

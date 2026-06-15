@@ -13,23 +13,21 @@ class TestPythonSDK(unittest.TestCase):
         
         workflow = Workflow('test-process', 'Test Process Schema')
         
-        workflow.start_event('start')
+        workflow.start('start')
         
-        workflow.service_task('task1', 'Service Task 1', 'service-topic')\
-            .wasm('./my_task.wasm')
+        workflow.service('task1', 'Service Task 1', 'service-topic', wasm='./my_task.wasm')
             
         workflow.exclusive_gateway('gateway', 'Join/Split')
         
-        workflow.user_task('userTask', 'User Task Approve')\
-            .assignee('boss')
+        workflow.user('userTask', 'User Task Approve', assignee='boss')
             
-        workflow.end_event('end', 'Process Completed')
+        workflow.end('end', 'Process Completed')
 
         # Connect them
         workflow.sequence_flow('start', 'task1')
         workflow.sequence_flow('task1', 'gateway')
-        workflow.sequence_flow_with_condition('gateway', 'userTask', '${isApproved == true}')
-        workflow.sequence_flow_with_condition('gateway', 'end', '${isApproved == false}')
+        workflow.sequence_flow_with_condition('gateway', 'userTask', 'isApproved == true')
+        workflow.sequence_flow_with_condition('gateway', 'end', 'isApproved == false')
         workflow.sequence_flow('userTask', 'end')
 
         xml = workflow.build_xml()
@@ -68,8 +66,8 @@ class TestPythonSDK(unittest.TestCase):
 
         # Compile with each
         workflow = Workflow('compressed-test', 'Compressed Test')
-        workflow.start_event('start').next('end')
-        workflow.end_event('end', 'End')
+        workflow.start('start')
+        workflow.end('end', 'End')
 
         for name, data in [("Brotli", br_bytes), ("Gzip", gz_bytes), ("Zip", zip_bytes)]:
             xml = workflow.build_xml(data)
@@ -79,8 +77,8 @@ class TestPythonSDK(unittest.TestCase):
     def test_constructor_compilation(self):
         print("Running Python SDK constructor compilation test...")
         workflow = Workflow('init-test', 'Init Test', DEFAULT_WASM_PATH)
-        workflow.start_event('start').next('end')
-        workflow.end_event('end', 'End')
+        workflow.start('start')
+        workflow.end('end', 'End')
 
         xml = workflow.build_xml()
         self.assertTrue('id="init-test"' in xml)
@@ -90,26 +88,27 @@ class TestPythonSDK(unittest.TestCase):
         print("Running Python SDK business rule task test...")
         workflow = Workflow('dmn-test', 'DMN Test Process')
 
-        workflow.start_event('start')\
-            .next('ruleTask')
+        workflow.start('start')
 
-        workflow.business_rule_task('ruleTask', 'Determine Discount', 'determine_discount')\
-            .hit_policy('UNIQUE')\
-            .input('membership', 'string')\
-            .input('age', 'number')\
-            .output('discount', 'number')\
-            .rule()\
-                .when('membership', 'gold')\
-                .when('age', '>= 18')\
-                .then('discount', 20.0)\
-            .rule()\
-                .when('membership', 'silver')\
-                .then('discount', 10.0)\
-            .result_variable('discountVar')\
-            .map_decision_result('singleEntry')\
-            .next('end')
+        workflow.business_rule(
+            'ruleTask', 'Determine Discount', 'determine_discount',
+            hit_policy='UNIQUE',
+            inputs=[
+                {'expression': 'membership', 'type': 'string'},
+                {'expression': 'age', 'type': 'number'}
+            ],
+            outputs=[
+                {'name': 'discount', 'type': 'number'}
+            ],
+            rules=[
+                {'inputs': ['"gold"', '>= 18'], 'outputs': ['20.0']},
+                {'inputs': ['"silver"', '-'], 'outputs': ['10.0']}
+            ],
+            result_var='discountVar',
+            map_decision_result='singleEntry'
+        )
 
-        workflow.end_event('end', 'End')
+        workflow.end('end', 'End')
 
         xml = workflow.build_xml()
         self.assertIsNotNone(xml)
@@ -124,9 +123,7 @@ class TestPythonSDK(unittest.TestCase):
         workflow = Workflow('closure-process', 'Closure Process')
         
         workflow.user('task1', 'User Approval').when(v('approved').eq(True)).then(lambda b: (
-            b.service('publish', 'Publish Page', 'publish-topic', lambda st: (
-                st.wasm('./publish.wasm')
-            ))
+            b.service('publish', 'Publish Page', 'publish-topic', wasm='./publish.wasm')
         )).otherwise(lambda b: (
             b.service('reject', 'Notify Reject', 'reject-topic')
         ))
@@ -148,7 +145,7 @@ class TestPythonSDK(unittest.TestCase):
         
         @workflow.when(v('approved').eq(True))
         def then_branch(b):
-            b.service('publish', 'Publish Page', 'publish-topic', lambda st: st.wasm('./publish.wasm'))
+            b.service('publish', 'Publish Page', 'publish-topic', wasm='./publish.wasm')
             
         @then_branch.otherwise()
         def else_branch(b):

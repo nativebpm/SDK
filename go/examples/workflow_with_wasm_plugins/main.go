@@ -17,20 +17,16 @@ func main() {
 
 	// Chain starting from first service task (auto-start will prepend start event)
 	workflow.
-		Service("calculate", "Calculate Totals", "payment_topic", func(st *nativebpm.ServiceTaskBuilder) {
-			st.Wasm("./calculate_total.wasm")
-		}).
-		AI("aiCheck", "AI Fraud Guard", func(ait *nativebpm.AITaskBuilder) {
-			ait.Provider("google").
-				Model("gemini-2.5-flash").
-				Prompt("Analyze transaction for fraud: ${orderAmount}").
-				ResultVar("isFraudulent")
+		Service("calculate", "Calculate Totals", "payment_topic", nativebpm.M{"wasm": "./calculate_total.wasm"}).
+		AI("aiCheck", "AI Fraud Guard", nativebpm.M{
+			"provider":    "google",
+			"model":       "gemini-2.5-flash",
+			"prompt":      "Analyze transaction for fraud: ${orderAmount}",
+			"resultVar":   "isFraudulent",
 		}).
 		When(nativebpm.V("isFraudulent").Eq(true)).
 		Then(func(flow *nativebpm.Branch) {
-			flow.User("userTask", "Manual Fraud Approval", func(ut *nativebpm.UserTaskBuilder) {
-				ut.Assignee("security_officer")
-			})
+			flow.User("userTask", "Manual Fraud Approval", nativebpm.M{"assignee": "security_officer"})
 		}).
 		Otherwise(func(flow *nativebpm.Branch) {
 			// empty default else

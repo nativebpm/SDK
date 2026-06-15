@@ -109,7 +109,7 @@ namespace NativeBPM.Client.Builder
 
         public Workflow Builder() => this;
 
-        public StartEventBuilder StartEvent(string nodeId)
+        public Workflow StartEvent(string nodeId)
         {
             nodes.Add(new Dictionary<string, object>
             {
@@ -117,7 +117,8 @@ namespace NativeBPM.Client.Builder
                 { "id", nodeId },
                 { "name", "Start" }
             });
-            return new StartEventBuilder(this, nodeId);
+            this.currentNodeID = nodeId;
+            return this;
         }
 
         public Workflow EndEvent(string nodeId, string nodeName)
@@ -131,41 +132,79 @@ namespace NativeBPM.Client.Builder
             return this;
         }
 
-        public ServiceTaskBuilder ServiceTask(string nodeId, string nodeName, string topic)
+        private static string Capitalize(string s)
         {
-            nodes.Add(new Dictionary<string, object>
+            if (string.IsNullOrEmpty(s)) return s;
+            return char.ToUpper(s[0]) + s.Substring(1);
+        }
+
+        private static string ToCamelCase(string s)
+        {
+            if (s == "wasm") return "wasmPath";
+            if (s == "result_variable") return "resultVar";
+            if (!s.Contains("_")) return s;
+            string[] parts = s.Split('_');
+            for (int i = 1; i < parts.Length; i++)
+            {
+                parts[i] = Capitalize(parts[i]);
+            }
+            string res = string.Concat(parts);
+            if (res == "wasm") return "wasmPath";
+            if (res == "resultVariable") return "resultVar";
+            return res;
+        }
+
+        private static void PopulateNodeProperties(Dictionary<string, object> node, Dictionary<string, object>? opts)
+        {
+            if (opts == null) return;
+            foreach (var kvp in opts)
+            {
+                string key = ToCamelCase(kvp.Key);
+                node[key] = kvp.Value;
+            }
+        }
+
+        public Workflow ServiceTask(string nodeId, string nodeName, string topic, Dictionary<string, object>? options = null)
+        {
+            var node = new Dictionary<string, object>
             {
                 { "type", "serviceTask" },
                 { "id", nodeId },
                 { "name", nodeName },
                 { "topic", topic }
-            });
-            return new ServiceTaskBuilder(this, nodeId);
+            };
+            PopulateNodeProperties(node, options);
+            nodes.Add(node);
+            return this;
         }
 
-        public AITaskBuilder AITask(string nodeId, string nodeName)
+        public Workflow AITask(string nodeId, string nodeName, Dictionary<string, object>? options = null)
         {
-            nodes.Add(new Dictionary<string, object>
+            var node = new Dictionary<string, object>
             {
                 { "type", "aiServiceTask" },
                 { "id", nodeId },
                 { "name", nodeName }
-            });
-            return new AITaskBuilder(this, nodeId);
+            };
+            PopulateNodeProperties(node, options);
+            nodes.Add(node);
+            return this;
         }
 
-        public UserTaskBuilder UserTask(string nodeId, string nodeName)
+        public Workflow UserTask(string nodeId, string nodeName, Dictionary<string, object>? options = null)
         {
-            nodes.Add(new Dictionary<string, object>
+            var node = new Dictionary<string, object>
             {
                 { "type", "userTask" },
                 { "id", nodeId },
                 { "name", nodeName }
-            });
-            return new UserTaskBuilder(this, nodeId);
+            };
+            PopulateNodeProperties(node, options);
+            nodes.Add(node);
+            return this;
         }
 
-        public ExclusiveGatewayBuilder ExclusiveGateway(string nodeId, string nodeName)
+        public Workflow ExclusiveGateway(string nodeId, string nodeName)
         {
             nodes.Add(new Dictionary<string, object>
             {
@@ -173,10 +212,10 @@ namespace NativeBPM.Client.Builder
                 { "id", nodeId },
                 { "name", nodeName }
             });
-            return new ExclusiveGatewayBuilder(this, nodeId);
+            return this;
         }
 
-        public ParallelGatewayBuilder ParallelGateway(string nodeId, string nodeName)
+        public Workflow ParallelGateway(string nodeId, string nodeName)
         {
             nodes.Add(new Dictionary<string, object>
             {
@@ -184,10 +223,10 @@ namespace NativeBPM.Client.Builder
                 { "id", nodeId },
                 { "name", nodeName }
             });
-            return new ParallelGatewayBuilder(this, nodeId);
+            return this;
         }
 
-        public EventBasedGatewayBuilder EventBasedGateway(string nodeId, string nodeName)
+        public Workflow EventBasedGateway(string nodeId, string nodeName)
         {
             nodes.Add(new Dictionary<string, object>
             {
@@ -195,31 +234,35 @@ namespace NativeBPM.Client.Builder
                 { "id", nodeId },
                 { "name", nodeName }
             });
-            return new EventBasedGatewayBuilder(this, nodeId);
+            return this;
         }
 
-        public CallActivityBuilder CallActivity(string nodeId, string nodeName, string calledElement)
+        public Workflow CallActivity(string nodeId, string nodeName, string calledElement, Dictionary<string, object>? options = null)
         {
-            nodes.Add(new Dictionary<string, object>
+            var node = new Dictionary<string, object>
             {
                 { "type", "callActivity" },
                 { "id", nodeId },
                 { "name", nodeName },
                 { "calledElement", calledElement }
-            });
-            return new CallActivityBuilder(this, nodeId);
+            };
+            PopulateNodeProperties(node, options);
+            nodes.Add(node);
+            return this;
         }
 
-        public BusinessRuleTaskBuilder BusinessRuleTask(string nodeId, string nodeName, string decisionRef)
+        public Workflow BusinessRuleTask(string nodeId, string nodeName, string decisionRef, Dictionary<string, object>? options = null)
         {
-            nodes.Add(new Dictionary<string, object>
+            var node = new Dictionary<string, object>
             {
                 { "type", "businessRuleTask" },
                 { "id", nodeId },
                 { "name", nodeName },
                 { "decisionRef", decisionRef }
-            });
-            return new BusinessRuleTaskBuilder(this, nodeId);
+            };
+            PopulateNodeProperties(node, options);
+            nodes.Add(node);
+            return this;
         }
 
         public Workflow SequenceFlow(string source, string target)
@@ -483,26 +526,37 @@ namespace NativeBPM.Client.Builder
             return this;
         }
 
-        public Workflow User(string id, string name, Action<UserTaskBuilder>? config = null)
+        public Workflow User(string id, string name, Dictionary<string, object>? options = null)
         {
-            var builder = this.UserTask(id, name);
-            config?.Invoke(builder);
+            this.UserTask(id, name, options);
             ConnectNode(id);
             return this;
         }
 
-        public Workflow Service(string id, string name, string topic, Action<ServiceTaskBuilder>? config = null)
+        public Workflow Service(string id, string name, string topic, Dictionary<string, object>? options = null)
         {
-            var builder = this.ServiceTask(id, name, topic);
-            config?.Invoke(builder);
+            this.ServiceTask(id, name, topic, options);
             ConnectNode(id);
             return this;
         }
 
-        public Workflow Ai(string id, string name, Action<AITaskBuilder>? config = null)
+        public Workflow Ai(string id, string name, Dictionary<string, object>? options = null)
         {
-            var builder = this.AITask(id, name);
-            config?.Invoke(builder);
+            this.AITask(id, name, options);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Workflow Call(string id, string name, string calledElement, Dictionary<string, object>? options = null)
+        {
+            this.CallActivity(id, name, calledElement, options);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Workflow BusinessRule(string id, string name, string decisionRef, Dictionary<string, object>? options = null)
+        {
+            this.BusinessRuleTask(id, name, decisionRef, options);
             ConnectNode(id);
             return this;
         }
@@ -524,521 +578,6 @@ namespace NativeBPM.Client.Builder
         {
             compiledModule?.Dispose();
             engine?.Dispose();
-        }
-    }
-
-    public class StartEventBuilder
-    {
-        private readonly Workflow workflow;
-        private readonly string id;
-
-        public StartEventBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class ServiceTaskBuilder
-    {
-        private readonly Workflow workflow;
-        private readonly string id;
-
-        public ServiceTaskBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public ServiceTaskBuilder WasmPath(string path)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["wasmPath"] = path;
-            return this;
-        }
-
-        public ServiceTaskBuilder Wasm(string alias) => WasmPath(alias);
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class AITaskBuilder
-    {
-        private readonly Workflow workflow;
-        private readonly string id;
-
-        public AITaskBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public AITaskBuilder Provider(string provider)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["provider"] = provider;
-            return this;
-        }
-
-        public AITaskBuilder Model(string model)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["model"] = model;
-            return this;
-        }
-
-        public AITaskBuilder Prompt(string prompt)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["prompt"] = prompt;
-            return this;
-        }
-
-        public AITaskBuilder SystemInstruction(string systemInstruction)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["systemInstruction"] = systemInstruction;
-            return this;
-        }
-
-        public AITaskBuilder ResponseSchema(string responseSchema)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["responseSchema"] = responseSchema;
-            return this;
-        }
-
-        public AITaskBuilder Temperature(double temperature)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["temperature"] = temperature;
-            return this;
-        }
-
-        public AITaskBuilder ResultVar(string resultVar)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["resultVar"] = resultVar;
-            return this;
-        }
-
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class UserTaskBuilder
-    {
-        private readonly Workflow workflow;
-        private readonly string id;
-
-        public UserTaskBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public UserTaskBuilder Assignee(string assignee)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["assignee"] = assignee;
-            return this;
-        }
-
-        public UserTaskBuilder CandidateGroups(string candidateGroups)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["candidateGroups"] = candidateGroups;
-            return this;
-        }
-
-        public UserTaskBuilder DueDate(string dueDate)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["dueDate"] = dueDate;
-            return this;
-        }
-
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class ExclusiveGatewayBuilder
-    {
-        private readonly Workflow workflow;
-        private readonly string id;
-
-        public ExclusiveGatewayBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow NextWithCondition(string targetId, string condition) => workflow.SequenceFlowWithCondition(id, targetId, condition);
-        public ExclusiveGatewayBuilder Condition(string targetId, string condition)
-        {
-            workflow.SequenceFlowWithCondition(id, targetId, condition);
-            return this;
-        }
-        public ExclusiveGatewayBuilder DefaultValue(string targetId)
-        {
-            workflow.SequenceFlow(id, targetId);
-            return this;
-        }
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class ParallelGatewayBuilder
-    {
-        private readonly Workflow workflow;
-        private readonly string id;
-
-        public ParallelGatewayBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class EventBasedGatewayBuilder
-    {
-        private readonly Workflow workflow;
-        private readonly string id;
-
-        public EventBasedGatewayBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class CallActivityBuilder
-    {
-        private readonly Workflow workflow;
-        private readonly string id;
-
-        public CallActivityBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public CallActivityBuilder In(string source, string target)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null)
-            {
-                if (!node.TryGetValue("inVariables", out var listObj) || listObj is not List<Dictionary<string, object>> list)
-                {
-                    list = new List<Dictionary<string, object>>();
-                    node["inVariables"] = list;
-                }
-                list.Add(new Dictionary<string, object>
-                {
-                    { "source", source },
-                    { "target", target },
-                    { "variables", "" },
-                    { "local", false }
-                });
-            }
-            return this;
-        }
-
-        public CallActivityBuilder InAll()
-        {
-            var node = workflow.FindNode(id);
-            if (node != null)
-            {
-                if (!node.TryGetValue("inVariables", out var listObj) || listObj is not List<Dictionary<string, object>> list)
-                {
-                    list = new List<Dictionary<string, object>>();
-                    node["inVariables"] = list;
-                }
-                list.Add(new Dictionary<string, object>
-                {
-                    { "source", "" },
-                    { "target", "" },
-                    { "variables", "all" },
-                    { "local", false }
-                });
-            }
-            return this;
-        }
-
-        public CallActivityBuilder Out(string source, string target)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null)
-            {
-                if (!node.TryGetValue("outVariables", out var listObj) || listObj is not List<Dictionary<string, object>> list)
-                {
-                    list = new List<Dictionary<string, object>>();
-                    node["outVariables"] = list;
-                }
-                list.Add(new Dictionary<string, object>
-                {
-                    { "source", source },
-                    { "target", target },
-                    { "variables", "" }
-                });
-            }
-            return this;
-        }
-
-        public CallActivityBuilder OutAll()
-        {
-            var node = workflow.FindNode(id);
-            if (node != null)
-            {
-                if (!node.TryGetValue("outVariables", out var listObj) || listObj is not List<Dictionary<string, object>> list)
-                {
-                    list = new List<Dictionary<string, object>>();
-                    node["outVariables"] = list;
-                }
-                list.Add(new Dictionary<string, object>
-                {
-                    { "source", "" },
-                    { "target", "" },
-                    { "variables", "all" }
-                });
-            }
-            return this;
-        }
-
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class BusinessRuleTaskBuilder
-    {
-        internal readonly Workflow workflow;
-        internal readonly string id;
-
-        public BusinessRuleTaskBuilder(Workflow workflow, string id)
-        {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public BusinessRuleTaskBuilder MapDecisionResult(string mapDecisionResult)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["mapDecisionResult"] = mapDecisionResult;
-            return this;
-        }
-
-        public BusinessRuleTaskBuilder ResultVariable(string resultVar)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["resultVar"] = resultVar;
-            return this;
-        }
-
-        public BusinessRuleTaskBuilder HitPolicy(string hitPolicy)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null) node["hitPolicy"] = hitPolicy;
-            return this;
-        }
-
-        public BusinessRuleTaskBuilder Input(string expression, string type)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null)
-            {
-                if (!node.TryGetValue("inputs", out var listObj) || listObj is not List<Dictionary<string, object>> list)
-                {
-                    list = new List<Dictionary<string, object>>();
-                    node["inputs"] = list;
-                }
-                list.Add(new Dictionary<string, object>
-                {
-                    { "expression", expression },
-                    { "type", type }
-                });
-            }
-            return this;
-        }
-
-        public BusinessRuleTaskBuilder Output(string name, string type)
-        {
-            var node = workflow.FindNode(id);
-            if (node != null)
-            {
-                if (!node.TryGetValue("outputs", out var listObj) || listObj is not List<Dictionary<string, object>> list)
-                {
-                    list = new List<Dictionary<string, object>>();
-                    node["outputs"] = list;
-                }
-                list.Add(new Dictionary<string, object>
-                {
-                    { "name", name },
-                    { "type", type }
-                });
-            }
-            return this;
-        }
-
-        public DMNRuleBuilder Rule()
-        {
-            return new DMNRuleBuilder(this);
-        }
-
-        public Workflow Next(string targetId) => workflow.SequenceFlow(id, targetId);
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-        public Workflow Builder() => workflow;
-    }
-
-    public class DMNRuleBuilder
-    {
-        private readonly BusinessRuleTaskBuilder taskBuilder;
-        private readonly Dictionary<string, string> inputs = new();
-        private readonly Dictionary<string, string> outputs = new();
-
-        public DMNRuleBuilder(BusinessRuleTaskBuilder taskBuilder)
-        {
-            this.taskBuilder = taskBuilder;
-        }
-
-        public DMNRuleBuilder When(string expression, object val)
-        {
-            inputs[expression] = FormatDMNValue(val);
-            return this;
-        }
-
-        public DMNRuleBuilder Then(string name, object val)
-        {
-            outputs[name] = FormatDMNValue(val);
-            return this;
-        }
-
-        private void Commit()
-        {
-            var node = taskBuilder.workflow.FindNode(taskBuilder.id);
-            if (node == null) return;
-
-            if (!node.TryGetValue("rules", out var listObj) || listObj is not List<Dictionary<string, object>> rulesList)
-            {
-                rulesList = new List<Dictionary<string, object>>();
-                node["rules"] = rulesList;
-            }
-
-            node.TryGetValue("inputs", out var inputsObj);
-            var inputsList = inputsObj as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
-
-            node.TryGetValue("outputs", out var outputsObj);
-            var outputsList = outputsObj as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
-
-            var ruleInputs = new List<string>();
-            foreach (var inVal in inputsList)
-            {
-                string expr = (string)inVal["expression"];
-                if (inputs.TryGetValue(expr, out var dmnVal))
-                {
-                    ruleInputs.Add(dmnVal);
-                }
-                else
-                {
-                    ruleInputs.Add("-");
-                }
-            }
-
-            var ruleOutputs = new List<string>();
-            foreach (var outVal in outputsList)
-            {
-                string name = (string)outVal["name"];
-                if (outputs.TryGetValue(name, out var dmnVal))
-                {
-                    ruleOutputs.Add(dmnVal);
-                }
-                else
-                {
-                    ruleOutputs.Add("-");
-                }
-            }
-
-            rulesList.Add(new Dictionary<string, object>
-            {
-                { "inputs", ruleInputs },
-                { "outputs", ruleOutputs }
-            });
-        }
-
-        public DMNRuleBuilder Rule()
-        {
-            Commit();
-            return taskBuilder.Rule();
-        }
-
-        public Workflow Next(string targetId)
-        {
-            Commit();
-            return taskBuilder.Next(targetId);
-        }
-
-        public Workflow ConnectTo(string targetId) => Next(targetId);
-
-        public Workflow Builder()
-        {
-            Commit();
-            return taskBuilder.Builder();
-        }
-
-        public BusinessRuleTaskBuilder MapDecisionResult(string mapDecisionResult)
-        {
-            Commit();
-            return taskBuilder.MapDecisionResult(mapDecisionResult);
-        }
-
-        public BusinessRuleTaskBuilder ResultVariable(string resultVar)
-        {
-            Commit();
-            return taskBuilder.ResultVariable(resultVar);
-        }
-
-        private string FormatDMNValue(object val)
-        {
-            if (val == null) return "-";
-            if (val is string s)
-            {
-                string trimmed = s.Trim();
-                foreach (var op in new[] { "<=", ">=", "!=", "<>", "<", ">" })
-                {
-                    if (trimmed.StartsWith(op)) return trimmed;
-                }
-                if (trimmed == "true" || trimmed == "false") return trimmed;
-                if (double.TryParse(trimmed, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out _))
-                {
-                    return trimmed;
-                }
-                return $"\"{trimmed}\"";
-            }
-            if (val is bool b)
-            {
-                return b ? "true" : "false";
-            }
-            if (val is double || val is float || val is int || val is long)
-            {
-                return Convert.ToString(val, System.Globalization.CultureInfo.InvariantCulture);
-            }
-            return val.ToString() ?? "-";
         }
     }
 
@@ -1094,26 +633,37 @@ namespace NativeBPM.Client.Builder
             this.currentNodeID = nodeId;
         }
 
-        public Branch User(string id, string name, Action<UserTaskBuilder>? config = null)
+        public Branch User(string id, string name, Dictionary<string, object>? options = null)
         {
-            var builder = Workflow.UserTask(id, name);
-            config?.Invoke(builder);
+            Workflow.UserTask(id, name, options);
             ConnectNode(id);
             return this;
         }
 
-        public Branch Service(string id, string name, string topic, Action<ServiceTaskBuilder>? config = null)
+        public Branch Service(string id, string name, string topic, Dictionary<string, object>? options = null)
         {
-            var builder = Workflow.ServiceTask(id, name, topic);
-            config?.Invoke(builder);
+            Workflow.ServiceTask(id, name, topic, options);
             ConnectNode(id);
             return this;
         }
 
-        public Branch Ai(string id, string name, Action<AITaskBuilder>? config = null)
+        public Branch Ai(string id, string name, Dictionary<string, object>? options = null)
         {
-            var builder = Workflow.AITask(id, name);
-            config?.Invoke(builder);
+            Workflow.AITask(id, name, options);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Branch Call(string id, string name, string calledElement, Dictionary<string, object>? options = null)
+        {
+            Workflow.CallActivity(id, name, calledElement, options);
+            ConnectNode(id);
+            return this;
+        }
+
+        public Branch BusinessRule(string id, string name, string decisionRef, Dictionary<string, object>? options = null)
+        {
+            Workflow.BusinessRuleTask(id, name, decisionRef, options);
             ConnectNode(id);
             return this;
         }
@@ -1253,7 +803,7 @@ namespace NativeBPM.Client.Builder
         }
         public override string ToString()
         {
-            return $"${{{expr}}}";
+            return expr;
         }
     }
 

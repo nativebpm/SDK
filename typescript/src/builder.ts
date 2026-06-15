@@ -87,410 +87,18 @@ export interface WorkflowAST {
   flows: FlowAST[];
 }
 
-export class StartEventBuilder {
-  constructor(private workflow: Workflow, private id: string) {}
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow { return this.workflow; }
-}
-
-export class ServiceTaskBuilder {
-  constructor(private workflow: Workflow, private id: string) {}
-
-  public wasmPath(path: string): ServiceTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.wasmPath = path;
-    return this;
-  }
-
-  public wasm(alias: string): ServiceTaskBuilder {
-    return this.wasmPath(alias);
-  }
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    return this.workflow;
-  }
-}
-
-export class AITaskBuilder {
-  constructor(private workflow: Workflow, private id: string) {}
-
-  public provider(p: string): AITaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.provider = p;
-    return this;
-  }
-
-  public model(m: string): AITaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.model = m;
-    return this;
-  }
-
-  public prompt(p: string): AITaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.prompt = p;
-    return this;
-  }
-
-  public systemInstruction(si: string): AITaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.systemInstruction = si;
-    return this;
-  }
-
-  public responseSchema(rs: string): AITaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.responseSchema = rs;
-    return this;
-  }
-
-  public temperature(t: number): AITaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.temperature = t;
-    return this;
-  }
-
-  public resultVar(rv: string): AITaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.resultVar = rv;
-    return this;
-  }
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    return this.workflow;
-  }
-}
-
-export class UserTaskBuilder {
-  constructor(private workflow: Workflow, private id: string) {}
-
-  public assignee(a: string): UserTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.assignee = a;
-    return this;
-  }
-
-  public candidateGroups(cg: string): UserTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.candidateGroups = cg;
-    return this;
-  }
-
-  public dueDate(d: string): UserTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.dueDate = d;
-    return this;
-  }
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    return this.workflow;
-  }
-}
-
-export class ExclusiveGatewayBuilder {
-  constructor(private workflow: Workflow, private id: string) {}
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public nextWithCondition(targetID: string, condition: string): Workflow {
-    this.workflow.sequenceFlowWithCondition(this.id, targetID, condition);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    return this.workflow;
-  }
-}
-
-export class ParallelGatewayBuilder {
-  constructor(private workflow: Workflow, private id: string) {}
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    return this.workflow;
-  }
-}
-
-export class EventBasedGatewayBuilder {
-  constructor(private workflow: Workflow, private id: string) {}
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    return this.workflow;
-  }
-}
-
-export class CallActivityBuilder {
-  constructor(private workflow: Workflow, private id: string) {}
-
-  public in(source: string, target: string): CallActivityBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) {
-      if (!node.inVariables) node.inVariables = [];
-      node.inVariables.push({ source, target, variables: '', local: false });
+function populateNodeProperties(node: any, opts?: Record<string, any>): void {
+  if (!opts) return;
+  for (const [key, val] of Object.entries(opts)) {
+    let targetKey = key;
+    if (key === 'wasm') targetKey = 'wasmPath';
+    if (key === 'resultVariable') targetKey = 'resultVar';
+    if (key.includes('_')) {
+      targetKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+      if (targetKey === 'wasm') targetKey = 'wasmPath';
+      if (targetKey === 'resultVariable') targetKey = 'resultVar';
     }
-    return this;
-  }
-
-  public inAll(): CallActivityBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) {
-      if (!node.inVariables) node.inVariables = [];
-      node.inVariables.push({ source: '', target: '', variables: 'all', local: false });
-    }
-    return this;
-  }
-
-  public out(source: string, target: string): CallActivityBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) {
-      if (!node.outVariables) node.outVariables = [];
-      node.outVariables.push({ source, target, variables: '' });
-    }
-    return this;
-  }
-
-  public outAll(): CallActivityBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) {
-      if (!node.outVariables) node.outVariables = [];
-      node.outVariables.push({ source: '', target: '', variables: 'all' });
-    }
-    return this;
-  }
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    return this.workflow;
-  }
-}
-
-function formatDMNValue(val: any): string {
-  if (val === null || val === undefined) {
-    return "-";
-  }
-  if (typeof val === 'string') {
-    const s = val.trim();
-    for (const op of ["<=", ">=", "!=", "<>", "<", ">"]) {
-      if (s.startsWith(op)) {
-        return s;
-      }
-    }
-    if (s === "true" || s === "false") {
-      return s;
-    }
-    if (!isNaN(Number(s)) && s !== "") {
-      return s;
-    }
-    return `"${s}"`;
-  }
-  if (typeof val === 'boolean') {
-    return val ? "true" : "false";
-  }
-  return String(val);
-}
-
-export class BusinessRuleTaskBuilder {
-  constructor(public workflow: Workflow, public id: string) {}
-
-  public mapDecisionResult(mapDecisionResult: string): BusinessRuleTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.mapDecisionResult = mapDecisionResult;
-    return this;
-  }
-
-  public resultVariable(resultVar: string): BusinessRuleTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.resultVar = resultVar;
-    return this;
-  }
-
-  public hitPolicy(hitPolicy: string): BusinessRuleTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) node.hitPolicy = hitPolicy;
-    return this;
-  }
-
-  public input(expression: string, type: string): BusinessRuleTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) {
-      if (!node.inputs) node.inputs = [];
-      node.inputs.push({ expression, type });
-    }
-    return this;
-  }
-
-  public output(name: string, type: string): BusinessRuleTaskBuilder {
-    const node = this.workflow.findNode(this.id);
-    if (node) {
-      if (!node.outputs) node.outputs = [];
-      node.outputs.push({ name, type });
-    }
-    return this;
-  }
-
-  public rule(): DMNRuleBuilder {
-    return new DMNRuleBuilder(this);
-  }
-
-  public next(targetID: string): Workflow {
-    this.workflow.sequenceFlow(this.id, targetID);
-    return this.workflow;
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    return this.workflow;
-  }
-}
-
-export class DMNRuleBuilder {
-  private inputs: Record<string, string> = {};
-  private outputs: Record<string, string> = {};
-
-  constructor(private taskBuilder: BusinessRuleTaskBuilder) {}
-
-  public when(expression: string, val: any): DMNRuleBuilder {
-    this.inputs[expression] = formatDMNValue(val);
-    return this;
-  }
-
-  public then(name: string, val: any): DMNRuleBuilder {
-    this.outputs[name] = formatDMNValue(val);
-    return this;
-  }
-
-  private commit(): void {
-    const node = this.taskBuilder.workflow.findNode(this.taskBuilder.id);
-    if (!node) return;
-    if (!node.rules) node.rules = [];
-
-    const inputsList = node.inputs || [];
-    const outputsList = node.outputs || [];
-
-    const ruleInputs: string[] = [];
-    for (const inVal of inputsList) {
-      const expr = inVal.expression;
-      if (expr in this.inputs) {
-        ruleInputs.push(this.inputs[expr]);
-      } else {
-        ruleInputs.push("-");
-      }
-    }
-
-    const ruleOutputs: string[] = [];
-    for (const outVal of outputsList) {
-      const name = outVal.name;
-      if (name in this.outputs) {
-        ruleOutputs.push(this.outputs[name]);
-      } else {
-        ruleOutputs.push("-");
-      }
-    }
-
-    node.rules.push({
-      inputs: ruleInputs,
-      outputs: ruleOutputs
-    });
-  }
-
-  public rule(): DMNRuleBuilder {
-    this.commit();
-    return this.taskBuilder.rule();
-  }
-
-  public next(targetID: string): Workflow {
-    this.commit();
-    return this.taskBuilder.next(targetID);
-  }
-
-  public connectTo(targetID: string): Workflow {
-    return this.next(targetID);
-  }
-
-  public builder(): Workflow {
-    this.commit();
-    return this.taskBuilder.builder();
-  }
-
-  public mapDecisionResult(mapDecisionResult: string): BusinessRuleTaskBuilder {
-    this.commit();
-    return this.taskBuilder.mapDecisionResult(mapDecisionResult);
-  }
-
-  public resultVariable(resultVar: string): BusinessRuleTaskBuilder {
-    this.commit();
-    return this.taskBuilder.resultVariable(resultVar);
+    node[targetKey] = val;
   }
 }
 
@@ -529,23 +137,32 @@ export class Branch {
     this.currentNodeID = id;
   }
 
-  public user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Branch {
-    const builder = this.workflow.userTask(id, name);
-    if (config) config(builder);
+  public user(id: string, name: string, opts?: Record<string, any>): Branch {
+    this.workflow.userTask(id, name, opts);
     this.connectNode(id);
     return this;
   }
 
-  public service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Branch {
-    const builder = this.workflow.serviceTask(id, name, topic);
-    if (config) config(builder);
+  public service(id: string, name: string, topic: string, opts?: Record<string, any>): Branch {
+    this.workflow.serviceTask(id, name, topic, opts);
     this.connectNode(id);
     return this;
   }
 
-  public ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Branch {
-    const builder = this.workflow.aiTask(id, name);
-    if (config) config(builder);
+  public ai(id: string, name: string, opts?: Record<string, any>): Branch {
+    this.workflow.aiTask(id, name, opts);
+    this.connectNode(id);
+    return this;
+  }
+
+  public call(id: string, name: string, calledElement: string, opts?: Record<string, any>): Branch {
+    this.workflow.callActivity(id, name, calledElement, opts);
+    this.connectNode(id);
+    return this;
+  }
+
+  public businessRule(id: string, name: string, decisionRef: string, opts?: Record<string, any>): Branch {
+    this.workflow.businessRuleTask(id, name, decisionRef, opts);
     this.connectNode(id);
     return this;
   }
@@ -700,23 +317,32 @@ export class Workflow {
     return this;
   }
 
-  public user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Workflow {
-    const builder = this.userTask(id, name);
-    if (config) config(builder);
+  public user(id: string, name: string, opts?: Record<string, any>): Workflow {
+    this.userTask(id, name, opts);
     this.connectNode(id);
     return this;
   }
 
-  public service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Workflow {
-    const builder = this.serviceTask(id, name, topic);
-    if (config) config(builder);
+  public service(id: string, name: string, topic: string, opts?: Record<string, any>): Workflow {
+    this.serviceTask(id, name, topic, opts);
     this.connectNode(id);
     return this;
   }
 
-  public ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Workflow {
-    const builder = this.aiTask(id, name);
-    if (config) config(builder);
+  public ai(id: string, name: string, opts?: Record<string, any>): Workflow {
+    this.aiTask(id, name, opts);
+    this.connectNode(id);
+    return this;
+  }
+
+  public call(id: string, name: string, calledElement: string, opts?: Record<string, any>): Workflow {
+    this.callActivity(id, name, calledElement, opts);
+    this.connectNode(id);
+    return this;
+  }
+
+  public businessRule(id: string, name: string, decisionRef: string, opts?: Record<string, any>): Workflow {
+    this.businessRuleTask(id, name, decisionRef, opts);
     this.connectNode(id);
     return this;
   }
@@ -730,10 +356,11 @@ export class Workflow {
     return new WhenBuilder(this, gwID, condStr);
   }
 
-  public startEvent(id: string = 'start'): StartEventBuilder {
+  public startEvent(id: string = 'start'): Workflow {
     const node: NodeAST = { type: 'startEvent', id, name: 'Start' };
     this.nodes.push(node);
-    return new StartEventBuilder(this, id);
+    this.currentNodeID = id;
+    return this;
   }
 
   public endEvent(id: string, name: string): Workflow {
@@ -742,52 +369,57 @@ export class Workflow {
     return this;
   }
 
-  public serviceTask(id: string, name: string, topic: string): ServiceTaskBuilder {
+  public serviceTask(id: string, name: string, topic: string, opts?: Record<string, any>): Workflow {
     const node: NodeAST = { type: 'serviceTask', id, name, topic };
+    populateNodeProperties(node, opts);
     this.nodes.push(node);
-    return new ServiceTaskBuilder(this, id);
+    return this;
   }
 
-  public aiTask(id: string, name: string): AITaskBuilder {
+  public aiTask(id: string, name: string, opts?: Record<string, any>): Workflow {
     const node: NodeAST = { type: 'aiServiceTask', id, name };
+    populateNodeProperties(node, opts);
     this.nodes.push(node);
-    return new AITaskBuilder(this, id);
+    return this;
   }
 
-  public userTask(id: string, name: string): UserTaskBuilder {
+  public userTask(id: string, name: string, opts?: Record<string, any>): Workflow {
     const node: NodeAST = { type: 'userTask', id, name };
+    populateNodeProperties(node, opts);
     this.nodes.push(node);
-    return new UserTaskBuilder(this, id);
+    return this;
   }
 
-  public exclusiveGateway(id: string, name: string): ExclusiveGatewayBuilder {
+  public exclusiveGateway(id: string, name: string): Workflow {
     const node: NodeAST = { type: 'exclusiveGateway', id, name };
     this.nodes.push(node);
-    return new ExclusiveGatewayBuilder(this, id);
+    return this;
   }
 
-  public parallelGateway(id: string, name: string): ParallelGatewayBuilder {
+  public parallelGateway(id: string, name: string): Workflow {
     const node: NodeAST = { type: 'parallelGateway', id, name };
     this.nodes.push(node);
-    return new ParallelGatewayBuilder(this, id);
+    return this;
   }
 
-  public eventBasedGateway(id: string, name: string): EventBasedGatewayBuilder {
+  public eventBasedGateway(id: string, name: string): Workflow {
     const node: NodeAST = { type: 'eventBasedGateway', id, name };
     this.nodes.push(node);
-    return new EventBasedGatewayBuilder(this, id);
+    return this;
   }
 
-  public callActivity(id: string, name: string, calledElement: string): CallActivityBuilder {
+  public callActivity(id: string, name: string, calledElement: string, opts?: Record<string, any>): Workflow {
     const node: NodeAST = { type: 'callActivity', id, name, calledElement };
+    populateNodeProperties(node, opts);
     this.nodes.push(node);
-    return new CallActivityBuilder(this, id);
+    return this;
   }
 
-  public businessRuleTask(id: string, name: string, decisionRef: string): BusinessRuleTaskBuilder {
+  public businessRuleTask(id: string, name: string, decisionRef: string, opts?: Record<string, any>): Workflow {
     const node: NodeAST = { type: 'businessRuleTask', id, name, decisionRef };
+    populateNodeProperties(node, opts);
     this.nodes.push(node);
-    return new BusinessRuleTaskBuilder(this, id);
+    return this;
   }
 
   public sequenceFlow(source: string, target: string): Workflow {
@@ -845,7 +477,7 @@ export class Workflow {
       args: [],
       env: {},
       preopens: {}
-    });
+    } as any);
 
     const instance = await WebAssembly.instantiate(wasmModule, {
       wasi_snapshot_preview1: wasi.wasiImport
@@ -889,12 +521,7 @@ export class Workflow {
   }
 }
 
-export class Expression {
-  constructor(public expr: string) {}
-  public toString(): string {
-    return `\${${this.expr}}`;
-  }
-}
+export class Expression extends String {}
 
 export class Variable {
   constructor(public name: string) {}

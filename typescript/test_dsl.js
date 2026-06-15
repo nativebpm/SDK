@@ -15,9 +15,7 @@ async function testDSL() {
     .user('task1', 'User Task')
     .when(v('approved').eq(true))
     .then((flow) => {
-      flow.service('publish', 'Publish Page', 'publish-topic', (st) => {
-        st.wasm('./publish.wasm');
-      });
+      flow.service('publish', 'Publish Page', 'publish-topic', { wasm: './publish.wasm' });
     })
     .otherwise((flow) => {
       flow.service('reject', 'Notify Reject', 'reject-topic');

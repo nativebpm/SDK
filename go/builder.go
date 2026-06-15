@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/andybalholm/brotli"
@@ -21,6 +20,8 @@ import (
 
 //go:embed core.wasm
 var coreWasm []byte
+
+type M map[string]interface{}
 
 type Workflow struct {
 	ID             string                   `json:"id"`
@@ -144,7 +145,7 @@ func (w *Workflow) Builder() *Workflow {
 	return w
 }
 
-func (w *Workflow) StartEvent(id ...string) *StartEventBuilder {
+func (w *Workflow) StartEvent(id ...string) *Workflow {
 	startID := "start"
 	if len(id) > 0 {
 		startID = id[0]
@@ -154,7 +155,8 @@ func (w *Workflow) StartEvent(id ...string) *StartEventBuilder {
 		"id":   startID,
 		"name": "Start",
 	})
-	return &StartEventBuilder{w: w, id: startID}
+	w.currentNodeID = startID
+	return w
 }
 
 func (w *Workflow) EndEvent(id string, name string) *Workflow {
@@ -166,79 +168,122 @@ func (w *Workflow) EndEvent(id string, name string) *Workflow {
 	return w
 }
 
-func (w *Workflow) ServiceTask(id string, name string, topic string) *ServiceTaskBuilder {
-	w.Nodes = append(w.Nodes, map[string]interface{}{
+func capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+func toCamelCase(s string) string {
+	if s == "wasm" {
+		return "wasmPath"
+	}
+	if s == "result_variable" {
+		return "resultVar"
+	}
+	if !strings.Contains(s, "_") {
+		return s
+	}
+	parts := strings.Split(s, "_")
+	for i := 1; i < len(parts); i++ {
+		parts[i] = capitalize(parts[i])
+	}
+	return strings.Join(parts, "")
+}
+
+func populateNodeProperties(node map[string]interface{}, opts []map[string]interface{}) {
+	for _, opt := range opts {
+		for k, v := range opt {
+			key := toCamelCase(k)
+			node[key] = v
+		}
+	}
+}
+
+func (w *Workflow) ServiceTask(id string, name string, topic string, options ...map[string]interface{}) *Workflow {
+	node := map[string]interface{}{
 		"type":  "serviceTask",
 		"id":    id,
 		"name":  name,
 		"topic": topic,
-	})
-	return &ServiceTaskBuilder{w: w, id: id}
+	}
+	populateNodeProperties(node, options)
+	w.Nodes = append(w.Nodes, node)
+	return w
 }
 
-func (w *Workflow) AITask(id string, name string) *AITaskBuilder {
-	w.Nodes = append(w.Nodes, map[string]interface{}{
+func (w *Workflow) AITask(id string, name string, options ...map[string]interface{}) *Workflow {
+	node := map[string]interface{}{
 		"type": "aiServiceTask",
 		"id":   id,
 		"name": name,
-	})
-	return &AITaskBuilder{w: w, id: id}
+	}
+	populateNodeProperties(node, options)
+	w.Nodes = append(w.Nodes, node)
+	return w
 }
 
-func (w *Workflow) UserTask(id string, name string) *UserTaskBuilder {
-	w.Nodes = append(w.Nodes, map[string]interface{}{
+func (w *Workflow) UserTask(id string, name string, options ...map[string]interface{}) *Workflow {
+	node := map[string]interface{}{
 		"type": "userTask",
 		"id":   id,
 		"name": name,
-	})
-	return &UserTaskBuilder{w: w, id: id}
+	}
+	populateNodeProperties(node, options)
+	w.Nodes = append(w.Nodes, node)
+	return w
 }
 
-func (w *Workflow) ExclusiveGateway(id string, name string) *ExclusiveGatewayBuilder {
+func (w *Workflow) ExclusiveGateway(id string, name string) *Workflow {
 	w.Nodes = append(w.Nodes, map[string]interface{}{
 		"type": "exclusiveGateway",
 		"id":   id,
 		"name": name,
 	})
-	return &ExclusiveGatewayBuilder{w: w, id: id}
+	return w
 }
 
-func (w *Workflow) ParallelGateway(id string, name string) *ParallelGatewayBuilder {
+func (w *Workflow) ParallelGateway(id string, name string) *Workflow {
 	w.Nodes = append(w.Nodes, map[string]interface{}{
 		"type": "parallelGateway",
 		"id":   id,
 		"name": name,
 	})
-	return &ParallelGatewayBuilder{w: w, id: id}
+	return w
 }
 
-func (w *Workflow) EventBasedGateway(id string, name string) *EventBasedGatewayBuilder {
+func (w *Workflow) EventBasedGateway(id string, name string) *Workflow {
 	w.Nodes = append(w.Nodes, map[string]interface{}{
 		"type": "eventBasedGateway",
 		"id":   id,
 		"name": name,
 	})
-	return &EventBasedGatewayBuilder{w: w, id: id}
+	return w
 }
 
-func (w *Workflow) CallActivity(id string, name string, calledElement string) *CallActivityBuilder {
-	w.Nodes = append(w.Nodes, map[string]interface{}{
+func (w *Workflow) CallActivity(id string, name string, calledElement string, options ...map[string]interface{}) *Workflow {
+	node := map[string]interface{}{
 		"type":          "callActivity",
 		"id":            id,
 		"name":          name,
 		"calledElement": calledElement,
-	})
-	return &CallActivityBuilder{w: w, id: id}
+	}
+	populateNodeProperties(node, options)
+	w.Nodes = append(w.Nodes, node)
+	return w
 }
 
-func (w *Workflow) BusinessRuleTask(id string, name string, decisionRef string) *BusinessRuleTaskBuilder {
-	w.Nodes = append(w.Nodes, map[string]interface{}{
+func (w *Workflow) BusinessRuleTask(id string, name string, decisionRef string, options ...map[string]interface{}) *Workflow {
+	node := map[string]interface{}{
 		"type":        "businessRuleTask",
 		"id":          id,
 		"name":        name,
 		"decisionRef": decisionRef,
-	})
-	return &BusinessRuleTaskBuilder{w: w, id: id}
+	}
+	populateNodeProperties(node, options)
+	w.Nodes = append(w.Nodes, node)
+	return w
 }
 
 func (w *Workflow) SequenceFlow(source, target string) *Workflow {
@@ -353,31 +398,34 @@ func (w *Workflow) End(id, name string) *Workflow {
 }
 
 // User appends a user task and links it sequentially.
-func (w *Workflow) User(id, name string, config ...func(t *UserTaskBuilder)) *Workflow {
-	builder := w.UserTask(id, name)
-	if len(config) > 0 {
-		config[0](builder)
-	}
+func (w *Workflow) User(id, name string, options ...map[string]interface{}) *Workflow {
+	w.UserTask(id, name, options...)
 	w.connectNode(id)
 	return w
 }
 
 // Service appends a service task and links it sequentially.
-func (w *Workflow) Service(id, name, topic string, config ...func(t *ServiceTaskBuilder)) *Workflow {
-	builder := w.ServiceTask(id, name, topic)
-	if len(config) > 0 {
-		config[0](builder)
-	}
+func (w *Workflow) Service(id, name, topic string, options ...map[string]interface{}) *Workflow {
+	w.ServiceTask(id, name, topic, options...)
 	w.connectNode(id)
 	return w
 }
 
 // AI appends an AI orchestration task and links it sequentially.
-func (w *Workflow) AI(id, name string, config ...func(t *AITaskBuilder)) *Workflow {
-	builder := w.AITask(id, name)
-	if len(config) > 0 {
-		config[0](builder)
-	}
+func (w *Workflow) AI(id, name string, options ...map[string]interface{}) *Workflow {
+	w.AITask(id, name, options...)
+	w.connectNode(id)
+	return w
+}
+
+func (w *Workflow) Call(id, name, calledElement string, options ...map[string]interface{}) *Workflow {
+	w.CallActivity(id, name, calledElement, options...)
+	w.connectNode(id)
+	return w
+}
+
+func (w *Workflow) BusinessRule(id, name, decisionRef string, options ...map[string]interface{}) *Workflow {
+	w.BusinessRuleTask(id, name, decisionRef, options...)
 	w.connectNode(id)
 	return w
 }
@@ -461,7 +509,8 @@ func (b *Branch) connectNode(id string) {
 		if b.isConditional {
 			b.workflow.SequenceFlowWithCondition(b.gatewayID, id, b.condition)
 		} else {
-			b.workflow.ExclusiveGateway(b.gatewayID, "Decision Gateway").Default(id)
+			// Connect default sequence flow
+			b.workflow.SequenceFlow(b.gatewayID, id)
 		}
 	} else if b.currentNodeID != "" && b.currentNodeID != id {
 		b.workflow.SequenceFlow(b.currentNodeID, id)
@@ -470,31 +519,34 @@ func (b *Branch) connectNode(id string) {
 }
 
 // User appends a user task inside a branch.
-func (b *Branch) User(id, name string, config ...func(t *UserTaskBuilder)) *Branch {
-	builder := b.workflow.UserTask(id, name)
-	if len(config) > 0 {
-		config[0](builder)
-	}
+func (b *Branch) User(id, name string, options ...map[string]interface{}) *Branch {
+	b.workflow.UserTask(id, name, options...)
 	b.connectNode(id)
 	return b
 }
 
 // Service appends a service task inside a branch.
-func (b *Branch) Service(id, name, topic string, config ...func(t *ServiceTaskBuilder)) *Branch {
-	builder := b.workflow.ServiceTask(id, name, topic)
-	if len(config) > 0 {
-		config[0](builder)
-	}
+func (b *Branch) Service(id, name, topic string, options ...map[string]interface{}) *Branch {
+	b.workflow.ServiceTask(id, name, topic, options...)
 	b.connectNode(id)
 	return b
 }
 
 // AI appends an AI orchestration task inside a branch.
-func (b *Branch) AI(id, name string, config ...func(t *AITaskBuilder)) *Branch {
-	builder := b.workflow.AITask(id, name)
-	if len(config) > 0 {
-		config[0](builder)
-	}
+func (b *Branch) AI(id, name string, options ...map[string]interface{}) *Branch {
+	b.workflow.AITask(id, name, options...)
+	b.connectNode(id)
+	return b
+}
+
+func (b *Branch) Call(id, name, calledElement string, options ...map[string]interface{}) *Branch {
+	b.workflow.CallActivity(id, name, calledElement, options...)
+	b.connectNode(id)
+	return b
+}
+
+func (b *Branch) BusinessRule(id, name, decisionRef string, options ...map[string]interface{}) *Branch {
+	b.workflow.BusinessRuleTask(id, name, decisionRef, options...)
 	b.connectNode(id)
 	return b
 }
@@ -623,7 +675,7 @@ type Expression struct {
 }
 
 func (e Expression) String() string {
-	return fmt.Sprintf("${%s}", e.expr)
+	return e.expr
 }
 
 type Variable struct {
@@ -849,529 +901,4 @@ func (w *Workflow) BuildXMLWithPath(ctx context.Context, path string) (string, e
 		return "", err
 	}
 	return w.BuildXMLWithBytes(ctx, data)
-}
-
-// Builders
-
-type StartEventBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *StartEventBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *StartEventBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *StartEventBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type ServiceTaskBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *ServiceTaskBuilder) WasmPath(path string) *ServiceTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["wasmPath"] = path
-	}
-	return b
-}
-
-func (b *ServiceTaskBuilder) Wasm(path string) *ServiceTaskBuilder {
-	return b.WasmPath(path)
-}
-
-func (b *ServiceTaskBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *ServiceTaskBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *ServiceTaskBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type AITaskBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *AITaskBuilder) Provider(p string) *AITaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["provider"] = p
-	}
-	return b
-}
-
-func (b *AITaskBuilder) Model(m string) *AITaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["model"] = m
-	}
-	return b
-}
-
-func (b *AITaskBuilder) Prompt(p string) *AITaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["prompt"] = p
-	}
-	return b
-}
-
-func (b *AITaskBuilder) SystemInstruction(si string) *AITaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["systemInstruction"] = si
-	}
-	return b
-}
-
-func (b *AITaskBuilder) ResponseSchema(rs string) *AITaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["responseSchema"] = rs
-	}
-	return b
-}
-
-func (b *AITaskBuilder) Temperature(t float64) *AITaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["temperature"] = t
-	}
-	return b
-}
-
-func (b *AITaskBuilder) ResultVar(rv string) *AITaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["resultVar"] = rv
-	}
-	return b
-}
-
-func (b *AITaskBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *AITaskBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *AITaskBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type UserTaskBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *UserTaskBuilder) Assignee(a string) *UserTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["assignee"] = a
-	}
-	return b
-}
-
-func (b *UserTaskBuilder) CandidateGroups(cg string) *UserTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["candidateGroups"] = cg
-	}
-	return b
-}
-
-func (b *UserTaskBuilder) DueDate(d string) *UserTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["dueDate"] = d
-	}
-	return b
-}
-
-func (b *UserTaskBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *UserTaskBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *UserTaskBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type ExclusiveGatewayBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *ExclusiveGatewayBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *ExclusiveGatewayBuilder) NextWithCondition(targetID string, condition string) *Workflow {
-	b.w.SequenceFlowWithCondition(b.id, targetID, condition)
-	return b.w
-}
-
-func (b *ExclusiveGatewayBuilder) Condition(targetID string, cond string) *ExclusiveGatewayBuilder {
-	b.w.SequenceFlowWithCondition(b.id, targetID, cond)
-	return b
-}
-
-func (b *ExclusiveGatewayBuilder) Default(targetID string) *ExclusiveGatewayBuilder {
-	b.w.SequenceFlow(b.id, targetID)
-	return b
-}
-
-func (b *ExclusiveGatewayBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *ExclusiveGatewayBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type ParallelGatewayBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *ParallelGatewayBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *ParallelGatewayBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *ParallelGatewayBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type EventBasedGatewayBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *EventBasedGatewayBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *EventBasedGatewayBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *EventBasedGatewayBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type CallActivityBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *CallActivityBuilder) InVal(source, target string) *CallActivityBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		var inVars []interface{}
-		if val, exists := n["inVariables"]; exists {
-			if list, ok := val.([]interface{}); ok {
-				inVars = list
-			}
-		}
-		inVars = append(inVars, map[string]interface{}{
-			"source":    source,
-			"target":    target,
-			"variables": "",
-			"local":     false,
-		})
-		n["inVariables"] = inVars
-	}
-	return b
-}
-
-func (b *CallActivityBuilder) InAll() *CallActivityBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		var inVars []interface{}
-		if val, exists := n["inVariables"]; exists {
-			if list, ok := val.([]interface{}); ok {
-				inVars = list
-			}
-		}
-		inVars = append(inVars, map[string]interface{}{
-			"source":    "",
-			"target":    "",
-			"variables": "all",
-			"local":     false,
-		})
-		n["inVariables"] = inVars
-	}
-	return b
-}
-
-func (b *CallActivityBuilder) OutVal(source, target string) *CallActivityBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		var outVars []interface{}
-		if val, exists := n["outVariables"]; exists {
-			if list, ok := val.([]interface{}); ok {
-				outVars = list
-			}
-		}
-		outVars = append(outVars, map[string]interface{}{
-			"source":    source,
-			"target":    target,
-			"variables": "",
-		})
-		n["outVariables"] = outVars
-	}
-	return b
-}
-
-func (b *CallActivityBuilder) OutAll() *CallActivityBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		var outVars []interface{}
-		if val, exists := n["outVariables"]; exists {
-			if list, ok := val.([]interface{}); ok {
-				outVars = list
-			}
-		}
-		outVars = append(outVars, map[string]interface{}{
-			"source":    "",
-			"target":    "",
-			"variables": "all",
-		})
-		n["outVariables"] = outVars
-	}
-	return b
-}
-
-func (b *CallActivityBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *CallActivityBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *CallActivityBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type BusinessRuleTaskBuilder struct {
-	w  *Workflow
-	id string
-}
-
-func (b *BusinessRuleTaskBuilder) MapDecisionResult(mapDecisionResult string) *BusinessRuleTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["mapDecisionResult"] = mapDecisionResult
-	}
-	return b
-}
-
-func (b *BusinessRuleTaskBuilder) ResultVariable(resultVar string) *BusinessRuleTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["resultVar"] = resultVar
-	}
-	return b
-}
-
-func (b *BusinessRuleTaskBuilder) HitPolicy(hitPolicy string) *BusinessRuleTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		n["hitPolicy"] = hitPolicy
-	}
-	return b
-}
-
-func (b *BusinessRuleTaskBuilder) Input(expression string, typeStr string) *BusinessRuleTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		var inputs []interface{}
-		if val, exists := n["inputs"]; exists {
-			if list, ok := val.([]interface{}); ok {
-				inputs = list
-			}
-		}
-		inputs = append(inputs, map[string]interface{}{
-			"expression": expression,
-			"type":       typeStr,
-		})
-		n["inputs"] = inputs
-	}
-	return b
-}
-
-func (b *BusinessRuleTaskBuilder) Output(name string, typeStr string) *BusinessRuleTaskBuilder {
-	if n := b.w.findNode(b.id); n != nil {
-		var outputs []interface{}
-		if val, exists := n["outputs"]; exists {
-			if list, ok := val.([]interface{}); ok {
-				outputs = list
-			}
-		}
-		outputs = append(outputs, map[string]interface{}{
-			"name": name,
-			"type": typeStr,
-		})
-		n["outputs"] = outputs
-	}
-	return b
-}
-
-func (b *BusinessRuleTaskBuilder) Rule() *DMNRuleBuilder {
-	return &DMNRuleBuilder{
-		taskBuilder: b,
-		inputs:      make(map[string]string),
-		outputs:     make(map[string]string),
-	}
-}
-
-func (b *BusinessRuleTaskBuilder) Next(targetID string) *Workflow {
-	b.w.SequenceFlow(b.id, targetID)
-	return b.w
-}
-
-func (b *BusinessRuleTaskBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *BusinessRuleTaskBuilder) Builder() *Workflow {
-	return b.w
-}
-
-type DMNRuleBuilder struct {
-	taskBuilder *BusinessRuleTaskBuilder
-	inputs      map[string]string
-	outputs     map[string]string
-}
-
-func (b *DMNRuleBuilder) When(expression string, val interface{}) *DMNRuleBuilder {
-	b.inputs[expression] = formatDMNValue(val)
-	return b
-}
-
-func (b *DMNRuleBuilder) Then(name string, val interface{}) *DMNRuleBuilder {
-	b.outputs[name] = formatDMNValue(val)
-	return b
-}
-
-func (b *DMNRuleBuilder) commit() {
-	node := b.taskBuilder.w.findNode(b.taskBuilder.id)
-	if node == nil {
-		return
-	}
-
-	var rules []interface{}
-	if val, exists := node["rules"]; exists {
-		if list, ok := val.([]interface{}); ok {
-			rules = list
-		}
-	}
-
-	var inputsList []interface{}
-	if val, exists := node["inputs"]; exists {
-		if list, ok := val.([]interface{}); ok {
-			inputsList = list
-		}
-	}
-
-	var outputsList []interface{}
-	if val, exists := node["outputs"]; exists {
-		if list, ok := val.([]interface{}); ok {
-			outputsList = list
-		}
-	}
-
-	var ruleInputs []string
-	for _, inVal := range inputsList {
-		if inMap, ok := inVal.(map[string]interface{}); ok {
-			expr, _ := inMap["expression"].(string)
-			if dmnVal, ok := b.inputs[expr]; ok {
-				ruleInputs = append(ruleInputs, dmnVal)
-			} else {
-				ruleInputs = append(ruleInputs, "-")
-			}
-		}
-	}
-
-	var ruleOutputs []string
-	for _, outVal := range outputsList {
-		if outMap, ok := outVal.(map[string]interface{}); ok {
-			name, _ := outMap["name"].(string)
-			if dmnVal, ok := b.outputs[name]; ok {
-				ruleOutputs = append(ruleOutputs, dmnVal)
-			} else {
-				ruleOutputs = append(ruleOutputs, "-")
-			}
-		}
-	}
-
-	r := map[string]interface{}{
-		"inputs":  ruleInputs,
-		"outputs": ruleOutputs,
-	}
-	rules = append(rules, r)
-	node["rules"] = rules
-}
-
-func (b *DMNRuleBuilder) Rule() *DMNRuleBuilder {
-	b.commit()
-	return b.taskBuilder.Rule()
-}
-
-func (b *DMNRuleBuilder) Next(targetID string) *Workflow {
-	b.commit()
-	return b.taskBuilder.Next(targetID)
-}
-
-func (b *DMNRuleBuilder) ConnectTo(targetID string) *Workflow {
-	return b.Next(targetID)
-}
-
-func (b *DMNRuleBuilder) Builder() *Workflow {
-	b.commit()
-	return b.taskBuilder.Builder()
-}
-
-func (b *DMNRuleBuilder) MapDecisionResult(mapDecisionResult string) *BusinessRuleTaskBuilder {
-	b.commit()
-	return b.taskBuilder.MapDecisionResult(mapDecisionResult)
-}
-
-func (b *DMNRuleBuilder) ResultVariable(resultVar string) *BusinessRuleTaskBuilder {
-	b.commit()
-	return b.taskBuilder.ResultVariable(resultVar)
-}
-
-func formatDMNValue(val interface{}) string {
-	if val == nil {
-		return "-"
-	}
-	switch v := val.(type) {
-	case string:
-		s := strings.TrimSpace(v)
-		for _, op := range []string{"<=", ">=", "!=", "<>", "<", ">"} {
-			if strings.HasPrefix(s, op) {
-				return s
-			}
-		}
-		if s == "true" || s == "false" {
-			return s
-		}
-		if _, err := strconv.ParseFloat(s, 64); err == nil {
-			return s
-		}
-		return fmt.Sprintf(`"%s"`, s)
-	default:
-		return fmt.Sprintf("%v", v)
-	}
 }

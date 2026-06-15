@@ -46,21 +46,19 @@ namespace NativeBPM.Client.Test.Builder
 
             workflow.StartEvent("start");
 
-            workflow.ServiceTask("task1", "Service Task 1", "service-topic")
-                .Wasm("./my_task.wasm");
+            workflow.ServiceTask("task1", "Service Task 1", "service-topic", new Dictionary<string, object> { { "wasm", "./my_task.wasm" } });
 
             workflow.ExclusiveGateway("gateway", "Join/Split");
 
-            workflow.UserTask("userTask", "User Task Approve")
-                .Assignee("boss");
+            workflow.UserTask("userTask", "User Task Approve", new Dictionary<string, object> { { "assignee", "boss" } });
 
             workflow.EndEvent("end", "Process Completed");
 
             // Connect them
             workflow.SequenceFlow("start", "task1");
             workflow.SequenceFlow("task1", "gateway");
-            workflow.SequenceFlowWithCondition("gateway", "userTask", "${isApproved == true}");
-            workflow.SequenceFlowWithCondition("gateway", "end", "${isApproved == false}");
+            workflow.SequenceFlowWithCondition("gateway", "userTask", "isApproved == true");
+            workflow.SequenceFlowWithCondition("gateway", "end", "isApproved == false");
             workflow.SequenceFlow("userTask", "end");
 
             string xml = workflow.BuildXml();
@@ -122,8 +120,7 @@ namespace NativeBPM.Client.Test.Builder
             }
 
             using var workflow = new Workflow("compressed-test", "Compressed Test");
-            workflow.StartEvent("start").Next("end");
-            workflow.EndEvent("end", "End");
+            workflow.Start().End("end", "End");
 
             string xmlBr = workflow.BuildXml(brBytes);
             Assert.Contains("id=\"compressed-test\"", xmlBr);
@@ -144,8 +141,7 @@ namespace NativeBPM.Client.Test.Builder
             Console.WriteLine("Running .NET SDK constructor compilation test...");
             byte[] rawBytes = GetWasmBytes();
             using var workflow = new Workflow("init-test", "Init Test", rawBytes);
-            workflow.StartEvent("start").Next("end");
-            workflow.EndEvent("end", "End");
+            workflow.Start().End("end", "End");
 
             string xml = workflow.BuildXml();
             Assert.Contains("id=\"init-test\"", xml);
@@ -165,8 +161,7 @@ namespace NativeBPM.Client.Test.Builder
             for (int i = 0; i < 200; i++)
             {
                 using var workflow = new Workflow($"load-test-{i}", $"Load Test {i}", rawBytes);
-                workflow.StartEvent("start").Next("end");
-                workflow.EndEvent("end", "End");
+                workflow.Start().End("end", "End");
                 string xml = workflow.BuildXml();
                 Assert.NotNull(xml);
 
@@ -191,26 +186,37 @@ namespace NativeBPM.Client.Test.Builder
             byte[] rawBytes = GetWasmBytes();
             using var workflow = new Workflow("dmn-test", "DMN Test Process", rawBytes);
 
-            workflow.StartEvent("start")
-                .Next("ruleTask");
-
-            workflow.BusinessRuleTask("ruleTask", "Determine Discount", "determine_discount")
-                .HitPolicy("UNIQUE")
-                .Input("membership", "string")
-                .Input("age", "number")
-                .Output("discount", "number")
-                .Rule()
-                    .When("membership", "gold")
-                    .When("age", ">= 18")
-                    .Then("discount", 20.0)
-                .Rule()
-                    .When("membership", "silver")
-                    .Then("discount", 10.0)
-                .ResultVariable("discountVar")
-                .MapDecisionResult("singleEntry")
-                .Next("end");
-
-            workflow.EndEvent("end", "End");
+            workflow.Start().BusinessRule("ruleTask", "Determine Discount", "determine_discount", new Dictionary<string, object>
+            {
+                { "hitPolicy", "UNIQUE" },
+                { "inputs", new List<Dictionary<string, object>>
+                    {
+                        new Dictionary<string, object> { { "expression", "membership" }, { "type", "string" } },
+                        new Dictionary<string, object> { { "expression", "age" }, { "type", "number" } }
+                    }
+                },
+                { "outputs", new List<Dictionary<string, object>>
+                    {
+                        new Dictionary<string, object> { { "name", "discount" }, { "type", "number" } }
+                    }
+                },
+                { "rules", new List<Dictionary<string, object>>
+                    {
+                        new Dictionary<string, object>
+                        {
+                            { "inputs", new List<string> { "\"gold\"", ">= 18" } },
+                            { "outputs", new List<string> { "20.0" } }
+                        },
+                        new Dictionary<string, object>
+                        {
+                            { "inputs", new List<string> { "\"silver\"", "-" } },
+                            { "outputs", new List<string> { "10.0" } }
+                        }
+                    }
+                },
+                { "resultVar", "discountVar" },
+                { "mapDecisionResult", "singleEntry" }
+            }).End("end", "End");
 
             string xml = workflow.BuildXml();
             Assert.NotNull(xml);
@@ -230,9 +236,7 @@ namespace NativeBPM.Client.Test.Builder
 
             workflow.User("task1", "User Approval")
                 .When(Workflow.V("approved").Eq(true)).Then(b => {
-                    b.Service("publish", "Publish Page", "publish-topic", st => {
-                        st.Wasm("./publish.wasm");
-                    });
+                    b.Service("publish", "Publish Page", "publish-topic", new Dictionary<string, object> { { "wasm", "./publish.wasm" } });
                 })
                 .Otherwise(b => {
                     b.Service("reject", "Notify Reject", "reject-topic");

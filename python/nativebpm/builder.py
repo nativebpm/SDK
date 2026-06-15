@@ -32,378 +32,20 @@ def decompress_wasm_if_needed(data: bytes) -> bytes:
         pass
     raise ValueError("unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)")
 
-class StartEventBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-class ServiceTaskBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def wasm_path(self, path: str) -> 'ServiceTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['wasmPath'] = path
-        return self
-
-    def wasm(self, alias: str) -> 'ServiceTaskBuilder':
-        return self.wasm_path(alias)
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-class AITaskBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def provider(self, p: str) -> 'AITaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['provider'] = p
-        return self
-
-    def model(self, m: str) -> 'AITaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['model'] = m
-        return self
-
-    def prompt(self, p: str) -> 'AITaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['prompt'] = p
-        return self
-
-    def system_instruction(self, si: str) -> 'AITaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['systemInstruction'] = si
-        return self
-
-    def response_schema(self, rs: str) -> 'AITaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['responseSchema'] = rs
-        return self
-
-    def temperature(self, t: float) -> 'AITaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['temperature'] = t
-        return self
-
-    def result_var(self, rv: str) -> 'AITaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['resultVar'] = rv
-        return self
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-class UserTaskBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def assignee(self, a: str) -> 'UserTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['assignee'] = a
-        return self
-
-    def candidate_groups(self, cg: str) -> 'UserTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['candidateGroups'] = cg
-        return self
-
-    def due_date(self, d: str) -> 'UserTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['dueDate'] = d
-        return self
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-class ExclusiveGatewayBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def next_with_condition(self, target_id: str, condition: str) -> 'Workflow':
-        self._workflow.sequence_flow_with_condition(self._id, target_id, condition)
-        return self._workflow
-
-    def condition(self, target_id: str, cond: str) -> 'ExclusiveGatewayBuilder':
-        self._workflow.sequence_flow_with_condition(self._id, target_id, cond)
-        return self
-
-    def default(self, target_id: str) -> 'ExclusiveGatewayBuilder':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-class ParallelGatewayBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-class EventBasedGatewayBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-class CallActivityBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def in_val(self, source: str, target: str) -> 'CallActivityBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            if 'inVariables' not in node:
-                node['inVariables'] = []
-            node['inVariables'].append({'source': source, 'target': target, 'variables': '', 'local': False})
-        return self
-
-    def in_all(self) -> 'CallActivityBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            if 'inVariables' not in node:
-                node['inVariables'] = []
-            node['inVariables'].append({'source': '', 'target': '', 'variables': 'all', 'local': False})
-        return self
-
-    def out_val(self, source: str, target: str) -> 'CallActivityBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            if 'outVariables' not in node:
-                node['outVariables'] = []
-            node['outVariables'].append({'source': source, 'target': target, 'variables': ''})
-        return self
-
-    def out_all(self) -> 'CallActivityBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            if 'outVariables' not in node:
-                node['outVariables'] = []
-            node['outVariables'].append({'source': '', 'target': '', 'variables': 'all'})
-        return self
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-def format_dmn_value(val: Any) -> str:
-    if val is None:
-        return "-"
-    if isinstance(val, str):
-        s = val.strip()
-        for op in ["<=", ">=", "!=", "<>", "<", ">"]:
-            if s.startswith(op):
-                return s
-        if s == "true" or s == "false":
-            return s
-        try:
-            float(s)
-            return s
-        except ValueError:
-            pass
-        return f'"{s}"'
-    if isinstance(val, bool):
-        return "true" if val else "false"
-    return str(val)
-
-class BusinessRuleTaskBuilder:
-    def __init__(self, workflow: 'Workflow', node_id: str):
-        self._workflow = workflow
-        self._id = node_id
-
-    def map_decision_result(self, map_decision_result: str) -> 'BusinessRuleTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['mapDecisionResult'] = map_decision_result
-        return self
-
-    def result_variable(self, result_var: str) -> 'BusinessRuleTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['resultVar'] = result_var
-        return self
-
-    def hit_policy(self, hit_policy: str) -> 'BusinessRuleTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            node['hitPolicy'] = hit_policy
-        return self
-
-    def input(self, expression: str, type_str: str) -> 'BusinessRuleTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            if 'inputs' not in node:
-                node['inputs'] = []
-            node['inputs'].append({'expression': expression, 'type': type_str})
-        return self
-
-    def output(self, name: str, type_str: str) -> 'BusinessRuleTaskBuilder':
-        node = self._workflow.find_node(self._id)
-        if node:
-            if 'outputs' not in node:
-                node['outputs'] = []
-            node['outputs'].append({'name': name, 'type': type_str})
-        return self
-
-    def rule(self) -> 'DMNRuleBuilder':
-        return DMNRuleBuilder(self)
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._workflow.sequence_flow(self._id, target_id)
-        return self._workflow
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        return self._workflow
-
-class DMNRuleBuilder:
-    def __init__(self, task_builder: BusinessRuleTaskBuilder):
-        self._task_builder = task_builder
-        self._inputs = {}
-        self._outputs = {}
-
-    def when(self, expression: str, val: Any) -> 'DMNRuleBuilder':
-        self._inputs[expression] = format_dmn_value(val)
-        return self
-
-    def then(self, name: str, val: Any) -> 'DMNRuleBuilder':
-        self._outputs[name] = format_dmn_value(val)
-        return self
-
-    def _commit(self):
-        node = self._task_builder._workflow.find_node(self._task_builder._id)
-        if not node:
-            return
-        if 'rules' not in node:
-            node['rules'] = []
-
-        inputs_list = node.get('inputs', [])
-        outputs_list = node.get('outputs', [])
-
-        rule_inputs = []
-        for in_val in inputs_list:
-            expr = in_val.get('expression')
-            if expr in self._inputs:
-                rule_inputs.append(self._inputs[expr])
-            else:
-                rule_inputs.append("-")
-
-        rule_outputs = []
-        for out_val in outputs_list:
-            name = out_val.get('name')
-            if name in self._outputs:
-                rule_outputs.append(self._outputs[name])
-            else:
-                rule_outputs.append("-")
-
-        node['rules'].append({
-            'inputs': rule_inputs,
-            'outputs': rule_outputs
-        })
-
-    def rule(self) -> 'DMNRuleBuilder':
-        self._commit()
-        return self._task_builder.rule()
-
-    def next(self, target_id: str) -> 'Workflow':
-        self._commit()
-        return self._task_builder.next(target_id)
-
-    def connect_to(self, target_id: str) -> 'Workflow':
-        return self.next(target_id)
-
-    def builder(self) -> 'Workflow':
-        self._commit()
-        return self._task_builder.builder()
-
-    def map_decision_result(self, map_decision_result: str) -> BusinessRuleTaskBuilder:
-        self._commit()
-        return self._task_builder.map_decision_result(map_decision_result)
-
-    def result_variable(self, result_var: str) -> BusinessRuleTaskBuilder:
-        self._commit()
-        return self._task_builder.result_variable(result_var)
+def to_camel_case(s: str) -> str:
+    if s == "wasm":
+        return "wasmPath"
+    if s == "result_variable":
+        return "resultVar"
+    if '_' not in s:
+        return s
+    parts = s.split('_')
+    return parts[0] + ''.join(x.title() for x in parts[1:])
+
+def populate_node_properties(node: dict, kwargs: dict):
+    for k, val in kwargs.items():
+        key = to_camel_case(k)
+        node[key] = val
 
 _COMPILER_CACHE = {}
 
@@ -438,24 +80,28 @@ class Branch:
         
         self._current_node_id = node_id
 
-    def user(self, node_id: str, name: str, config=None) -> 'Branch':
-        builder = self._workflow.user_task(node_id, name)
-        if config:
-            config(builder)
+    def user(self, node_id: str, name: str, **kwargs) -> 'Branch':
+        self._workflow.user_task(node_id, name, **kwargs)
         self._connect_node(node_id)
         return self
 
-    def service(self, node_id: str, name: str, topic: str, config=None) -> 'Branch':
-        builder = self._workflow.service_task(node_id, name, topic)
-        if config:
-            config(builder)
+    def service(self, node_id: str, name: str, topic: str, **kwargs) -> 'Branch':
+        self._workflow.service_task(node_id, name, topic, **kwargs)
         self._connect_node(node_id)
         return self
 
-    def ai(self, node_id: str, name: str, config=None) -> 'Branch':
-        builder = self._workflow.ai_task(node_id, name)
-        if config:
-            config(builder)
+    def ai(self, node_id: str, name: str, **kwargs) -> 'Branch':
+        self._workflow.ai_task(node_id, name, **kwargs)
+        self._connect_node(node_id)
+        return self
+
+    def call(self, node_id: str, name: str, called_element: str, **kwargs) -> 'Branch':
+        self._workflow.call_activity(node_id, name, called_element, **kwargs)
+        self._connect_node(node_id)
+        return self
+
+    def business_rule(self, node_id: str, name: str, decision_ref: str, **kwargs) -> 'Branch':
+        self._workflow.business_rule_task(node_id, name, decision_ref, **kwargs)
         self._connect_node(node_id)
         return self
 
@@ -623,24 +269,28 @@ class Workflow:
         self._current_node_id = ""
         return self
 
-    def user(self, node_id: str, name: str, config=None) -> 'Workflow':
-        builder = self.user_task(node_id, name)
-        if config:
-            config(builder)
+    def user(self, node_id: str, name: str, **kwargs) -> 'Workflow':
+        self.user_task(node_id, name, **kwargs)
         self._connect_node(node_id)
         return self
 
-    def service(self, node_id: str, name: str, topic: str, config=None) -> 'Workflow':
-        builder = self.service_task(node_id, name, topic)
-        if config:
-            config(builder)
+    def service(self, node_id: str, name: str, topic: str, **kwargs) -> 'Workflow':
+        self.service_task(node_id, name, topic, **kwargs)
         self._connect_node(node_id)
         return self
 
-    def ai(self, node_id: str, name: str, config=None) -> 'Workflow':
-        builder = self.ai_task(node_id, name)
-        if config:
-            config(builder)
+    def ai(self, node_id: str, name: str, **kwargs) -> 'Workflow':
+        self.ai_task(node_id, name, **kwargs)
+        self._connect_node(node_id)
+        return self
+
+    def call(self, node_id: str, name: str, called_element: str, **kwargs) -> 'Workflow':
+        self.call_activity(node_id, name, called_element, **kwargs)
+        self._connect_node(node_id)
+        return self
+
+    def business_rule(self, node_id: str, name: str, decision_ref: str, **kwargs) -> 'Workflow':
+        self.business_rule_task(node_id, name, decision_ref, **kwargs)
         self._connect_node(node_id)
         return self
 
@@ -650,45 +300,55 @@ class Workflow:
         self._connect_node(gw_id)
         return WhenBuilder(self, gw_id, str(condition))
 
-    def start_event(self, node_id: str = "start") -> StartEventBuilder:
+    def start_event(self, node_id: str = "start") -> 'Workflow':
         self._nodes.append({'type': 'startEvent', 'id': node_id, 'name': 'Start'})
-        return StartEventBuilder(self, node_id)
+        return self
 
     def end_event(self, node_id: str, name: str) -> 'Workflow':
         self._nodes.append({'type': 'endEvent', 'id': node_id, 'name': name})
         return self
 
-    def service_task(self, node_id: str, name: str, topic: str) -> ServiceTaskBuilder:
-        self._nodes.append({'type': 'serviceTask', 'id': node_id, 'name': name, 'topic': topic})
-        return ServiceTaskBuilder(self, node_id)
+    def service_task(self, node_id: str, name: str, topic: str, **kwargs) -> 'Workflow':
+        node = {'type': 'serviceTask', 'id': node_id, 'name': name, 'topic': topic}
+        populate_node_properties(node, kwargs)
+        self._nodes.append(node)
+        return self
 
-    def ai_task(self, node_id: str, name: str) -> AITaskBuilder:
-        self._nodes.append({'type': 'aiServiceTask', 'id': node_id, 'name': name})
-        return AITaskBuilder(self, node_id)
+    def ai_task(self, node_id: str, name: str, **kwargs) -> 'Workflow':
+        node = {'type': 'aiServiceTask', 'id': node_id, 'name': name}
+        populate_node_properties(node, kwargs)
+        self._nodes.append(node)
+        return self
 
-    def user_task(self, node_id: str, name: str) -> UserTaskBuilder:
-        self._nodes.append({'type': 'userTask', 'id': node_id, 'name': name})
-        return UserTaskBuilder(self, node_id)
+    def user_task(self, node_id: str, name: str, **kwargs) -> 'Workflow':
+        node = {'type': 'userTask', 'id': node_id, 'name': name}
+        populate_node_properties(node, kwargs)
+        self._nodes.append(node)
+        return self
 
-    def exclusive_gateway(self, node_id: str, name: str) -> ExclusiveGatewayBuilder:
+    def exclusive_gateway(self, node_id: str, name: str) -> 'Workflow':
         self._nodes.append({'type': 'exclusiveGateway', 'id': node_id, 'name': name})
-        return ExclusiveGatewayBuilder(self, node_id)
+        return self
 
-    def parallel_gateway(self, node_id: str, name: str) -> ParallelGatewayBuilder:
+    def parallel_gateway(self, node_id: str, name: str) -> 'Workflow':
         self._nodes.append({'type': 'parallelGateway', 'id': node_id, 'name': name})
-        return ParallelGatewayBuilder(self, node_id)
+        return self
 
-    def event_based_gateway(self, node_id: str, name: str) -> EventBasedGatewayBuilder:
+    def event_based_gateway(self, node_id: str, name: str) -> 'Workflow':
         self._nodes.append({'type': 'eventBasedGateway', 'id': node_id, 'name': name})
-        return EventBasedGatewayBuilder(self, node_id)
+        return self
 
-    def call_activity(self, node_id: str, name: str, called_element: str) -> CallActivityBuilder:
-        self._nodes.append({'type': 'callActivity', 'id': node_id, 'name': name, 'calledElement': called_element})
-        return CallActivityBuilder(self, node_id)
+    def call_activity(self, node_id: str, name: str, called_element: str, **kwargs) -> 'Workflow':
+        node = {'type': 'callActivity', 'id': node_id, 'name': name, 'calledElement': called_element}
+        populate_node_properties(node, kwargs)
+        self._nodes.append(node)
+        return self
 
-    def business_rule_task(self, node_id: str, name: str, decision_ref: str) -> 'BusinessRuleTaskBuilder':
-        self._nodes.append({'type': 'businessRuleTask', 'id': node_id, 'name': name, 'decisionRef': decision_ref})
-        return BusinessRuleTaskBuilder(self, node_id)
+    def business_rule_task(self, node_id: str, name: str, decision_ref: str, **kwargs) -> 'Workflow':
+        node = {'type': 'businessRuleTask', 'id': node_id, 'name': name, 'decisionRef': decision_ref}
+        populate_node_properties(node, kwargs)
+        self._nodes.append(node)
+        return self
 
     def sequence_flow(self, source: str, target: str) -> 'Workflow':
         self._flows.append({'id': f"flow-{source}-{target}", 'source': source, 'target': target, 'condition': ''})
@@ -790,17 +450,16 @@ class Workflow:
         return result["xml"]
 
 
-class Expression:
-    def __init__(self, expr: str):
-        self.expr = expr
-
-    def __str__(self) -> str:
-        return f"${{{self.expr}}}"
+class Expression(str):
+    pass
 
 
 class Variable:
     def __init__(self, name: str):
         self.name = name
+
+    def __str__(self) -> str:
+        return self.name
 
     def eq(self, value: Any) -> Expression:
         val_str = "true" if value is True else ("false" if value is False else str(value))
@@ -829,4 +488,3 @@ def V(name: str) -> Variable:
 
 def v(name: str) -> Variable:
     return Variable(name)
-

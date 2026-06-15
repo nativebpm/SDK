@@ -32,408 +32,23 @@ function decompressWasmIfNeeded(data) {
     }
     throw new Error("unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)");
 }
-export class StartEventBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() { return this.workflow; }
-}
-export class ServiceTaskBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    wasmPath(path) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.wasmPath = path;
-        return this;
-    }
-    wasm(alias) {
-        return this.wasmPath(alias);
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        return this.workflow;
-    }
-}
-export class AITaskBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    provider(p) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.provider = p;
-        return this;
-    }
-    model(m) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.model = m;
-        return this;
-    }
-    prompt(p) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.prompt = p;
-        return this;
-    }
-    systemInstruction(si) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.systemInstruction = si;
-        return this;
-    }
-    responseSchema(rs) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.responseSchema = rs;
-        return this;
-    }
-    temperature(t) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.temperature = t;
-        return this;
-    }
-    resultVar(rv) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.resultVar = rv;
-        return this;
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        return this.workflow;
-    }
-}
-export class UserTaskBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    assignee(a) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.assignee = a;
-        return this;
-    }
-    candidateGroups(cg) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.candidateGroups = cg;
-        return this;
-    }
-    dueDate(d) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.dueDate = d;
-        return this;
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        return this.workflow;
-    }
-}
-export class ExclusiveGatewayBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    nextWithCondition(targetID, condition) {
-        this.workflow.sequenceFlowWithCondition(this.id, targetID, condition);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        return this.workflow;
-    }
-}
-export class ParallelGatewayBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        return this.workflow;
-    }
-}
-export class EventBasedGatewayBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        return this.workflow;
-    }
-}
-export class CallActivityBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    in(source, target) {
-        const node = this.workflow.findNode(this.id);
-        if (node) {
-            if (!node.inVariables)
-                node.inVariables = [];
-            node.inVariables.push({ source, target, variables: '', local: false });
+function populateNodeProperties(node, opts) {
+    if (!opts)
+        return;
+    for (const [key, val] of Object.entries(opts)) {
+        let targetKey = key;
+        if (key === 'wasm')
+            targetKey = 'wasmPath';
+        if (key === 'resultVariable')
+            targetKey = 'resultVar';
+        if (key.includes('_')) {
+            targetKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+            if (targetKey === 'wasm')
+                targetKey = 'wasmPath';
+            if (targetKey === 'resultVariable')
+                targetKey = 'resultVar';
         }
-        return this;
-    }
-    inAll() {
-        const node = this.workflow.findNode(this.id);
-        if (node) {
-            if (!node.inVariables)
-                node.inVariables = [];
-            node.inVariables.push({ source: '', target: '', variables: 'all', local: false });
-        }
-        return this;
-    }
-    out(source, target) {
-        const node = this.workflow.findNode(this.id);
-        if (node) {
-            if (!node.outVariables)
-                node.outVariables = [];
-            node.outVariables.push({ source, target, variables: '' });
-        }
-        return this;
-    }
-    outAll() {
-        const node = this.workflow.findNode(this.id);
-        if (node) {
-            if (!node.outVariables)
-                node.outVariables = [];
-            node.outVariables.push({ source: '', target: '', variables: 'all' });
-        }
-        return this;
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        return this.workflow;
-    }
-}
-function formatDMNValue(val) {
-    if (val === null || val === undefined) {
-        return "-";
-    }
-    if (typeof val === 'string') {
-        const s = val.trim();
-        for (const op of ["<=", ">=", "!=", "<>", "<", ">"]) {
-            if (s.startsWith(op)) {
-                return s;
-            }
-        }
-        if (s === "true" || s === "false") {
-            return s;
-        }
-        if (!isNaN(Number(s)) && s !== "") {
-            return s;
-        }
-        return `"${s}"`;
-    }
-    if (typeof val === 'boolean') {
-        return val ? "true" : "false";
-    }
-    return String(val);
-}
-export class BusinessRuleTaskBuilder {
-    workflow;
-    id;
-    constructor(workflow, id) {
-        this.workflow = workflow;
-        this.id = id;
-    }
-    mapDecisionResult(mapDecisionResult) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.mapDecisionResult = mapDecisionResult;
-        return this;
-    }
-    resultVariable(resultVar) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.resultVar = resultVar;
-        return this;
-    }
-    hitPolicy(hitPolicy) {
-        const node = this.workflow.findNode(this.id);
-        if (node)
-            node.hitPolicy = hitPolicy;
-        return this;
-    }
-    input(expression, type) {
-        const node = this.workflow.findNode(this.id);
-        if (node) {
-            if (!node.inputs)
-                node.inputs = [];
-            node.inputs.push({ expression, type });
-        }
-        return this;
-    }
-    output(name, type) {
-        const node = this.workflow.findNode(this.id);
-        if (node) {
-            if (!node.outputs)
-                node.outputs = [];
-            node.outputs.push({ name, type });
-        }
-        return this;
-    }
-    rule() {
-        return new DMNRuleBuilder(this);
-    }
-    next(targetID) {
-        this.workflow.sequenceFlow(this.id, targetID);
-        return this.workflow;
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        return this.workflow;
-    }
-}
-export class DMNRuleBuilder {
-    taskBuilder;
-    inputs = {};
-    outputs = {};
-    constructor(taskBuilder) {
-        this.taskBuilder = taskBuilder;
-    }
-    when(expression, val) {
-        this.inputs[expression] = formatDMNValue(val);
-        return this;
-    }
-    then(name, val) {
-        this.outputs[name] = formatDMNValue(val);
-        return this;
-    }
-    commit() {
-        const node = this.taskBuilder.workflow.findNode(this.taskBuilder.id);
-        if (!node)
-            return;
-        if (!node.rules)
-            node.rules = [];
-        const inputsList = node.inputs || [];
-        const outputsList = node.outputs || [];
-        const ruleInputs = [];
-        for (const inVal of inputsList) {
-            const expr = inVal.expression;
-            if (expr in this.inputs) {
-                ruleInputs.push(this.inputs[expr]);
-            }
-            else {
-                ruleInputs.push("-");
-            }
-        }
-        const ruleOutputs = [];
-        for (const outVal of outputsList) {
-            const name = outVal.name;
-            if (name in this.outputs) {
-                ruleOutputs.push(this.outputs[name]);
-            }
-            else {
-                ruleOutputs.push("-");
-            }
-        }
-        node.rules.push({
-            inputs: ruleInputs,
-            outputs: ruleOutputs
-        });
-    }
-    rule() {
-        this.commit();
-        return this.taskBuilder.rule();
-    }
-    next(targetID) {
-        this.commit();
-        return this.taskBuilder.next(targetID);
-    }
-    connectTo(targetID) {
-        return this.next(targetID);
-    }
-    builder() {
-        this.commit();
-        return this.taskBuilder.builder();
-    }
-    mapDecisionResult(mapDecisionResult) {
-        this.commit();
-        return this.taskBuilder.mapDecisionResult(mapDecisionResult);
-    }
-    resultVariable(resultVar) {
-        this.commit();
-        return this.taskBuilder.resultVariable(resultVar);
+        node[targetKey] = val;
     }
 }
 export class Branch {
@@ -475,24 +90,28 @@ export class Branch {
         }
         this.currentNodeID = id;
     }
-    user(id, name, config) {
-        const builder = this.workflow.userTask(id, name);
-        if (config)
-            config(builder);
+    user(id, name, opts) {
+        this.workflow.userTask(id, name, opts);
         this.connectNode(id);
         return this;
     }
-    service(id, name, topic, config) {
-        const builder = this.workflow.serviceTask(id, name, topic);
-        if (config)
-            config(builder);
+    service(id, name, topic, opts) {
+        this.workflow.serviceTask(id, name, topic, opts);
         this.connectNode(id);
         return this;
     }
-    ai(id, name, config) {
-        const builder = this.workflow.aiTask(id, name);
-        if (config)
-            config(builder);
+    ai(id, name, opts) {
+        this.workflow.aiTask(id, name, opts);
+        this.connectNode(id);
+        return this;
+    }
+    call(id, name, calledElement, opts) {
+        this.workflow.callActivity(id, name, calledElement, opts);
+        this.connectNode(id);
+        return this;
+    }
+    businessRule(id, name, decisionRef, opts) {
+        this.workflow.businessRuleTask(id, name, decisionRef, opts);
         this.connectNode(id);
         return this;
     }
@@ -645,24 +264,28 @@ export class Workflow {
         this.currentNodeID = '';
         return this;
     }
-    user(id, name, config) {
-        const builder = this.userTask(id, name);
-        if (config)
-            config(builder);
+    user(id, name, opts) {
+        this.userTask(id, name, opts);
         this.connectNode(id);
         return this;
     }
-    service(id, name, topic, config) {
-        const builder = this.serviceTask(id, name, topic);
-        if (config)
-            config(builder);
+    service(id, name, topic, opts) {
+        this.serviceTask(id, name, topic, opts);
         this.connectNode(id);
         return this;
     }
-    ai(id, name, config) {
-        const builder = this.aiTask(id, name);
-        if (config)
-            config(builder);
+    ai(id, name, opts) {
+        this.aiTask(id, name, opts);
+        this.connectNode(id);
+        return this;
+    }
+    call(id, name, calledElement, opts) {
+        this.callActivity(id, name, calledElement, opts);
+        this.connectNode(id);
+        return this;
+    }
+    businessRule(id, name, decisionRef, opts) {
+        this.businessRuleTask(id, name, decisionRef, opts);
         this.connectNode(id);
         return this;
     }
@@ -676,52 +299,58 @@ export class Workflow {
     startEvent(id = 'start') {
         const node = { type: 'startEvent', id, name: 'Start' };
         this.nodes.push(node);
-        return new StartEventBuilder(this, id);
+        this.currentNodeID = id;
+        return this;
     }
     endEvent(id, name) {
         const node = { type: 'endEvent', id, name };
         this.nodes.push(node);
         return this;
     }
-    serviceTask(id, name, topic) {
+    serviceTask(id, name, topic, opts) {
         const node = { type: 'serviceTask', id, name, topic };
+        populateNodeProperties(node, opts);
         this.nodes.push(node);
-        return new ServiceTaskBuilder(this, id);
+        return this;
     }
-    aiTask(id, name) {
+    aiTask(id, name, opts) {
         const node = { type: 'aiServiceTask', id, name };
+        populateNodeProperties(node, opts);
         this.nodes.push(node);
-        return new AITaskBuilder(this, id);
+        return this;
     }
-    userTask(id, name) {
+    userTask(id, name, opts) {
         const node = { type: 'userTask', id, name };
+        populateNodeProperties(node, opts);
         this.nodes.push(node);
-        return new UserTaskBuilder(this, id);
+        return this;
     }
     exclusiveGateway(id, name) {
         const node = { type: 'exclusiveGateway', id, name };
         this.nodes.push(node);
-        return new ExclusiveGatewayBuilder(this, id);
+        return this;
     }
     parallelGateway(id, name) {
         const node = { type: 'parallelGateway', id, name };
         this.nodes.push(node);
-        return new ParallelGatewayBuilder(this, id);
+        return this;
     }
     eventBasedGateway(id, name) {
         const node = { type: 'eventBasedGateway', id, name };
         this.nodes.push(node);
-        return new EventBasedGatewayBuilder(this, id);
+        return this;
     }
-    callActivity(id, name, calledElement) {
+    callActivity(id, name, calledElement, opts) {
         const node = { type: 'callActivity', id, name, calledElement };
+        populateNodeProperties(node, opts);
         this.nodes.push(node);
-        return new CallActivityBuilder(this, id);
+        return this;
     }
-    businessRuleTask(id, name, decisionRef) {
+    businessRuleTask(id, name, decisionRef, opts) {
         const node = { type: 'businessRuleTask', id, name, decisionRef };
+        populateNodeProperties(node, opts);
         this.nodes.push(node);
-        return new BusinessRuleTaskBuilder(this, id);
+        return this;
     }
     sequenceFlow(source, target) {
         this.flows.push({ id: `flow-${source}-${target}`, source, target, condition: '' });
@@ -801,14 +430,7 @@ export class Workflow {
         return result.xml;
     }
 }
-export class Expression {
-    expr;
-    constructor(expr) {
-        this.expr = expr;
-    }
-    toString() {
-        return `\${${this.expr}}`;
-    }
+export class Expression extends String {
 }
 export class Variable {
     name;

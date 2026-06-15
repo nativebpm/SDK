@@ -8,3 +8,6 @@ build:
 
 test: build
 	node test.js
+	node test_builder.js
+	node test_dsl.js
+	node test_schema.js

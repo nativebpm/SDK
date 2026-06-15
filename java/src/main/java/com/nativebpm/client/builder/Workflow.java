@@ -117,6 +117,42 @@ public class Workflow {
         return this;
     }
 
+    private static String toCamelCase(String s) {
+        if ("wasm".equals(s)) {
+            return "wasmPath";
+        }
+        if ("result_variable".equals(s)) {
+            return "resultVar";
+        }
+        if (!s.contains("_")) {
+            return s;
+        }
+        String[] parts = s.split("_");
+        StringBuilder camel = new StringBuilder(parts[0]);
+        for (int i = 1; i < parts.length; i++) {
+            if (parts[i].length() > 0) {
+                camel.append(Character.toUpperCase(parts[i].charAt(0)))
+                     .append(parts[i].substring(1));
+            }
+        }
+        String res = camel.toString();
+        if ("wasm".equals(res)) {
+            return "wasmPath";
+        }
+        if ("resultVariable".equals(res)) {
+            return "resultVar";
+        }
+        return res;
+    }
+
+    private static void populateNodeProperties(Map<String, Object> node, Map<String, Object> opts) {
+        if (opts == null) return;
+        for (Map.Entry<String, Object> entry : opts.entrySet()) {
+            String key = toCamelCase(entry.getKey());
+            node.put(key, entry.getValue());
+        }
+    }
+
     public static class Branch {
         private final Workflow workflow;
         private final String gatewayID;
@@ -161,11 +197,8 @@ public class Workflow {
             return user(id, name, null);
         }
 
-        public Branch user(String id, String name, Consumer<UserTaskBuilder> config) {
-            UserTaskBuilder builder = workflow.userTask(id, name);
-            if (config != null) {
-                config.accept(builder);
-            }
+        public Branch user(String id, String name, Map<String, Object> options) {
+            workflow.userTask(id, name, options);
             connectNode(id);
             return this;
         }
@@ -174,11 +207,8 @@ public class Workflow {
             return service(id, name, topic, null);
         }
 
-        public Branch service(String id, String name, String topic, Consumer<ServiceTaskBuilder> config) {
-            ServiceTaskBuilder builder = workflow.serviceTask(id, name, topic);
-            if (config != null) {
-                config.accept(builder);
-            }
+        public Branch service(String id, String name, String topic, Map<String, Object> options) {
+            workflow.serviceTask(id, name, topic, options);
             connectNode(id);
             return this;
         }
@@ -187,11 +217,28 @@ public class Workflow {
             return ai(id, name, null);
         }
 
-        public Branch ai(String id, String name, Consumer<AITaskBuilder> config) {
-            AITaskBuilder builder = workflow.aiTask(id, name);
-            if (config != null) {
-                config.accept(builder);
-            }
+        public Branch ai(String id, String name, Map<String, Object> options) {
+            workflow.aiTask(id, name, options);
+            connectNode(id);
+            return this;
+        }
+
+        public Branch call(String id, String name, String calledElement) {
+            return call(id, name, calledElement, null);
+        }
+
+        public Branch call(String id, String name, String calledElement, Map<String, Object> options) {
+            workflow.callActivity(id, name, calledElement, options);
+            connectNode(id);
+            return this;
+        }
+
+        public Branch businessRule(String id, String name, String decisionRef) {
+            return businessRule(id, name, decisionRef, null);
+        }
+
+        public Branch businessRule(String id, String name, String decisionRef, Map<String, Object> options) {
+            workflow.businessRuleTask(id, name, decisionRef, options);
             connectNode(id);
             return this;
         }
@@ -207,8 +254,6 @@ public class Workflow {
             String gwID = "gw_" + this.currentNodeID + "_decision";
             workflow.exclusiveGateway(gwID, "Decision Gateway");
             connectNode(gwID);
-
-            Branch thenBranch = new Branch(workflow, gwID, gwID, true, condition);
             return new WhenBranchBuilder(this, gwID, condition);
         }
 
@@ -353,11 +398,8 @@ public class Workflow {
         return user(id, name, null);
     }
 
-    public Workflow user(String id, String name, Consumer<UserTaskBuilder> config) {
-        UserTaskBuilder builder = this.userTask(id, name);
-        if (config != null) {
-            config.accept(builder);
-        }
+    public Workflow user(String id, String name, Map<String, Object> options) {
+        this.userTask(id, name, options);
         connectNode(id);
         return this;
     }
@@ -366,11 +408,8 @@ public class Workflow {
         return service(id, name, topic, null);
     }
 
-    public Workflow service(String id, String name, String topic, Consumer<ServiceTaskBuilder> config) {
-        ServiceTaskBuilder builder = this.serviceTask(id, name, topic);
-        if (config != null) {
-            config.accept(builder);
-        }
+    public Workflow service(String id, String name, String topic, Map<String, Object> options) {
+        this.serviceTask(id, name, topic, options);
         connectNode(id);
         return this;
     }
@@ -379,11 +418,28 @@ public class Workflow {
         return ai(id, name, null);
     }
 
-    public Workflow ai(String id, String name, Consumer<AITaskBuilder> config) {
-        AITaskBuilder builder = this.aiTask(id, name);
-        if (config != null) {
-            config.accept(builder);
-        }
+    public Workflow ai(String id, String name, Map<String, Object> options) {
+        this.aiTask(id, name, options);
+        connectNode(id);
+        return this;
+    }
+
+    public Workflow call(String id, String name, String calledElement) {
+        return call(id, name, calledElement, null);
+    }
+
+    public Workflow call(String id, String name, String calledElement, Map<String, Object> options) {
+        this.callActivity(id, name, calledElement, options);
+        connectNode(id);
+        return this;
+    }
+
+    public Workflow businessRule(String id, String name, String decisionRef) {
+        return businessRule(id, name, decisionRef, null);
+    }
+
+    public Workflow businessRule(String id, String name, String decisionRef, Map<String, Object> options) {
+        this.businessRuleTask(id, name, decisionRef, options);
         connectNode(id);
         return this;
     }
@@ -399,13 +455,14 @@ public class Workflow {
         return when(condition.toString());
     }
 
-    public StartEventBuilder startEvent(String id) {
+    public Workflow startEvent(String id) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "startEvent");
         node.put("id", id);
         node.put("name", "Start");
         nodes.add(node);
-        return new StartEventBuilder(this, id);
+        this.currentNodeID = id;
+        return this;
     }
 
     public Workflow endEvent(String id, String name) {
@@ -417,87 +474,84 @@ public class Workflow {
         return this;
     }
 
-    public ServiceTaskBuilder serviceTask(String id, String name, String topic) {
+    public Workflow serviceTask(String id, String name, String topic, Map<String, Object> options) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "serviceTask");
         node.put("id", id);
         node.put("name", name);
         node.put("topic", topic);
+        populateNodeProperties(node, options);
         nodes.add(node);
-        return new ServiceTaskBuilder(this, id);
+        return this;
     }
 
-    public AITaskBuilder aiTask(String id, String name) {
+    public Workflow aiTask(String id, String name, Map<String, Object> options) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "aiServiceTask");
         node.put("id", id);
         node.put("name", name);
+        populateNodeProperties(node, options);
         nodes.add(node);
-        return new AITaskBuilder(this, id);
+        return this;
     }
 
-    public UserTaskBuilder userTask(String id, String name) {
+    public Workflow userTask(String id, String name, Map<String, Object> options) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "userTask");
         node.put("id", id);
         node.put("name", name);
+        populateNodeProperties(node, options);
         nodes.add(node);
-        return new UserTaskBuilder(this, id);
+        return this;
     }
 
-    public ExclusiveGatewayBuilder exclusiveGateway(String id, String name) {
+    public Workflow exclusiveGateway(String id, String name) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "exclusiveGateway");
         node.put("id", id);
         node.put("name", name);
         nodes.add(node);
-        return new ExclusiveGatewayBuilder(this, id);
+        return this;
     }
 
-    public ParallelGatewayBuilder parallelGateway(String id, String name) {
+    public Workflow parallelGateway(String id, String name) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "parallelGateway");
         node.put("id", id);
         node.put("name", name);
         nodes.add(node);
-        return new ParallelGatewayBuilder(this, id);
+        return this;
     }
 
-    public EventBasedGatewayBuilder eventBasedGateway(String id, String name) {
+    public Workflow eventBasedGateway(String id, String name) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "eventBasedGateway");
         node.put("id", id);
         node.put("name", name);
         nodes.add(node);
-        return new EventBasedGatewayBuilder(this, id);
+        return this;
     }
 
-    public CallActivityBuilder callActivity(String id, String name, String calledElement) {
+    public Workflow callActivity(String id, String name, String calledElement, Map<String, Object> options) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "callActivity");
         node.put("id", id);
         node.put("name", name);
         node.put("calledElement", calledElement);
+        populateNodeProperties(node, options);
         nodes.add(node);
-        return new CallActivityBuilder(this, id);
+        return this;
     }
 
-    /**
-     * Creates a new Business Rule Task node in the workflow that evaluates a DMN decision table.
-     *
-     * @param id The unique identifier of the task.
-     * @param name The human-readable name of the task.
-     * @param decisionRef The ID reference of the DMN decision to execute.
-     * @return A {@link BusinessRuleTaskBuilder} to configure the task parameters and rules.
-     */
-    public BusinessRuleTaskBuilder businessRuleTask(String id, String name, String decisionRef) {
+    public Workflow businessRuleTask(String id, String name, String decisionRef, Map<String, Object> options) {
         Map<String, Object> node = new HashMap<>();
         node.put("type", "businessRuleTask");
         node.put("id", id);
         node.put("name", name);
         node.put("decisionRef", decisionRef);
+        populateNodeProperties(node, options);
         nodes.add(node);
-        return new BusinessRuleTaskBuilder(this, id);
+        return this;
     }
 
     public Workflow sequenceFlow(String source, String target) {
@@ -656,582 +710,6 @@ public class Workflow {
         return (String) result.get("xml");
     }
 
-    public static class StartEventBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public StartEventBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class ServiceTaskBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public ServiceTaskBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public ServiceTaskBuilder wasmPath(String path) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) {
-                node.put("wasmPath", path);
-            }
-            return this;
-        }
-
-        public ServiceTaskBuilder wasm(String alias) {
-            return wasmPath(alias);
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class AITaskBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public AITaskBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public AITaskBuilder provider(String provider) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("provider", provider);
-            return this;
-        }
-
-        public AITaskBuilder model(String model) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("model", model);
-            return this;
-        }
-
-        public AITaskBuilder prompt(String prompt) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("prompt", prompt);
-            return this;
-        }
-
-        public AITaskBuilder systemInstruction(String systemInstruction) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("systemInstruction", systemInstruction);
-            return this;
-        }
-
-        public AITaskBuilder responseSchema(String responseSchema) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("responseSchema", responseSchema);
-            return this;
-        }
-
-        public AITaskBuilder temperature(double temperature) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("temperature", temperature);
-            return this;
-        }
-
-        public AITaskBuilder resultVar(String resultVar) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("resultVar", resultVar);
-            return this;
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class UserTaskBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public UserTaskBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public UserTaskBuilder assignee(String assignee) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("assignee", assignee);
-            return this;
-        }
-
-        public UserTaskBuilder candidateGroups(String candidateGroups) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("candidateGroups", candidateGroups);
-            return this;
-        }
-
-        public UserTaskBuilder dueDate(String dueDate) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("dueDate", dueDate);
-            return this;
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class ExclusiveGatewayBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public ExclusiveGatewayBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow nextWithCondition(String targetID, String condition) {
-            return this.workflow.sequenceFlowWithCondition(this.id, targetID, condition);
-        }
-
-        public ExclusiveGatewayBuilder condition(String targetID, String condition) {
-            this.workflow.sequenceFlowWithCondition(this.id, targetID, condition);
-            return this;
-        }
-
-        public ExclusiveGatewayBuilder defaultValue(String targetID) {
-            this.workflow.sequenceFlow(this.id, targetID);
-            return this;
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class ParallelGatewayBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public ParallelGatewayBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class EventBasedGatewayBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public EventBasedGatewayBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class CallActivityBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public CallActivityBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        @SuppressWarnings("unchecked")
-        public CallActivityBuilder in(String source, String target) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) {
-                List<Map<String, Object>> inVars = (List<Map<String, Object>>) node.get("inVariables");
-                if (inVars == null) {
-                    inVars = new ArrayList<>();
-                    node.put("inVariables", inVars);
-                }
-                Map<String, Object> var = new HashMap<>();
-                var.put("source", source);
-                var.put("target", target);
-                var.put("variables", "");
-                var.put("local", false);
-                inVars.add(var);
-            }
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        public CallActivityBuilder inAll() {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) {
-                List<Map<String, Object>> inVars = (List<Map<String, Object>>) node.get("inVariables");
-                if (inVars == null) {
-                    inVars = new ArrayList<>();
-                    node.put("inVariables", inVars);
-                }
-                Map<String, Object> var = new HashMap<>();
-                var.put("source", "");
-                var.put("target", "");
-                var.put("variables", "all");
-                var.put("local", false);
-                inVars.add(var);
-            }
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        public CallActivityBuilder out(String source, String target) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) {
-                List<Map<String, Object>> outVars = (List<Map<String, Object>>) node.get("outVariables");
-                if (outVars == null) {
-                    outVars = new ArrayList<>();
-                    node.put("outVariables", outVars);
-                }
-                Map<String, Object> var = new HashMap<>();
-                var.put("source", source);
-                var.put("target", target);
-                var.put("variables", "");
-                outVars.add(var);
-            }
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        public CallActivityBuilder outAll() {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) {
-                List<Map<String, Object>> outVars = (List<Map<String, Object>>) node.get("outVariables");
-                if (outVars == null) {
-                    outVars = new ArrayList<>();
-                    node.put("outVariables", outVars);
-                }
-                Map<String, Object> var = new HashMap<>();
-                var.put("source", "");
-                var.put("target", "");
-                var.put("variables", "all");
-                outVars.add(var);
-            }
-            return this;
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class BusinessRuleTaskBuilder {
-        private final Workflow workflow;
-        private final String id;
-
-        public BusinessRuleTaskBuilder(Workflow workflow, String id) {
-            this.workflow = workflow;
-            this.id = id;
-        }
-
-        public BusinessRuleTaskBuilder mapDecisionResult(String mapDecisionResult) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("mapDecisionResult", mapDecisionResult);
-            return this;
-        }
-
-        public BusinessRuleTaskBuilder resultVariable(String resultVar) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("resultVar", resultVar);
-            return this;
-        }
-
-        /**
-         * Sets the hit policy for the inline DMN decision table.
-         *
-         * @param hitPolicy The DMN hit policy string (e.g., "UNIQUE", "FIRST", "ANY", "COLLECT").
-         * @return This builder instance for method chaining.
-         */
-        public BusinessRuleTaskBuilder hitPolicy(String hitPolicy) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) node.put("hitPolicy", hitPolicy);
-            return this;
-        }
-
-        /**
-         * Adds an input column configuration to the inline DMN table.
-         *
-         * @param expression The variable name or expression to evaluate as input (e.g., "membership").
-         * @param type The type of the input variable (e.g., "string", "number", "boolean").
-         * @return This builder instance for method chaining.
-         */
-        @SuppressWarnings("unchecked")
-        public BusinessRuleTaskBuilder input(String expression, String type) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) {
-                List<Map<String, Object>> inputs = (List<Map<String, Object>>) node.get("inputs");
-                if (inputs == null) {
-                    inputs = new ArrayList<>();
-                    node.put("inputs", inputs);
-                }
-                Map<String, Object> in = new HashMap<>();
-                in.put("expression", expression);
-                in.put("type", type);
-                inputs.add(in);
-            }
-            return this;
-        }
-
-        /**
-         * Adds an output column configuration to the inline DMN table.
-         *
-         * @param name The name of the output variable where the rule result will be written.
-         * @param type The type of the output variable (e.g., "string", "number", "boolean").
-         * @return This builder instance for method chaining.
-         */
-        @SuppressWarnings("unchecked")
-        public BusinessRuleTaskBuilder output(String name, String type) {
-            Map<String, Object> node = this.workflow.findNode(this.id);
-            if (node != null) {
-                List<Map<String, Object>> outputs = (List<Map<String, Object>>) node.get("outputs");
-                if (outputs == null) {
-                    outputs = new ArrayList<>();
-                    node.put("outputs", outputs);
-                }
-                Map<String, Object> out = new HashMap<>();
-                out.put("name", name);
-                out.put("type", type);
-                outputs.add(out);
-            }
-            return this;
-        }
-
-        /**
-         * Starts the definition of a new DMN rule inside this business rule task.
-         *
-         * @return A {@link DMNRuleBuilder} to specify the rule's conditions and outcomes.
-         */
-        public DMNRuleBuilder rule() {
-            return new DMNRuleBuilder(this);
-        }
-
-        public Workflow next(String targetID) {
-            return this.workflow.sequenceFlow(this.id, targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            return this.workflow;
-        }
-    }
-
-    public static class DMNRuleBuilder {
-        private final BusinessRuleTaskBuilder taskBuilder;
-        private final Map<String, String> inputs = new HashMap<>();
-        private final Map<String, String> outputs = new HashMap<>();
-
-        public DMNRuleBuilder(BusinessRuleTaskBuilder taskBuilder) {
-            this.taskBuilder = taskBuilder;
-        }
-
-        /**
-         * Adds a condition ("When" clause) to the rule for a specific input column.
-         *
-         * @param expression The expression identifier corresponding to one of the defined input expressions.
-         * @param val The value constraint (e.g., "gold", ">= 18").
-         * @return This DMNRuleBuilder for method chaining.
-         */
-        public DMNRuleBuilder when(String expression, Object val) {
-            inputs.put(expression, formatDMNValue(val));
-            return this;
-        }
-
-        /**
-         * Adds an outcome ("Then" clause) to the rule for a specific output column.
-         *
-         * @param name The output variable name corresponding to one of the defined output columns.
-         * @param val The value to return if all conditions in this rule match (e.g., 20.0).
-         * @return This DMNRuleBuilder for method chaining.
-         */
-        public DMNRuleBuilder then(String name, Object val) {
-            outputs.put(name, formatDMNValue(val));
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        private void commit() {
-            Map<String, Object> node = this.taskBuilder.workflow.findNode(this.taskBuilder.id);
-            if (node != null) {
-                List<Map<String, Object>> rules = (List<Map<String, Object>>) node.get("rules");
-                if (rules == null) {
-                    rules = new ArrayList<>();
-                    node.put("rules", rules);
-                }
-
-                List<Map<String, Object>> inputsList = (List<Map<String, Object>>) node.get("inputs");
-                List<Map<String, Object>> outputsList = (List<Map<String, Object>>) node.get("outputs");
-
-                List<String> ruleInputs = new ArrayList<>();
-                if (inputsList != null) {
-                    for (Map<String, Object> in : inputsList) {
-                        String expr = (String) in.get("expression");
-                        if (inputs.containsKey(expr)) {
-                            ruleInputs.add(inputs.get(expr));
-                        } else {
-                            ruleInputs.add("-");
-                        }
-                    }
-                }
-
-                List<String> ruleOutputs = new ArrayList<>();
-                if (outputsList != null) {
-                    for (Map<String, Object> out : outputsList) {
-                        String name = (String) out.get("name");
-                        if (outputs.containsKey(name)) {
-                            ruleOutputs.add(outputs.get(name));
-                        } else {
-                            ruleOutputs.add("-");
-                        }
-                    }
-                }
-
-                Map<String, Object> r = new HashMap<>();
-                r.put("inputs", ruleInputs);
-                r.put("outputs", ruleOutputs);
-                rules.add(r);
-            }
-        }
-
-        /**
-         * Commits the current rule and starts defining the next DMN rule in this table.
-         *
-         * @return A new {@link DMNRuleBuilder} associated with the same business rule task.
-         */
-        public DMNRuleBuilder rule() {
-            commit();
-            return this.taskBuilder.rule();
-        }
-
-        public Workflow next(String targetID) {
-            commit();
-            return this.taskBuilder.next(targetID);
-        }
-
-        public Workflow connectTo(String targetID) {
-            return next(targetID);
-        }
-
-        public Workflow builder() {
-            commit();
-            return this.taskBuilder.builder();
-        }
-
-        public BusinessRuleTaskBuilder mapDecisionResult(String mapDecisionResult) {
-            commit();
-            return this.taskBuilder.mapDecisionResult(mapDecisionResult);
-        }
-
-        public BusinessRuleTaskBuilder resultVariable(String resultVar) {
-            commit();
-            return this.taskBuilder.resultVariable(resultVar);
-        }
-
-        private String formatDMNValue(Object val) {
-            if (val == null) {
-                return "-";
-            }
-            if (val instanceof String) {
-                String s = ((String) val).trim();
-                for (String op : new String[]{"<=", ">=", "!=", "<>", "<", ">"}) {
-                    if (s.startsWith(op)) {
-                        return s;
-                    }
-                }
-                if (s.equals("true") || s.equals("false")) {
-                    return s;
-                }
-                try {
-                    Double.parseDouble(s);
-                    return s;
-                } catch (NumberFormatException e) {
-                    // ignore
-                }
-                return "\"" + s + "\"";
-            }
-            return String.valueOf(val);
-        }
-    }
-
     public static class Expression {
         private final String expr;
         public Expression(String expr) {
@@ -1239,7 +717,7 @@ public class Workflow {
         }
         @Override
         public String toString() {
-            return "${" + expr + "}";
+            return expr;
         }
     }
 

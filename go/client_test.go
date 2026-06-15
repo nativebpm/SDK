@@ -16,14 +16,9 @@ func TestWorkflowBuilderAndWasm(t *testing.T) {
 	ctx := context.Background()
 
 	wf := NewWorkflow("test-process", "Test Process")
-	wf.StartEvent("start").
-		Next("service1").
-		Builder().
-		ServiceTask("service1", "Service 1", "topic1").
-		Wasm("./my_wasm_module.wasm").
-		Next("end").
-		Builder().
-		EndEvent("end", "End")
+	wf.Start("start").
+		Service("service1", "Service 1", "topic1", M{"wasm": "./my_wasm_module.wasm"}).
+		End("end", "End")
 
 	xml, err := wf.BuildXML(ctx)
 	if err != nil {
@@ -47,8 +42,7 @@ func TestBuildXMLWithCompressedFormats(t *testing.T) {
 	ctx := context.Background()
 
 	wf := NewWorkflow("test-compressed", "Test Compressed")
-	wf.StartEvent("start").Next("end")
-	wf.EndEvent("end", "End")
+	wf.Start("start").End("end", "End")
 
 	// 1. Create compressed files in-memory
 	// Brotli
@@ -121,8 +115,7 @@ func TestBuildXMLWithPrecompile(t *testing.T) {
 	ctx := context.Background()
 
 	wf := NewWorkflow("precompile-test", "Precompile Test")
-	wf.StartEvent("start").Next("end")
-	wf.EndEvent("end", "End")
+	wf.Start("start").End("end", "End")
 
 	// Pre-compile compiler using WithCompilerBytes
 	_, err := wf.WithCompilerBytes(ctx, coreWasm)
@@ -145,25 +138,24 @@ func TestBusinessRuleTask(t *testing.T) {
 	ctx := context.Background()
 	wf := NewWorkflow("dmn-test", "DMN Test Process")
 
-	wf.StartEvent("start").Next("ruleTask")
-
-	wf.BusinessRuleTask("ruleTask", "Determine Discount", "determine_discount").
-		HitPolicy("UNIQUE").
-		Input("membership", "string").
-		Input("age", "number").
-		Output("discount", "number").
-		Rule().
-			When("membership", "gold").
-			When("age", ">= 18").
-			Then("discount", 20.0).
-		Rule().
-			When("membership", "silver").
-			Then("discount", 10.0).
-		ResultVariable("discountVar").
-		MapDecisionResult("singleEntry").
-		Next("end")
-
-	wf.EndEvent("end", "End")
+	wf.Start("start").
+		BusinessRule("ruleTask", "Determine Discount", "determine_discount", M{
+			"hitPolicy": "UNIQUE",
+			"inputs": []interface{}{
+				M{"expression": "membership", "type": "string"},
+				M{"expression": "age", "type": "number"},
+			},
+			"outputs": []interface{}{
+				M{"name": "discount", "type": "number"},
+			},
+			"rules": []interface{}{
+				M{"inputs": []string{`"gold"`, ">= 18"}, "outputs": []string{"20.0"}},
+				M{"inputs": []string{`"silver"`, "-"}, "outputs": []string{"10.0"}},
+			},
+			"resultVar":         "discountVar",
+			"mapDecisionResult": "singleEntry",
+		}).
+		End("end", "End")
 
 	xml, err := wf.BuildXML(ctx)
 	if err != nil {
@@ -187,14 +179,9 @@ func TestBusinessRuleTask(t *testing.T) {
 func BenchmarkWorkflowBuilder(b *testing.B) {
 	ctx := context.Background()
 	wf := NewWorkflow("bench-process", "Bench Process")
-	wf.StartEvent("start").
-		Next("service1").
-		Builder().
-		ServiceTask("service1", "Service 1", "topic1").
-		Wasm("./my_wasm_module.wasm").
-		Next("end").
-		Builder().
-		EndEvent("end", "End")
+	wf.Start("start").
+		Service("service1", "Service 1", "topic1", M{"wasm": "./my_wasm_module.wasm"}).
+		End("end", "End")
 
 	// Pre-compile to avoid compilation latency during benchmark
 	_, _ = wf.WithCompilerBytes(ctx, coreWasm)
@@ -217,9 +204,7 @@ func TestBlockClosureDSL(t *testing.T) {
 		User("task1", "User Approval").
 		When(V("approved").Eq(true)).
 		Then(func(flow *Branch) {
-			flow.Service("publish", "Publish Page", "publish-topic", func(st *ServiceTaskBuilder) {
-				st.Wasm("./publish.wasm")
-			})
+			flow.Service("publish", "Publish Page", "publish-topic", M{"wasm": "./publish.wasm"})
 		}).
 		Otherwise(func(flow *Branch) {
 			flow.Service("reject", "Notify Reject", "reject-topic")
@@ -278,5 +263,3 @@ func TestImplicitBackEdges(t *testing.T) {
 		t.Errorf("expected sequence flow targeting 'step1' (back-edge), XML:\n%s", xml)
 	}
 }
-
-

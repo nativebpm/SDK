@@ -56,116 +56,6 @@ export interface WorkflowAST {
     nodes: NodeAST[];
     flows: FlowAST[];
 }
-export declare class StartEventBuilder {
-    private workflow;
-    private id;
-    constructor(workflow: Workflow, id: string);
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class ServiceTaskBuilder {
-    private workflow;
-    private id;
-    constructor(workflow: Workflow, id: string);
-    wasmPath(path: string): ServiceTaskBuilder;
-    wasm(alias: string): ServiceTaskBuilder;
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class AITaskBuilder {
-    private workflow;
-    private id;
-    constructor(workflow: Workflow, id: string);
-    provider(p: string): AITaskBuilder;
-    model(m: string): AITaskBuilder;
-    prompt(p: string): AITaskBuilder;
-    systemInstruction(si: string): AITaskBuilder;
-    responseSchema(rs: string): AITaskBuilder;
-    temperature(t: number): AITaskBuilder;
-    resultVar(rv: string): AITaskBuilder;
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class UserTaskBuilder {
-    private workflow;
-    private id;
-    constructor(workflow: Workflow, id: string);
-    assignee(a: string): UserTaskBuilder;
-    candidateGroups(cg: string): UserTaskBuilder;
-    dueDate(d: string): UserTaskBuilder;
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class ExclusiveGatewayBuilder {
-    private workflow;
-    private id;
-    constructor(workflow: Workflow, id: string);
-    next(targetID: string): Workflow;
-    nextWithCondition(targetID: string, condition: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class ParallelGatewayBuilder {
-    private workflow;
-    private id;
-    constructor(workflow: Workflow, id: string);
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class EventBasedGatewayBuilder {
-    private workflow;
-    private id;
-    constructor(workflow: Workflow, id: string);
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class CallActivityBuilder {
-    private workflow;
-    private id;
-    constructor(workflow: Workflow, id: string);
-    in(source: string, target: string): CallActivityBuilder;
-    inAll(): CallActivityBuilder;
-    out(source: string, target: string): CallActivityBuilder;
-    outAll(): CallActivityBuilder;
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class BusinessRuleTaskBuilder {
-    workflow: Workflow;
-    id: string;
-    constructor(workflow: Workflow, id: string);
-    mapDecisionResult(mapDecisionResult: string): BusinessRuleTaskBuilder;
-    resultVariable(resultVar: string): BusinessRuleTaskBuilder;
-    hitPolicy(hitPolicy: string): BusinessRuleTaskBuilder;
-    input(expression: string, type: string): BusinessRuleTaskBuilder;
-    output(name: string, type: string): BusinessRuleTaskBuilder;
-    rule(): DMNRuleBuilder;
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-}
-export declare class DMNRuleBuilder {
-    private taskBuilder;
-    private inputs;
-    private outputs;
-    constructor(taskBuilder: BusinessRuleTaskBuilder);
-    when(expression: string, val: any): DMNRuleBuilder;
-    then(name: string, val: any): DMNRuleBuilder;
-    private commit;
-    rule(): DMNRuleBuilder;
-    next(targetID: string): Workflow;
-    connectTo(targetID: string): Workflow;
-    builder(): Workflow;
-    mapDecisionResult(mapDecisionResult: string): BusinessRuleTaskBuilder;
-    resultVariable(resultVar: string): BusinessRuleTaskBuilder;
-}
 export declare class Branch {
     workflow: Workflow;
     gatewayID: string;
@@ -175,9 +65,11 @@ export declare class Branch {
     hasEnded: boolean;
     constructor(workflow: Workflow, gatewayID: string, currentNodeID: string, isConditional: boolean, condition?: string);
     private connectNode;
-    user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Branch;
-    service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Branch;
-    ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Branch;
+    user(id: string, name: string, opts?: Record<string, any>): Branch;
+    service(id: string, name: string, topic: string, opts?: Record<string, any>): Branch;
+    ai(id: string, name: string, opts?: Record<string, any>): Branch;
+    call(id: string, name: string, calledElement: string, opts?: Record<string, any>): Branch;
+    businessRule(id: string, name: string, decisionRef: string, opts?: Record<string, any>): Branch;
     end(id: string, name: string): Branch;
     when(condition: string | {
         toString(): string;
@@ -222,32 +114,31 @@ export declare class Workflow {
     private connectNode;
     start(id?: string): Workflow;
     end(id: string, name: string): Workflow;
-    user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Workflow;
-    service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Workflow;
-    ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Workflow;
+    user(id: string, name: string, opts?: Record<string, any>): Workflow;
+    service(id: string, name: string, topic: string, opts?: Record<string, any>): Workflow;
+    ai(id: string, name: string, opts?: Record<string, any>): Workflow;
+    call(id: string, name: string, calledElement: string, opts?: Record<string, any>): Workflow;
+    businessRule(id: string, name: string, decisionRef: string, opts?: Record<string, any>): Workflow;
     when(condition: string | {
         toString(): string;
     }): WhenBuilder;
-    startEvent(id?: string): StartEventBuilder;
+    startEvent(id?: string): Workflow;
     endEvent(id: string, name: string): Workflow;
-    serviceTask(id: string, name: string, topic: string): ServiceTaskBuilder;
-    aiTask(id: string, name: string): AITaskBuilder;
-    userTask(id: string, name: string): UserTaskBuilder;
-    exclusiveGateway(id: string, name: string): ExclusiveGatewayBuilder;
-    parallelGateway(id: string, name: string): ParallelGatewayBuilder;
-    eventBasedGateway(id: string, name: string): EventBasedGatewayBuilder;
-    callActivity(id: string, name: string, calledElement: string): CallActivityBuilder;
-    businessRuleTask(id: string, name: string, decisionRef: string): BusinessRuleTaskBuilder;
+    serviceTask(id: string, name: string, topic: string, opts?: Record<string, any>): Workflow;
+    aiTask(id: string, name: string, opts?: Record<string, any>): Workflow;
+    userTask(id: string, name: string, opts?: Record<string, any>): Workflow;
+    exclusiveGateway(id: string, name: string): Workflow;
+    parallelGateway(id: string, name: string): Workflow;
+    eventBasedGateway(id: string, name: string): Workflow;
+    callActivity(id: string, name: string, calledElement: string, opts?: Record<string, any>): Workflow;
+    businessRuleTask(id: string, name: string, decisionRef: string, opts?: Record<string, any>): Workflow;
     sequenceFlow(source: string, target: string): Workflow;
     sequenceFlowWithCondition(source: string, target: string, condition: string): Workflow;
     findNode(id: string): NodeAST | undefined;
     toAST(): WorkflowAST;
     buildXML(wasmInput?: string | Uint8Array): Promise<string>;
 }
-export declare class Expression {
-    expr: string;
-    constructor(expr: string);
-    toString(): string;
+export declare class Expression extends String {
 }
 export declare class Variable {
     name: string;
