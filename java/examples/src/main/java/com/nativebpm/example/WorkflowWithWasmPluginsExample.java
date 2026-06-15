@@ -1,6 +1,7 @@
 package com.nativebpm.example;
 
 import com.nativebpm.client.builder.Workflow;
+import static com.nativebpm.client.builder.Workflow.V;
 
 public class WorkflowWithWasmPluginsExample {
     public static String buildWorkflow() throws Exception {
@@ -10,9 +11,8 @@ public class WorkflowWithWasmPluginsExample {
         System.out.println("🔨 Building workflow dynamically using Fluent API...");
         Workflow workflow = new Workflow("wasm-demo", "Workflow with Guest WASM Plugins");
 
-        // Chain starting from start event
-        workflow.start("start")
-                .service("calculate", "Calculate Totals", "payment_topic", st -> {
+        // Chain starting from the first activity (auto-start will prepend start event)
+        workflow.service("calculate", "Calculate Totals", "payment_topic", st -> {
                     st.wasm("./calculate_total.wasm");
                 })
                 .ai("aiCheck", "AI Fraud Guard", ait -> {
@@ -21,13 +21,13 @@ public class WorkflowWithWasmPluginsExample {
                        .prompt("Analyze transaction for fraud: ${orderAmount}")
                        .resultVar("isFraudulent");
                 })
-                .ifBranch("${isFraudulent == true}", b -> {
+                .ifBranch(V("isFraudulent").eq(true), b -> {
                     b.user("userTask", "Manual Fraud Approval", ut -> {
                         ut.assignee("security_officer");
-                    }).end("end_fraud", "Process Finished");
+                    });
                 })
                 .elseBranch(b -> {
-                    b.end("end_ok", "Process Finished");
+                    // empty branch (will auto-route to end event)
                 });
 
         String bpmnXml = workflow.buildXML();

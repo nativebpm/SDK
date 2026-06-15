@@ -16,7 +16,7 @@ func main() {
 	workflow := nativebpm.NewWorkflow("wasm-demo", "Workflow with Guest WASM Plugins")
 
 	// Chain starting from start event
-	workflow.Start("start").
+	workflow.
 		Service("calculate", "Calculate Totals", "payment_topic", func(st *nativebpm.ServiceTaskBuilder) {
 			st.Wasm("./calculate_total.wasm")
 		}).
@@ -26,14 +26,13 @@ func main() {
 				Prompt("Analyze transaction for fraud: ${orderAmount}").
 				ResultVar("isFraudulent")
 		}).
-		If("${isFraudulent == true}", func(b *nativebpm.Branch) {
+		If(nativebpm.V("isFraudulent").Eq(true), func(b *nativebpm.Branch) {
 			b.User("userTask", "Manual Fraud Approval", func(ut *nativebpm.UserTaskBuilder) {
 				ut.Assignee("security_officer")
-			}).
-				End("end_fraud", "Process Finished")
+			})
 		}).
 		Else(func(b *nativebpm.Branch) {
-			b.End("end_ok", "Process Finished")
+			// empty default else
 		})
 
 	// 2. Pre-compile the WebAssembly builder core at initialization (e.g. from local core.wasm.br or raw core.wasm)

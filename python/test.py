@@ -4,7 +4,7 @@ import zipfile
 import brotli
 import unittest
 from pathlib import Path
-from nativebpm import Workflow
+from nativebpm import Workflow, v
 from nativebpm.builder import DEFAULT_WASM_PATH
 
 class TestPythonSDK(unittest.TestCase):
@@ -123,12 +123,12 @@ class TestPythonSDK(unittest.TestCase):
         print("Running Python SDK closure block DSL test...")
         workflow = Workflow('closure-process', 'Closure Process')
         
-        workflow.start('start').user('task1', 'User Approval').if_branch('approved == True', lambda b: (
+        workflow.user('task1', 'User Approval').if_branch(v('approved').eq(True), lambda b: (
             b.service('publish', 'Publish Page', 'publish-topic', lambda st: (
                 st.wasm('./publish.wasm')
-            )).end('end_approved', 'Approved End')
+            ))
         )).else_branch(lambda b: (
-            b.service('reject', 'Notify Reject', 'reject-topic').end('end_rejected', 'Rejected End')
+            b.service('reject', 'Notify Reject', 'reject-topic')
         ))
 
         xml = workflow.build_xml()
@@ -144,17 +144,15 @@ class TestPythonSDK(unittest.TestCase):
         print("Running Python SDK closure block DSL decorator test...")
         workflow = Workflow('closure-decorator', 'Closure Decorator Process')
         
-        workflow.start('start').user('task1', 'User Approval')
+        workflow.user('task1', 'User Approval')
         
-        @workflow.if_branch('approved == True')
+        @workflow.if_branch(v('approved').eq(True))
         def then_branch(b):
             b.service('publish', 'Publish Page', 'publish-topic', lambda st: st.wasm('./publish.wasm'))
-            b.end('end_approved', 'Approved End')
             
         @then_branch.else_branch()
         def else_branch(b):
             b.service('reject', 'Notify Reject', 'reject-topic')
-            b.end('end_rejected', 'Rejected End')
 
         xml = workflow.build_xml()
         

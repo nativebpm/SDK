@@ -260,12 +260,51 @@ namespace NativeBPM.Client.Builder
 
         public Dictionary<string, object> ToAST()
         {
+            var nodesCopy = new List<Dictionary<string, object>>(this.nodes);
+            var flowsCopy = new List<Dictionary<string, object>>(this.flows);
+
+            var sourceIds = new HashSet<string>();
+            foreach (var f in this.flows)
+            {
+                if (f.TryGetValue("source", out var srcObj) && srcObj is string src)
+                {
+                    sourceIds.Add(src);
+                }
+            }
+
+            foreach (var node in this.nodes)
+            {
+                string nodeType = node.TryGetValue("type", out var typeObj) ? typeObj.ToString() ?? "" : "";
+                string nodeId = node.TryGetValue("id", out var idObj) ? idObj.ToString() ?? "" : "";
+                if (nodeType == "endEvent" || nodeType == "startEvent")
+                {
+                    continue;
+                }
+                if (!sourceIds.Contains(nodeId))
+                {
+                    string endId = "end_" + nodeId;
+                    nodesCopy.Add(new Dictionary<string, object>
+                    {
+                        { "type", "endEvent" },
+                        { "id", endId },
+                        { "name", "Process Finished" }
+                    });
+                    flowsCopy.Add(new Dictionary<string, object>
+                    {
+                        { "id", $"flow-{nodeId}-{endId}" },
+                        { "source", nodeId },
+                        { "target", endId },
+                        { "condition", "" }
+                    });
+                }
+            }
+
             return new Dictionary<string, object>
             {
                 { "id", id },
                 { "name", name },
-                { "nodes", nodes },
-                { "flows", flows }
+                { "nodes", nodesCopy },
+                { "flows", flowsCopy }
             };
         }
 
@@ -392,6 +431,24 @@ namespace NativeBPM.Client.Builder
 
         private void ConnectNode(string nodeId)
         {
+            var node = FindNode(nodeId);
+            bool hasStart = false;
+            foreach (var n in this.nodes)
+            {
+                if (n.TryGetValue("type", out var typeObj) && typeObj.ToString() == "startEvent")
+                {
+                    hasStart = true;
+                    break;
+                }
+            }
+            if (!hasStart && node != null && node.TryGetValue("type", out var tObj) && tObj.ToString() != "startEvent")
+            {
+                this.StartEvent("start");
+                this.SequenceFlow("start", nodeId);
+                currentNodeID = nodeId;
+                return;
+            }
+
             if (PendingMerges.Count > 0)
             {
                 foreach (var sourceId in PendingMerges)
@@ -407,12 +464,16 @@ namespace NativeBPM.Client.Builder
             currentNodeID = nodeId;
         }
 
-        public Workflow Start(string id)
+        public Workflow Start(string id = "start")
         {
             this.StartEvent(id);
             ConnectNode(id);
             return this;
         }
+
+        public static Variable V(string name) => new Variable(name);
+        public static Variable Var(string name) => new Variable(name);
+        public static Variable v(string name) => new Variable(name);
 
         public Workflow End(string id, string name)
         {
@@ -451,10 +512,7 @@ namespace NativeBPM.Client.Builder
             string gwID = "gw_" + this.currentNodeID + "_decision";
             this.ExclusiveGateway(gwID, "Decision Gateway");
 
-            if (!string.IsNullOrEmpty(currentNodeID))
-            {
-                this.SequenceFlow(currentNodeID, gwID);
-            }
+            this.ConnectNode(gwID);
 
             Branch thenBranch = new Branch(this, gwID, gwID, true, condition);
             thenFn(thenBranch);
@@ -465,6 +523,11 @@ namespace NativeBPM.Client.Builder
             }
 
             return new IfElseBuilder(this, gwID);
+        }
+
+        public IfElseBuilder If(Expression condition, Action<Branch> thenFn)
+        {
+            return If(condition.ToString(), thenFn);
         }
 
         public void Dispose()
@@ -1089,6 +1152,11 @@ namespace NativeBPM.Client.Builder
 
             return new IfElseBranchBuilder(this, gwID);
         }
+
+        public IfElseBranchBuilder If(Expression condition, Action<Branch> thenFn)
+        {
+            return If(condition.ToString(), thenFn);
+        }
     }
 
     public class IfElseBuilder
@@ -1138,6 +1206,54 @@ namespace NativeBPM.Client.Builder
             }
 
             return branch;
+        }
+    }
+
+    public class Expression
+    {
+        private readonly string expr;
+        public Expression(string expr)
+        {
+            this.expr = expr;
+        }
+        public override string ToString()
+        {
+            return $"${{{expr}}}";
+        }
+    }
+
+    public class Variable
+    {
+        private readonly string name;
+        public Variable(string name)
+        {
+            this.name = name;
+        }
+        public Expression Eq(object val)
+        {
+            string valStr = val is bool b ? (b ? "true" : "false") : val.ToString() ?? "";
+            return new Expression($"{name} == {valStr}");
+        }
+        public Expression Ne(object val)
+        {
+            string valStr = val is bool b ? (b ? "true" : "false") : val.ToString() ?? "";
+            return new Expression($"{name} != {valStr}");
+        }
+        public Expression Gt(object val)
+        {
+            return new Expression($"{name} > {val}");
+        }
+        public Expression Gte(object val)
+        {
+            return new Expression($"{name} >= {val}");
+        }
+        public Expression Lt(object val)
+        {
+            return new Expression($"{name} < {val}");
+        }
+        public Expression Lte(object val)
+        {
+            return new Expression($"{name} <= {val}");
         }
     }
 }

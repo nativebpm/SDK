@@ -8,6 +8,10 @@ from .builder import (
   ParallelGatewayBuilder,
   EventBasedGatewayBuilder,
   CallActivityBuilder,
+  Variable,
+  Expression,
+  V,
+  v,
 )
 from .client import Client
 from nativebpm_client.models import (
@@ -30,6 +34,10 @@ __all__ = [
   "ParallelGatewayBuilder",
   "EventBasedGatewayBuilder",
   "CallActivityBuilder",
+  "Variable",
+  "Expression",
+  "V",
+  "v",
   "Client",
   "ProcessDefinition",
   "ProcessInstance",

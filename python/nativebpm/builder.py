@@ -465,7 +465,7 @@ class Branch:
         self._has_ended = True
         return self
 
-    def if_branch(self, condition: str, then_fn=None):
+    def if_branch(self, condition: Any, then_fn=None):
         if then_fn is None:
             def decorator(func):
                 return self.if_branch(condition, func)
@@ -475,7 +475,7 @@ class Branch:
         self._workflow.exclusive_gateway(gw_id, "Decision Gateway")
         self._connect_node(gw_id)
 
-        then_branch = Branch(self._workflow, gw_id, gw_id, True, condition)
+        then_branch = Branch(self._workflow, gw_id, gw_id, True, str(condition))
         then_fn(then_branch)
 
         if not then_branch._has_ended and then_branch._current_node_id != gw_id:
@@ -572,6 +572,14 @@ class Workflow:
         self._compiled_module = compiled_module
 
     def _connect_node(self, node_id: str):
+        node = self.find_node(node_id)
+        has_start = any(n.get('type') == 'startEvent' for n in self._nodes)
+        if not has_start and node and node.get('type') != 'startEvent':
+            self.start_event('start')
+            self.sequence_flow('start', node_id)
+            self._current_node_id = node_id
+            return
+
         if self._pending_merges:
             for source_id in self._pending_merges:
                 self.sequence_flow(source_id, node_id)
@@ -580,7 +588,7 @@ class Workflow:
             self.sequence_flow(self._current_node_id, node_id)
         self._current_node_id = node_id
 
-    def start(self, node_id: str) -> 'Workflow':
+    def start(self, node_id: str = "start") -> 'Workflow':
         self.start_event(node_id)
         self._connect_node(node_id)
         return self
@@ -612,7 +620,7 @@ class Workflow:
         self._connect_node(node_id)
         return self
 
-    def if_branch(self, condition: str, then_fn=None):
+    def if_branch(self, condition: Any, then_fn=None):
         if then_fn is None:
             def decorator(func):
                 return self.if_branch(condition, func)
@@ -622,7 +630,7 @@ class Workflow:
         self.exclusive_gateway(gw_id, "Decision Gateway")
         self._connect_node(gw_id)
 
-        then_branch = Branch(self, gw_id, gw_id, True, condition)
+        then_branch = Branch(self, gw_id, gw_id, True, str(condition))
         then_fn(then_branch)
 
         if not then_branch._has_ended and then_branch._current_node_id != gw_id:
@@ -630,7 +638,7 @@ class Workflow:
 
         return IfElseBuilder(self, gw_id)
 
-    def start_event(self, node_id: str) -> StartEventBuilder:
+    def start_event(self, node_id: str = "start") -> StartEventBuilder:
         self._nodes.append({'type': 'startEvent', 'id': node_id, 'name': 'Start'})
         return StartEventBuilder(self, node_id)
 
@@ -685,11 +693,29 @@ class Workflow:
         return None
 
     def to_ast(self) -> Dict[str, Any]:
+        nodes = list(self._nodes)
+        flows = list(self._flows)
+
+        source_ids = {f['source'] for f in self._flows if 'source' in f}
+
+        for node in self._nodes:
+            if node.get('type') in ('endEvent', 'startEvent'):
+                continue
+            if node.get('id') not in source_ids:
+                end_id = f"end_{node['id']}"
+                nodes.append({'type': 'endEvent', 'id': end_id, 'name': 'Process Finished'})
+                flows.append({
+                    'id': f"flow-{node['id']}-{end_id}",
+                    'source': node['id'],
+                    'target': end_id,
+                    'condition': ''
+                })
+
         return {
             'id': self._id,
             'name': self._name,
-            'nodes': self._nodes,
-            'flows': self._flows
+            'nodes': nodes,
+            'flows': flows
         }
 
     def build_xml(self, wasm_input: Optional[Any] = None) -> str:
@@ -750,3 +776,45 @@ class Workflow:
             raise ValueError(f"Wasm workflow compilation failed: {result['error']}")
 
         return result["xml"]
+
+
+class Expression:
+    def __init__(self, expr: str):
+        self.expr = expr
+
+    def __str__(self) -> str:
+        return f"${{{self.expr}}}"
+
+
+class Variable:
+    def __init__(self, name: str):
+        self.name = name
+
+    def eq(self, value: Any) -> Expression:
+        val_str = "true" if value is True else ("false" if value is False else str(value))
+        return Expression(f"{self.name} == {val_str}")
+
+    def ne(self, value: Any) -> Expression:
+        val_str = "true" if value is True else ("false" if value is False else str(value))
+        return Expression(f"{self.name} != {val_str}")
+
+    def gt(self, value: Any) -> Expression:
+        return Expression(f"{self.name} > {value}")
+
+    def gte(self, value: Any) -> Expression:
+        return Expression(f"{self.name} >= {value}")
+
+    def lt(self, value: Any) -> Expression:
+        return Expression(f"{self.name} < {value}")
+
+    def lte(self, value: Any) -> Expression:
+        return Expression(f"{self.name} <= {value}")
+
+
+def V(name: str) -> Variable:
+    return Variable(name)
+
+
+def v(name: str) -> Variable:
+    return Variable(name)
+

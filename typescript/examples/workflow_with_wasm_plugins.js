@@ -1,11 +1,11 @@
-import { Workflow, Client } from '../dist/index.js';
+import { Workflow, Client, v } from '../dist/index.js';
 
 export async function run() {
   console.log("=== NativeBPM TS SDK: Workflow with Guest WASM Plugins ===");
 
   // 1. Build workflow as code using closure DSL
   const workflow = new Workflow('wasm-demo', 'Workflow with Guest WASM Plugins', './src/core.wasm');
-  workflow.start('start')
+  workflow
     .service('calculate', 'Calculate Totals', 'payment_topic', st => {
       st.wasm('./calculate_total.wasm');
     })
@@ -15,13 +15,13 @@ export async function run() {
         .prompt('Analyze transaction for fraud: ${orderAmount}')
         .resultVar('isFraudulent');
     })
-    .if('${isFraudulent == true}', b => {
+    .if(v('isFraudulent').eq(true), b => {
       b.user('userTask', 'Manual Fraud Approval', ut => {
         ut.assignee('security_officer');
-      }).end('end_fraud', 'Process Finished');
+      });
     })
     .else(b => {
-      b.end('end_ok', 'Process Finished');
+      // empty default else
     });
   
   // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine

@@ -1,5 +1,4 @@
-import os
-from nativebpm import Client, Workflow
+from nativebpm import Client, Workflow, v
 
 def main():
     print("=== NativeBPM Python SDK: Workflow with Guest WASM Plugins ===")
@@ -8,7 +7,7 @@ def main():
     workflow = Workflow('wasm-demo', 'Workflow with Guest WASM Plugins', './nativebpm/core.wasm')
     
     # Chain starting from the start event
-    workflow.start('start')\
+    workflow\
         .service('calculate', 'Calculate Totals', 'payment_topic', lambda st: (
             st.wasm('./calculate_total.wasm')
         ))\
@@ -18,13 +17,13 @@ def main():
                .prompt('Analyze transaction for fraud: ${orderAmount}')
                .result_var('isFraudulent')
         ))\
-        .if_branch('${isFraudulent == True}', lambda b: (
+        .if_branch(v('isFraudulent').eq(True), lambda b: (
             b.user('userTask', 'Manual Fraud Approval', lambda ut: (
                 ut.assignee('security_officer')
-            )).end('end_fraud', 'Process Finished')
+            ))
         ))\
         .else_branch(lambda b: (
-            b.end('end_ok', 'Process Finished')
+            None
         ))
     
     # Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine

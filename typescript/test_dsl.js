@@ -1,4 +1,4 @@
-import { Workflow } from './dist/index.js';
+import { Workflow, v } from './dist/index.js';
 import * as path from 'node:path';
 import * as assert from 'node:assert';
 import { fileURLToPath } from 'node:url';
@@ -11,17 +11,15 @@ async function testDSL() {
   console.log("Running TypeScript closure block DSL tests...");
 
   const workflow = new Workflow('ts-closure-process', 'TS Closure Process');
-  workflow.start('start')
+  workflow.start()
     .user('task1', 'User Task')
-    .if('${approved === true}', (b) => {
+    .if(v('approved').eq(true), (b) => {
       b.service('publish', 'Publish Page', 'publish-topic', (st) => {
         st.wasm('./publish.wasm');
-      })
-      .end('end_approved', 'Approved End');
+      });
     })
     .else((b) => {
-      b.service('reject', 'Notify Reject', 'reject-topic')
-       .end('end_rejected', 'Rejected End');
+      b.service('reject', 'Notify Reject', 'reject-topic');
     });
 
   const xml = await workflow.buildXML(wasmPath);

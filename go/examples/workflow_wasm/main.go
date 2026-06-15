@@ -16,16 +16,14 @@ func main() {
 	workflow := nativebpm.NewWorkflow("native-demo", "Workflow as Code")
 
 	// Chain starting from the start event
-	workflow.Start("start").
-		If("${isUrgent == true}", func(b *nativebpm.Branch) {
+	workflow.
+		If(nativebpm.V("isUrgent").Eq(true), func(b *nativebpm.Branch) {
 			b.User("reviewOrder", "Review Order Details", func(ut *nativebpm.UserTaskBuilder) {
 				ut.Assignee("sales_representative")
-			}).
-				End("end_review", "Process Finished")
+			})
 		}).
 		Else(func(b *nativebpm.Branch) {
-			b.Service("notifyCustomer", "Send Confirmation Email", "email_topic").
-				End("end_default", "Process Finished")
+			b.Service("notifyCustomer", "Send Confirmation Email", "email_topic")
 		})
 
 	// Compile the workflow AST to standard BPMN 2.0 XML using the default embedded Go engine

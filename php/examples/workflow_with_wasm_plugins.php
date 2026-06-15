@@ -10,9 +10,8 @@ echo "=== NativeBPM PHP SDK: Workflow with Guest WASM Plugins ===\n";
 echo "🔨 Building workflow dynamically using Fluent API...\n";
 $workflow = new Workflow("wasm-demo", "Workflow with Guest WASM Plugins");
 
-// Chain starting from start event
-$workflow->start("start")
-    ->service("calculate", "Calculate Totals", "payment_topic", function($st) {
+// Chain starting from first service task (auto-start will prepend start event)
+$workflow->service("calculate", "Calculate Totals", "payment_topic", function($st) {
         $st->wasm("./calculate_total.wasm");
     })
     ->ai("aiCheck", "AI Fraud Guard", function($ait) {
@@ -21,13 +20,13 @@ $workflow->start("start")
             ->prompt('Analyze transaction for fraud: ${orderAmount}')
             ->resultVar("isFraudulent");
     })
-    ->if('${isFraudulent == true}', function($b) {
+    ->if(Workflow::V('isFraudulent')->eq(true), function($b) {
         $b->user("userTask", "Manual Fraud Approval", function($ut) {
             $ut->assignee("security_officer");
-        })->end("end_fraud", "Process Finished");
+        });
     })
     ->else(function($b) {
-        $b->end("end_ok", "Process Finished");
+        // empty branch (will auto-route to end event)
     });
 
 $bpmnXml = $workflow->buildXML();

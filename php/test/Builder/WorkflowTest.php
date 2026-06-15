@@ -141,17 +141,14 @@ class WorkflowTest extends TestCase
         echo "Running PHP SDK closure DSL test...\n";
         $workflow = new Workflow("test-process-dsl", "Test Process DSL");
 
-        $workflow->start("start")
-            ->user("task1", "User Task 1", function($ut) {
+        $workflow->user("task1", "User Task 1", function($ut) {
                 $ut->assignee("admin");
             })
-            ->if('${is_urgent == true}', function($b) {
-                $b->service("task2", "Urgent Task", "urgent_topic")
-                    ->end("end_urgent", "Urgent Finished");
+            ->if(Workflow::v('is_urgent')->eq(true), function($b) {
+                $b->service("task2", "Urgent Task", "urgent_topic");
             })
             ->else(function($b) {
-                $b->service("task3", "Normal Task", "normal_topic")
-                    ->end("end_normal", "Normal Finished");
+                $b->service("task3", "Normal Task", "normal_topic");
             });
 
         $xml = $workflow->buildXML();
@@ -162,8 +159,6 @@ class WorkflowTest extends TestCase
         self::assertStringContainsString("assignee=\"admin\"", $xml);
         self::assertStringContainsString("<serviceTask id=\"task2\"", $xml);
         self::assertStringContainsString("<serviceTask id=\"task3\"", $xml);
-        self::assertStringContainsString("<endEvent id=\"end_urgent\"", $xml);
-        self::assertStringContainsString("<endEvent id=\"end_normal\"", $xml);
         echo "✓ PHP SDK closure DSL assertions passed successfully!\n";
     }
 }

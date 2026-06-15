@@ -1,6 +1,7 @@
 package com.nativebpm.example;
 
 import com.nativebpm.client.builder.Workflow;
+import static com.nativebpm.client.builder.Workflow.V;
 
 public class WorkflowWasmExample {
     public static String buildWorkflow() throws Exception {
@@ -11,15 +12,14 @@ public class WorkflowWasmExample {
         Workflow workflow = new Workflow("native-demo", "Workflow as Code");
 
         // Chain starting from the start event
-        workflow.start("start")
-                .ifBranch("${isUrgent == true}", b -> {
+        workflow
+                .ifBranch(V("isUrgent").eq(true), b -> {
                     b.user("reviewOrder", "Review Order Details", ut -> {
                         ut.assignee("sales_representative");
-                    }).end("end_review", "Process Finished");
+                    });
                 })
                 .elseBranch(b -> {
-                    b.service("notifyCustomer", "Send Confirmation Email", "email_topic")
-                     .end("end_default", "Process Finished");
+                    b.service("notifyCustomer", "Send Confirmation Email", "email_topic");
                 });
 
         String bpmnXml = workflow.buildXML();

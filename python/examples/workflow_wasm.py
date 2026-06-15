@@ -1,5 +1,5 @@
 import os
-from nativebpm import Client, Workflow
+from nativebpm import Client, Workflow, v
 
 def main():
     print("=== NativeBPM Python SDK: Workflow as Code ===")
@@ -8,13 +8,12 @@ def main():
     workflow = Workflow('native-demo', 'Workflow as Code')
     
     # Chain starting from the start event
-    workflow.start('start').if_branch('${isUrgent == True}', lambda b: (
+    workflow.if_branch(v('isUrgent').eq(True), lambda b: (
         b.user('reviewOrder', 'Review Order Details', lambda ut: (
             ut.assignee('sales_representative')
-        )).end('end_review', 'Process Finished')
+        ))
     )).else_branch(lambda b: (
         b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic')
-         .end('end_default', 'Process Finished')
     ))
         
     # Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine

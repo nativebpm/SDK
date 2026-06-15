@@ -15,7 +15,11 @@ export {
   CallActivityBuilder,
   Branch,
   IfElseBuilder,
-  IfElseBranchBuilder
+  IfElseBranchBuilder,
+  Variable,
+  Expression,
+  V,
+  v
 } from './builder.js';
 
 export * from './client.js';

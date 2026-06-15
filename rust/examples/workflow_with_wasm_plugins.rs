@@ -1,4 +1,4 @@
-use nativebpm_client::builder::Workflow;
+use nativebpm_client::{Workflow, v};
 use nativebpm_client::apis::{configuration, default_api};
 
 #[tokio::main]
@@ -9,7 +9,7 @@ async fn main() {
     let mut workflow = Workflow::new("wasm-demo", "Workflow with Guest WASM Plugins");
 
     // Chain starting from the start event
-    workflow.start("start")
+    workflow
         .service("calculate", "Calculate Totals", "payment_topic", |st| {
             st.wasm("./calculate_total.wasm")
         })
@@ -19,14 +19,13 @@ async fn main() {
                 .prompt("Analyze transaction for fraud: ${orderAmount}")
                 .result_var("isFraudulent")
         })
-        .if_branch("${isFraudulent == true}", |b| {
+        .if_branch(v("isFraudulent").eq(true), |b| {
             b.user("userTask", "Manual Fraud Approval", |ut| {
                 ut.assignee("security_officer")
-            })
-            .end("end_fraud", "Process Finished");
+            });
         })
-        .else_branch(|b| {
-            b.end("end_ok", "Process Finished");
+        .else_branch(|_b| {
+            // empty default else
         });
 
     // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine

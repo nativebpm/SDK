@@ -1,19 +1,18 @@
-import { Workflow, Client } from '../dist/index.js';
+import { Workflow, Client, v } from '../dist/index.js';
 
 export async function run() {
   console.log("=== NativeBPM TS SDK: Workflow as Code ===");
 
   // 1. Build workflow as code (without WASM tasks) using closure DSL
   const workflow = new Workflow('native-demo', 'Workflow as Code');
-  workflow.start('start')
-    .if('${isUrgent == true}', b => {
+  workflow
+    .if(v('isUrgent').eq(true), b => {
       b.user('reviewOrder', 'Review Order Details', ut => {
         ut.assignee('sales_representative');
-      }).end('end_review', 'Process Finished');
+      });
     })
     .else(b => {
-      b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic')
-       .end('end_default', 'Process Finished');
+      b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic');
     });
   
   // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine

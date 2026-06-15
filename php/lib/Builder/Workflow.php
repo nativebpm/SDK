@@ -219,11 +219,43 @@ class Workflow {
     }
 
     public function toAST(): array {
+        $nodesCopy = $this->nodes;
+        $flowsCopy = $this->flows;
+
+        $sourceIds = [];
+        foreach ($this->flows as $f) {
+            if (isset($f['source'])) {
+                $sourceIds[$f['source']] = true;
+            }
+        }
+
+        foreach ($this->nodes as $node) {
+            $nodeType = $node['type'] ?? '';
+            $nodeId = $node['id'] ?? '';
+            if ($nodeType === 'endEvent' || $nodeType === 'startEvent') {
+                continue;
+            }
+            if (!isset($sourceIds[$nodeId])) {
+                $endId = "end_" . $nodeId;
+                $nodesCopy[] = [
+                    'type' => 'endEvent',
+                    'id' => $endId,
+                    'name' => 'Process Finished'
+                ];
+                $flowsCopy[] = [
+                    'id' => "flow-" . $nodeId . "-" . $endId,
+                    'source' => $nodeId,
+                    'target' => $endId,
+                    'condition' => ''
+                ];
+            }
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'nodes' => $this->nodes,
-            'flows' => $this->flows
+            'nodes' => $nodesCopy,
+            'flows' => $flowsCopy
         ];
     }
 
@@ -310,6 +342,21 @@ class Workflow {
     }
 
     private function connectNode(string $nodeId): void {
+        $node = $this->findNode($nodeId);
+        $hasStart = false;
+        foreach ($this->nodes as $n) {
+            if (($n['type'] ?? '') === 'startEvent') {
+                $hasStart = true;
+                break;
+            }
+        }
+        if (!$hasStart && $node !== null && ($node['type'] ?? '') !== 'startEvent') {
+            $this->startEvent('start');
+            $this->sequenceFlow('start', $nodeId);
+            $this->currentNodeID = $nodeId;
+            return;
+        }
+
         if (count($this->pendingMerges) > 0) {
             foreach ($this->pendingMerges as $sourceId) {
                 $this->sequenceFlow($sourceId, $nodeId);
@@ -321,7 +368,7 @@ class Workflow {
         $this->currentNodeID = $nodeId;
     }
 
-    public function start(string $id): Workflow {
+    public function start(string $id = 'start'): Workflow {
         $this->startEvent($id);
         $this->connectNode($id);
         return $this;
@@ -361,14 +408,12 @@ class Workflow {
         return $this;
     }
 
-    public function if(string $condition, callable $thenFn): IfElseBuilder {
+    public function if($condition, callable $thenFn): IfElseBuilder {
         $gwID = "gw_" . $this->currentNodeID . "_decision";
         $this->exclusiveGateway($gwID, "Decision Gateway");
-        if ($this->currentNodeID !== '') {
-            $this->sequenceFlow($this->currentNodeID, $gwID);
-        }
+        $this->connectNode($gwID);
 
-        $thenBranch = new Branch($this, $gwID, $gwID, true, $condition);
+        $thenBranch = new Branch($this, $gwID, $gwID, true, (string)$condition);
         $thenFn($thenBranch);
 
         if (!$thenBranch->hasEnded && $thenBranch->currentNodeID !== $gwID) {
@@ -376,6 +421,18 @@ class Workflow {
         }
 
         return new IfElseBuilder($this, $gwID);
+    }
+
+    public static function V(string $name): Variable {
+        return new Variable($name);
+    }
+
+    public static function v(string $name): Variable {
+        return new Variable($name);
+    }
+
+    public static function var(string $name): Variable {
+        return new Variable($name);
     }
 }
 
@@ -1009,12 +1066,12 @@ class Branch {
         return $this;
     }
 
-    public function if(string $condition, callable $thenFn): IfElseBranchBuilder {
+    public function if($condition, callable $thenFn): IfElseBranchBuilder {
         $gwID = "gw_" . $this->currentNodeID . "_decision";
         $this->workflow->exclusiveGateway($gwID, "Decision Gateway");
         $this->connectNode($gwID);
 
-        $thenBranch = new Branch($this->workflow, $gwID, $gwID, true, $condition);
+        $thenBranch = new Branch($this->workflow, $gwID, $gwID, true, (string)$condition);
         $thenFn($thenBranch);
 
         if (!$thenBranch->hasEnded && $thenBranch->currentNodeID !== $gwID) {
@@ -1064,5 +1121,42 @@ class IfElseBranchBuilder {
         }
 
         return $this->branch;
+    }
+}
+
+class Expression {
+    private string $expr;
+    public function __construct(string $expr) {
+        $this->expr = $expr;
+    }
+    public function __toString(): string {
+        return "\${" . $this->expr . "}";
+    }
+}
+
+class Variable {
+    private string $name;
+    public function __construct(string $name) {
+        $this->name = $name;
+    }
+    public function eq($val): Expression {
+        $valStr = is_bool($val) ? ($val ? 'true' : 'false') : (string)$val;
+        return new Expression("{$this->name} == {$valStr}");
+    }
+    public function ne($val): Expression {
+        $valStr = is_bool($val) ? ($val ? 'true' : 'false') : (string)$val;
+        return new Expression("{$this->name} != {$valStr}");
+    }
+    public function gt($val): Expression {
+        return new Expression("{$this->name} > {$val}");
+    }
+    public function gte($val): Expression {
+        return new Expression("{$this->name} >= {$val}");
+    }
+    public function lt($val): Expression {
+        return new Expression("{$this->name} < {$val}");
+    }
+    public function lte($val): Expression {
+        return new Expression("{$this->name} <= {$val}");
     }
 }

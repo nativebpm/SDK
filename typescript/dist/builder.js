@@ -506,7 +506,8 @@ export class Branch {
         const gwID = `gw_${this.currentNodeID}_decision`;
         this.workflow.exclusiveGateway(gwID, 'Decision Gateway');
         this.connectNode(gwID);
-        const thenBranch = new Branch(this.workflow, gwID, gwID, true, condition);
+        const condStr = typeof condition === 'string' ? condition : condition.toString();
+        const thenBranch = new Branch(this.workflow, gwID, gwID, true, condStr);
         thenFn(thenBranch);
         if (!thenBranch.hasEnded && thenBranch.currentNodeID !== gwID) {
             this.workflow.pendingMerges.push(thenBranch.currentNodeID);
@@ -583,6 +584,14 @@ export class Workflow {
         this.compiledModulePromise = promise;
     }
     connectNode(id) {
+        const node = this.findNode(id);
+        const hasStart = this.nodes.some(n => n.type === 'startEvent');
+        if (!hasStart && node && node.type !== 'startEvent') {
+            this.startEvent('start');
+            this.sequenceFlow('start', id);
+            this.currentNodeID = id;
+            return;
+        }
         if (this.pendingMerges.length > 0) {
             for (const sourceID of this.pendingMerges) {
                 this.sequenceFlow(sourceID, id);
@@ -594,7 +603,7 @@ export class Workflow {
         }
         this.currentNodeID = id;
     }
-    start(id) {
+    start(id = 'start') {
         this.startEvent(id);
         this.connectNode(id);
         return this;
@@ -629,17 +638,16 @@ export class Workflow {
     if(condition, thenFn) {
         const gwID = `gw_${this.currentNodeID}_decision`;
         this.exclusiveGateway(gwID, 'Decision Gateway');
-        if (this.currentNodeID) {
-            this.sequenceFlow(this.currentNodeID, gwID);
-        }
-        const thenBranch = new Branch(this, gwID, gwID, true, condition);
+        this.connectNode(gwID);
+        const condStr = typeof condition === 'string' ? condition : condition.toString();
+        const thenBranch = new Branch(this, gwID, gwID, true, condStr);
         thenFn(thenBranch);
         if (!thenBranch.hasEnded && thenBranch.currentNodeID !== gwID) {
             this.pendingMerges.push(thenBranch.currentNodeID);
         }
         return new IfElseBuilder(this, gwID);
     }
-    startEvent(id) {
+    startEvent(id = 'start') {
         const node = { type: 'startEvent', id, name: 'Start' };
         this.nodes.push(node);
         return new StartEventBuilder(this, id);
@@ -701,11 +709,24 @@ export class Workflow {
         return this.nodes.find(n => n.id === id);
     }
     toAST() {
+        const nodes = [...this.nodes];
+        const flows = [...this.flows];
+        const sourceIDs = new Set(flows.map(f => f.source));
+        for (const node of this.nodes) {
+            if (node.type === 'endEvent' || node.type === 'startEvent') {
+                continue;
+            }
+            if (!sourceIDs.has(node.id)) {
+                const endID = `end_${node.id}`;
+                nodes.push({ type: 'endEvent', id: endID, name: 'Process Finished' });
+                flows.push({ id: `flow-${node.id}-${endID}`, source: node.id, target: endID, condition: '' });
+            }
+        }
         return {
             id: this.id,
             name: this.name,
-            nodes: this.nodes,
-            flows: this.flows
+            nodes,
+            flows
         };
     }
     async buildXML(wasmInput) {
@@ -753,4 +774,45 @@ export class Workflow {
         }
         return result.xml;
     }
+}
+export class Expression {
+    expr;
+    constructor(expr) {
+        this.expr = expr;
+    }
+    toString() {
+        return `\${${this.expr}}`;
+    }
+}
+export class Variable {
+    name;
+    constructor(name) {
+        this.name = name;
+    }
+    eq(value) {
+        const valStr = typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value);
+        return new Expression(`${this.name} == ${valStr}`);
+    }
+    ne(value) {
+        const valStr = typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value);
+        return new Expression(`${this.name} != ${valStr}`);
+    }
+    gt(value) {
+        return new Expression(`${this.name} > ${value}`);
+    }
+    gte(value) {
+        return new Expression(`${this.name} >= ${value}`);
+    }
+    lt(value) {
+        return new Expression(`${this.name} < ${value}`);
+    }
+    lte(value) {
+        return new Expression(`${this.name} <= ${value}`);
+    }
+}
+export function V(name) {
+    return new Variable(name);
+}
+export function v(name) {
+    return new Variable(name);
 }

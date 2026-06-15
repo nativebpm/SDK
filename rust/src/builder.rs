@@ -52,7 +52,7 @@ pub fn decompress_wasm_if_needed(data: &[u8]) -> Result<Vec<u8>, String> {
     Err("unsupported or invalid WebAssembly binary format".to_string())
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct Workflow {
     pub id: String,
     pub name: String,
@@ -62,6 +62,54 @@ pub struct Workflow {
     pub current_node_id: String,
     #[serde(skip)]
     pub pending_merges: Vec<String>,
+}
+
+impl serde::Serialize for Workflow {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+
+        let mut nodes = self.nodes.clone();
+        let mut flows = self.flows.clone();
+
+        let mut source_ids = std::collections::HashSet::new();
+        for f in &self.flows {
+            if let Some(src) = f.get("source").and_then(|v| v.as_str()) {
+                source_ids.insert(src.to_string());
+            }
+        }
+
+        for node in &self.nodes {
+            let node_type = node.get("type").and_then(|v| v.as_str()).unwrap_or("");
+            let node_id = node.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            if node_type == "endEvent" || node_type == "startEvent" {
+                continue;
+            }
+            if !source_ids.contains(node_id) {
+                let end_id = format!("end_{}", node_id);
+                nodes.push(serde_json::json!({
+                    "type": "endEvent",
+                    "id": end_id,
+                    "name": "Process Finished"
+                }));
+                flows.push(serde_json::json!({
+                    "id": format!("flow-{}-{}", node_id, end_id),
+                    "source": node_id,
+                    "target": end_id,
+                    "condition": ""
+                }));
+            }
+        }
+
+        let mut state = serializer.serialize_struct("Workflow", 4)?;
+        state.serialize_field("id", &self.id)?;
+        state.serialize_field("name", &self.name)?;
+        state.serialize_field("nodes", &nodes)?;
+        state.serialize_field("flows", &flows)?;
+        state.end()
+    }
 }
 
 impl Workflow {
@@ -786,6 +834,23 @@ fn format_dmn_value(val: serde_json::Value) -> String {
 // Closure-based DSL extensions for Workflow
 impl Workflow {
     fn connect_node(&mut self, node_id: &str) {
+        let has_start = self.nodes.iter().any(|n| {
+            n.get("type").and_then(|v| v.as_str()) == Some("startEvent")
+        });
+        let mut node_type = "";
+        for n in &self.nodes {
+            if n.get("id").and_then(|v| v.as_str()) == Some(node_id) {
+                node_type = n.get("type").and_then(|v| v.as_str()).unwrap_or("");
+                break;
+            }
+        }
+        if !has_start && node_type != "startEvent" && !node_type.is_empty() {
+            self.start_event("start");
+            self.sequence_flow("start", node_id);
+            self.current_node_id = node_id.to_string();
+            return;
+        }
+
         if !self.pending_merges.is_empty() {
             let merges = self.pending_merges.clone();
             for source_id in &merges {
@@ -799,9 +864,9 @@ impl Workflow {
         self.current_node_id = node_id.to_string();
     }
 
-    pub fn start(&mut self, node_id: &str) -> &mut Self {
-        self.start_event(node_id);
-        self.connect_node(node_id);
+    pub fn start(&mut self) -> &mut Self {
+        self.start_event("start");
+        self.connect_node("start");
         self
     }
 
@@ -842,8 +907,9 @@ impl Workflow {
         self
     }
 
-    pub fn if_branch<F>(&mut self, condition: &str, then_fn: F) -> IfElseBuilder<'_>
+    pub fn if_branch<C, F>(&mut self, condition: C, then_fn: F) -> IfElseBuilder<'_>
     where
+        C: ToCondition,
         F: FnOnce(&mut Branch<'_>)
     {
         let gw_id = format!("gw_{}_decision", self.current_node_id);
@@ -855,7 +921,7 @@ impl Workflow {
             gateway_id: gw_id.clone(),
             current_node_id: gw_id.clone(),
             is_conditional: true,
-            condition: Some(condition.to_string()),
+            condition: Some(condition.to_condition()),
             has_ended: false,
         };
         then_fn(&mut then_b);
@@ -949,8 +1015,9 @@ impl<'a> Branch<'a> {
         self
     }
 
-    pub fn if_branch<F>(&mut self, condition: &str, then_fn: F) -> IfElseBranchBuilder<'_, 'a>
+    pub fn if_branch<C, F>(&mut self, condition: C, then_fn: F) -> IfElseBranchBuilder<'_, 'a>
     where
+        C: ToCondition,
         F: FnOnce(&mut Branch<'_>)
     {
         let gw_id = format!("gw_{}_decision", self.current_node_id);
@@ -962,7 +1029,7 @@ impl<'a> Branch<'a> {
             gateway_id: gw_id.clone(),
             current_node_id: gw_id.clone(),
             is_conditional: true,
-            condition: Some(condition.to_string()),
+            condition: Some(condition.to_condition()),
             has_ended: false,
         };
         then_fn(&mut then_b);
@@ -1103,6 +1170,73 @@ mod tests {
         let duration = start.elapsed();
         println!("Compiled {} workflows in {:?}", iterations, duration);
         println!("Average compilation time per workflow: {:?}", duration / iterations);
+    }
+}
+
+pub trait ToCondition {
+    fn to_condition(&self) -> String;
+}
+
+impl ToCondition for &str {
+    fn to_condition(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl ToCondition for String {
+    fn to_condition(&self) -> String {
+        self.clone()
+    }
+}
+
+impl ToCondition for Expression {
+    fn to_condition(&self) -> String {
+        self.to_string()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Expression {
+    pub expr: String,
+}
+
+impl std::fmt::Display for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "${{{}}}", self.expr)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Variable {
+    pub name: String,
+}
+
+pub fn v(name: &str) -> Variable {
+    Variable { name: name.to_string() }
+}
+
+pub fn var(name: &str) -> Variable {
+    Variable { name: name.to_string() }
+}
+
+impl Variable {
+    pub fn eq<T: std::fmt::Display>(&self, val: T) -> Expression {
+        Expression { expr: format!("{} == {}", self.name, val) }
+    }
+    pub fn ne<T: std::fmt::Display>(&self, val: T) -> Expression {
+        Expression { expr: format!("{} != {}", self.name, val) }
+    }
+    pub fn gt<T: std::fmt::Display>(&self, val: T) -> Expression {
+        Expression { expr: format!("{} > {}", self.name, val) }
+    }
+    pub fn gte<T: std::fmt::Display>(&self, val: T) -> Expression {
+        Expression { expr: format!("{} >= {}", self.name, val) }
+    }
+    pub fn lt<T: std::fmt::Display>(&self, val: T) -> Expression {
+        Expression { expr: format!("{} < {}", self.name, val) }
+    }
+    pub fn lte<T: std::fmt::Display>(&self, val: T) -> Expression {
+        Expression { expr: format!("{} <= {}", self.name, val) }
     }
 }
 

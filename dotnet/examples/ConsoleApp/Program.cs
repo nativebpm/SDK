@@ -10,6 +10,8 @@ using NativeBPM.Client.Api;
 using NativeBPM.Client.Client;
 using NativeBPM.Client.Extensions;
 using NativeBPM.Client.Model;
+using NativeBPM.Client.Builder;
+using static NativeBPM.Client.Builder.Workflow;
 
 namespace ConsoleApp
 {
@@ -87,15 +89,14 @@ namespace ConsoleApp
             Console.WriteLine("🔨 Building workflow dynamically using Fluent API...");
             using var workflow = new Workflow("native-demo", "Workflow as Code");
 
-            workflow.Start("start")
-                .If("${isUrgent == true}", b => {
+            // Chain starting with dynamic if statement (auto-start will prepend start event)
+            workflow.If(V("isUrgent").Eq(true), b => {
                     b.User("reviewOrder", "Review Order Details", ut => {
                         ut.Assignee("sales_representative");
-                    }).End("end_review", "Process Finished");
+                    });
                 })
                 .Else(b => {
-                    b.Service("notifyCustomer", "Send Confirmation Email", "email_topic")
-                     .End("end_default", "Process Finished");
+                    b.Service("notifyCustomer", "Send Confirmation Email", "email_topic");
                 });
 
             string bpmnXml = workflow.BuildXml();
@@ -156,8 +157,8 @@ namespace ConsoleApp
             Console.WriteLine("🔨 Building workflow dynamically using Fluent API...");
             using var workflow = new Workflow("wasm-demo", "Workflow with Guest WASM Plugins");
 
-            workflow.Start("start")
-                .Service("calculate", "Calculate Totals", "payment_topic", st => {
+            // Chain starting from first service task (auto-start will prepend start event)
+            workflow.Service("calculate", "Calculate Totals", "payment_topic", st => {
                     st.Wasm("./calculate_total.wasm");
                 })
                 .Ai("aiCheck", "AI Fraud Guard", ait => {
@@ -166,13 +167,13 @@ namespace ConsoleApp
                        .Prompt("Analyze transaction for fraud: ${orderAmount}")
                        .ResultVar("isFraudulent");
                 })
-                .If("${isFraudulent == true}", b => {
+                .If(V("isFraudulent").Eq(true), b => {
                     b.User("userTask", "Manual Fraud Approval", ut => {
                         ut.Assignee("security_officer");
-                    }).End("end_fraud", "Process Finished");
+                    });
                 })
                 .Else(b => {
-                    b.End("end_ok", "Process Finished");
+                    // empty branch (will auto-route to end event)
                 });
 
             string bpmnXml = workflow.BuildXml();
@@ -224,5 +225,6 @@ namespace ConsoleApp
                     File.Delete(tempFilePath);
                 }
             }
+        }
     }
 }

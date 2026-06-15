@@ -213,17 +213,15 @@ func TestBlockClosureDSL(t *testing.T) {
 	ctx := context.Background()
 	wf := NewWorkflow("closure-process", "Closure Process")
 	
-	wf.Start("start").
+	wf.
 		User("task1", "User Approval").
-		If("${approved == true}", func(b *Branch) {
+		If(V("approved").Eq(true), func(b *Branch) {
 			b.Service("publish", "Publish Page", "publish-topic", func(st *ServiceTaskBuilder) {
 				st.Wasm("./publish.wasm")
-			}).
-			End("end_approved", "Approved End")
+			})
 		}).
 		Else(func(b *Branch) {
-			b.Service("reject", "Notify Reject", "reject-topic").
-				End("end_rejected", "Rejected End")
+			b.Service("reject", "Notify Reject", "reject-topic")
 		})
 
 	xml, err := wf.BuildXML(ctx)

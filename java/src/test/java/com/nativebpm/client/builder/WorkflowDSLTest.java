@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.function.Consumer;
+import static com.nativebpm.client.builder.Workflow.V;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -32,16 +32,14 @@ public class WorkflowDSLTest {
         byte[] rawBytes = getWasmBytes();
         Workflow workflow = new Workflow("closure-process", "Closure Process", rawBytes);
 
-        workflow.start("start")
-                .user("task1", "User Approval")
-                .ifBranch("approved == true", b -> {
+        workflow.user("task1", "User Approval")
+                .ifBranch(V("approved").eq(true), b -> {
                     b.service("publish", "Publish Page", "publish-topic", st -> {
                         st.wasm("./publish.wasm");
-                    }).end("end_approved", "Approved End");
+                    });
                 })
                 .elseBranch(b -> {
-                    b.service("reject", "Notify Reject", "reject-topic")
-                     .end("end_rejected", "Rejected End");
+                    b.service("reject", "Notify Reject", "reject-topic");
                 });
 
         String xml = workflow.buildXML();

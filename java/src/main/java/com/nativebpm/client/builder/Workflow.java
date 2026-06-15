@@ -217,6 +217,10 @@ public class Workflow {
 
             return new IfElseBranchBuilder(this, gwID);
         }
+
+        public IfElseBranchBuilder ifBranch(Expression condition, Consumer<Branch> thenFn) {
+            return ifBranch(condition.toString(), thenFn);
+        }
     }
 
     public static class IfElseBuilder {
@@ -262,6 +266,21 @@ public class Workflow {
     }
 
     private void connectNode(String nodeId) {
+        Map<String, Object> node = findNode(nodeId);
+        boolean hasStart = false;
+        for (Map<String, Object> n : this.nodes) {
+            if ("startEvent".equals(n.get("type"))) {
+                hasStart = true;
+                break;
+            }
+        }
+        if (!hasStart && node != null && !"startEvent".equals(node.get("type"))) {
+            this.startEvent("start");
+            this.sequenceFlow("start", nodeId);
+            currentNodeID = nodeId;
+            return;
+        }
+
         if (!pendingMerges.isEmpty()) {
             for (String sourceId : pendingMerges) {
                 this.sequenceFlow(sourceId, nodeId);
@@ -271,6 +290,10 @@ public class Workflow {
             this.sequenceFlow(currentNodeID, nodeId);
         }
         currentNodeID = nodeId;
+    }
+
+    public Workflow start() {
+        return start("start");
     }
 
     public Workflow start(String id) {
@@ -328,10 +351,7 @@ public class Workflow {
     public IfElseBuilder ifBranch(String condition, Consumer<Branch> thenFn) {
         String gwID = "gw_" + this.currentNodeID + "_decision";
         this.exclusiveGateway(gwID, "Decision Gateway");
-
-        if (!currentNodeID.isEmpty()) {
-            this.sequenceFlow(currentNodeID, gwID);
-        }
+        connectNode(gwID);
 
         Branch thenBranch = new Branch(this, gwID, gwID, true, condition);
         thenFn.accept(thenBranch);
@@ -341,6 +361,10 @@ public class Workflow {
         }
 
         return new IfElseBuilder(this, gwID);
+    }
+
+    public IfElseBuilder ifBranch(Expression condition, Consumer<Branch> thenFn) {
+        return ifBranch(condition.toString(), thenFn);
     }
 
     public StartEventBuilder startEvent(String id) {
@@ -474,11 +498,46 @@ public class Workflow {
     }
 
     public Map<String, Object> toAST() {
+        List<Map<String, Object>> nodesCopy = new ArrayList<>(this.nodes);
+        List<Map<String, Object>> flowsCopy = new ArrayList<>(this.flows);
+
+        Set<String> sourceIds = new HashSet<>();
+        for (Map<String, Object> f : this.flows) {
+            String src = (String) f.get("source");
+            if (src != null) {
+                sourceIds.add(src);
+            }
+        }
+
+        for (Map<String, Object> node : this.nodes) {
+            String nodeType = (String) node.get("type");
+            String nodeId = (String) node.get("id");
+            if ("endEvent".equals(nodeType) || "startEvent".equals(nodeType)) {
+                continue;
+            }
+            if (!sourceIds.contains(nodeId)) {
+                String endId = "end_" + nodeId;
+                
+                Map<String, Object> endNode = new HashMap<>();
+                endNode.put("type", "endEvent");
+                endNode.put("id", endId);
+                endNode.put("name", "Process Finished");
+                nodesCopy.add(endNode);
+
+                Map<String, Object> flow = new HashMap<>();
+                flow.put("id", "flow-" + nodeId + "-" + endId);
+                flow.put("source", nodeId);
+                flow.put("target", endId);
+                flow.put("condition", "");
+                flowsCopy.add(flow);
+            }
+        }
+
         Map<String, Object> ast = new HashMap<>();
         ast.put("id", this.id);
         ast.put("name", this.name);
-        ast.put("nodes", this.nodes);
-        ast.put("flows", this.flows);
+        ast.put("nodes", nodesCopy);
+        ast.put("flows", flowsCopy);
         return ast;
     }
 
@@ -1139,5 +1198,55 @@ public class Workflow {
             }
             return String.valueOf(val);
         }
+    }
+
+    public static class Expression {
+        private final String expr;
+        public Expression(String expr) {
+            this.expr = expr;
+        }
+        @Override
+        public String toString() {
+            return "${" + expr + "}";
+        }
+    }
+
+    public static class Variable {
+        private final String name;
+        public Variable(String name) {
+            this.name = name;
+        }
+        public Expression eq(Object val) {
+            String valStr = (val instanceof Boolean) ? (((Boolean) val) ? "true" : "false") : String.valueOf(val);
+            return new Expression(name + " == " + valStr);
+        }
+        public Expression ne(Object val) {
+            String valStr = (val instanceof Boolean) ? (((Boolean) val) ? "true" : "false") : String.valueOf(val);
+            return new Expression(name + " != " + valStr);
+        }
+        public Expression gt(Object val) {
+            return new Expression(name + " > " + val);
+        }
+        public Expression gte(Object val) {
+            return new Expression(name + " >= " + val);
+        }
+        public Expression lt(Object val) {
+            return new Expression(name + " < " + val);
+        }
+        public Expression lte(Object val) {
+            return new Expression(name + " <= " + val);
+        }
+    }
+
+    public static Variable v(String name) {
+        return new Variable(name);
+    }
+
+    public static Variable V(String name) {
+        return new Variable(name);
+    }
+
+    public static Variable var(String name) {
+        return new Variable(name);
     }
 }

@@ -228,16 +228,14 @@ namespace NativeBPM.Client.Test.Builder
             byte[] rawBytes = GetWasmBytes();
             using var workflow = new Workflow("closure-process", "Closure Process", rawBytes);
 
-            workflow.Start("start")
-                .User("task1", "User Approval")
-                .If("approved == true", b => {
+            workflow.User("task1", "User Approval")
+                .If(Workflow.V("approved").Eq(true), b => {
                     b.Service("publish", "Publish Page", "publish-topic", st => {
                         st.Wasm("./publish.wasm");
-                    }).End("end_approved", "Approved End");
+                    });
                 })
                 .Else(b => {
-                    b.Service("reject", "Notify Reject", "reject-topic")
-                     .End("end_rejected", "Rejected End");
+                    b.Service("reject", "Notify Reject", "reject-topic");
                 });
 
             string xml = workflow.BuildXml();

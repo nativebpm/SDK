@@ -179,7 +179,9 @@ export declare class Branch {
     service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Branch;
     ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Branch;
     end(id: string, name: string): Branch;
-    if(condition: string, thenFn: (b: Branch) => void): IfElseBranchBuilder;
+    if(condition: string | {
+        toString(): string;
+    }, thenFn: (b: Branch) => void): IfElseBranchBuilder;
 }
 export declare class IfElseBuilder {
     workflow: Workflow;
@@ -204,13 +206,15 @@ export declare class Workflow {
     constructor(id: string, name: string, wasmInput?: string | Uint8Array);
     private initCompiler;
     private connectNode;
-    start(id: string): Workflow;
+    start(id?: string): Workflow;
     end(id: string, name: string): Workflow;
     user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Workflow;
     service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Workflow;
     ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Workflow;
-    if(condition: string, thenFn: (b: Branch) => void): IfElseBuilder;
-    startEvent(id: string): StartEventBuilder;
+    if(condition: string | {
+        toString(): string;
+    }, thenFn: (b: Branch) => void): IfElseBuilder;
+    startEvent(id?: string): StartEventBuilder;
     endEvent(id: string, name: string): Workflow;
     serviceTask(id: string, name: string, topic: string): ServiceTaskBuilder;
     aiTask(id: string, name: string): AITaskBuilder;
@@ -226,3 +230,20 @@ export declare class Workflow {
     toAST(): WorkflowAST;
     buildXML(wasmInput?: string | Uint8Array): Promise<string>;
 }
+export declare class Expression {
+    expr: string;
+    constructor(expr: string);
+    toString(): string;
+}
+export declare class Variable {
+    name: string;
+    constructor(name: string);
+    eq(value: any): Expression;
+    ne(value: any): Expression;
+    gt(value: any): Expression;
+    gte(value: any): Expression;
+    lt(value: any): Expression;
+    lte(value: any): Expression;
+}
+export declare function V(name: string): Variable;
+export declare function v(name: string): Variable;

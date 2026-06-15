@@ -34,6 +34,54 @@ type Workflow struct {
 	pendingMerges  []string
 }
 
+func (w *Workflow) MarshalJSON() ([]byte, error) {
+	sourceIDs := make(map[string]bool)
+	for _, f := range w.Flows {
+		if src, ok := f["source"].(string); ok {
+			sourceIDs[src] = true
+		}
+	}
+
+	nodes := make([]map[string]interface{}, len(w.Nodes))
+	copy(nodes, w.Nodes)
+
+	flows := make([]map[string]interface{}, len(w.Flows))
+	copy(flows, w.Flows)
+
+	for _, node := range w.Nodes {
+		nodeType, _ := node["type"].(string)
+		nodeID, _ := node["id"].(string)
+		if nodeType == "endEvent" || nodeType == "startEvent" {
+			continue
+		}
+		if !sourceIDs[nodeID] {
+			endID := fmt.Sprintf("end_%s", nodeID)
+			nodes = append(nodes, map[string]interface{}{
+				"type": "endEvent",
+				"id":   endID,
+				"name": "Process Finished",
+			})
+			flows = append(flows, map[string]interface{}{
+				"id":        fmt.Sprintf("flow-%s-%s", nodeID, endID),
+				"source":    nodeID,
+				"target":    endID,
+				"condition": "",
+			})
+		}
+	}
+
+	type Alias Workflow
+	return json.Marshal(&struct {
+		Nodes []map[string]interface{} `json:"nodes"`
+		Flows []map[string]interface{} `json:"flows"`
+		*Alias
+	}{
+		Nodes: nodes,
+		Flows: flows,
+		Alias: (*Alias)(w),
+	})
+}
+
 func NewWorkflow(id, name string, wasmInput ...interface{}) *Workflow {
 	w := &Workflow{
 		ID:    id,
@@ -96,13 +144,17 @@ func (w *Workflow) Builder() *Workflow {
 	return w
 }
 
-func (w *Workflow) StartEvent(id string) *StartEventBuilder {
+func (w *Workflow) StartEvent(id ...string) *StartEventBuilder {
+	startID := "start"
+	if len(id) > 0 {
+		startID = id[0]
+	}
 	w.Nodes = append(w.Nodes, map[string]interface{}{
 		"type": "startEvent",
-		"id":   id,
+		"id":   startID,
 		"name": "Start",
 	})
-	return &StartEventBuilder{w: w, id: id}
+	return &StartEventBuilder{w: w, id: startID}
 }
 
 func (w *Workflow) EndEvent(id string, name string) *Workflow {
@@ -241,6 +293,21 @@ type IfElseBranchBuilder struct {
 }
 
 func (w *Workflow) connectNode(id string) {
+	node := w.findNode(id)
+	hasStart := false
+	for _, n := range w.Nodes {
+		if n["type"] == "startEvent" {
+			hasStart = true
+			break
+		}
+	}
+	if !hasStart && node != nil && node["type"] != "startEvent" {
+		w.StartEvent("start")
+		w.SequenceFlow("start", id)
+		w.currentNodeID = id
+		return
+	}
+
 	if len(w.pendingMerges) > 0 {
 		for _, sourceID := range w.pendingMerges {
 			w.SequenceFlow(sourceID, id)
@@ -253,9 +320,13 @@ func (w *Workflow) connectNode(id string) {
 }
 
 // Start initiates the workflow sequential path.
-func (w *Workflow) Start(id string) *Workflow {
-	w.StartEvent(id)
-	w.connectNode(id)
+func (w *Workflow) Start(id ...string) *Workflow {
+	startID := "start"
+	if len(id) > 0 {
+		startID = id[0]
+	}
+	w.StartEvent(startID)
+	w.connectNode(startID)
 	return w
 }
 
@@ -298,20 +369,27 @@ func (w *Workflow) AI(id, name string, config ...func(t *AITaskBuilder)) *Workfl
 }
 
 // If defines a conditional branch path on the main workflow.
-func (w *Workflow) If(condition string, thenFn func(b *Branch)) *IfElseBuilder {
+func (w *Workflow) If(condition interface{}, thenFn func(b *Branch)) *IfElseBuilder {
 	gwID := fmt.Sprintf("gw_%s_decision", w.currentNodeID)
 	w.ExclusiveGateway(gwID, "Decision Gateway")
+	w.connectNode(gwID)
 	
-	if w.currentNodeID != "" {
-		w.SequenceFlow(w.currentNodeID, gwID)
+	var condStr string
+	switch c := condition.(type) {
+	case string:
+		condStr = c
+	case fmt.Stringer:
+		condStr = c.String()
+	default:
+		condStr = fmt.Sprintf("%v", c)
 	}
-	
+
 	thenBranch := &Branch{
 		workflow:      w,
 		gatewayID:     gwID,
 		currentNodeID: gwID,
 		isConditional: true,
-		condition:     condition,
+		condition:     condStr,
 	}
 	
 	thenFn(thenBranch)
@@ -407,18 +485,28 @@ func (b *Branch) End(id, name string) *Branch {
 }
 
 // If defines a nested conditional branch path inside a branch.
-func (b *Branch) If(condition string, thenFn func(sub *Branch)) *IfElseBranchBuilder {
+func (b *Branch) If(condition interface{}, thenFn func(sub *Branch)) *IfElseBranchBuilder {
 	gwID := fmt.Sprintf("gw_%s_decision", b.currentNodeID)
 	b.workflow.ExclusiveGateway(gwID, "Decision Gateway")
 	
 	b.connectNode(gwID)
 	
+	var condStr string
+	switch c := condition.(type) {
+	case string:
+		condStr = c
+	case fmt.Stringer:
+		condStr = c.String()
+	default:
+		condStr = fmt.Sprintf("%v", c)
+	}
+
 	thenBranch := &Branch{
 		workflow:      b.workflow,
 		gatewayID:     gwID,
 		currentNodeID: gwID,
 		isConditional: true,
-		condition:     condition,
+		condition:     condStr,
 	}
 	
 	thenFn(thenBranch)
@@ -497,6 +585,66 @@ func decompressWasmIfNeeded(data []byte) ([]byte, error) {
 		return decompressed, nil
 	}
 	return nil, errors.New("unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)")
+}
+
+type Expression struct {
+	expr string
+}
+
+func (e Expression) String() string {
+	return fmt.Sprintf("${%s}", e.expr)
+}
+
+type Variable struct {
+	name string
+}
+
+func V(name string) Variable {
+	return Variable{name: name}
+}
+
+func Var(name string) Variable {
+	return Variable{name: name}
+}
+
+func (v Variable) Eq(val interface{}) Expression {
+	valStr := fmt.Sprintf("%v", val)
+	if b, ok := val.(bool); ok {
+		if b {
+			valStr = "true"
+		} else {
+			valStr = "false"
+		}
+	}
+	return Expression{expr: fmt.Sprintf("%s == %s", v.name, valStr)}
+}
+
+func (v Variable) Neq(val interface{}) Expression {
+	valStr := fmt.Sprintf("%v", val)
+	if b, ok := val.(bool); ok {
+		if b {
+			valStr = "true"
+		} else {
+			valStr = "false"
+		}
+	}
+	return Expression{expr: fmt.Sprintf("%s != %s", v.name, valStr)}
+}
+
+func (v Variable) Gt(val interface{}) Expression {
+	return Expression{expr: fmt.Sprintf("%s > %v", v.name, val)}
+}
+
+func (v Variable) Gte(val interface{}) Expression {
+	return Expression{expr: fmt.Sprintf("%s >= %v", v.name, val)}
+}
+
+func (v Variable) Lt(val interface{}) Expression {
+	return Expression{expr: fmt.Sprintf("%s < %v", v.name, val)}
+}
+
+func (v Variable) Lte(val interface{}) Expression {
+	return Expression{expr: fmt.Sprintf("%s <= %v", v.name, val)}
 }
 
 func (w *Workflow) Close(ctx context.Context) error {

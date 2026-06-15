@@ -557,12 +557,13 @@ export class Branch {
     return this;
   }
 
-  public if(condition: string, thenFn: (b: Branch) => void): IfElseBranchBuilder {
+  public if(condition: string | { toString(): string }, thenFn: (b: Branch) => void): IfElseBranchBuilder {
     const gwID = `gw_${this.currentNodeID}_decision`;
     this.workflow.exclusiveGateway(gwID, 'Decision Gateway');
     this.connectNode(gwID);
 
-    const thenBranch = new Branch(this.workflow, gwID, gwID, true, condition);
+    const condStr = typeof condition === 'string' ? condition : condition.toString();
+    const thenBranch = new Branch(this.workflow, gwID, gwID, true, condStr);
     thenFn(thenBranch);
 
     if (!thenBranch.hasEnded && thenBranch.currentNodeID !== gwID) {
@@ -643,6 +644,15 @@ export class Workflow {
   }
 
   private connectNode(id: string): void {
+    const node = this.findNode(id);
+    const hasStart = this.nodes.some(n => n.type === 'startEvent');
+    if (!hasStart && node && node.type !== 'startEvent') {
+      this.startEvent('start');
+      this.sequenceFlow('start', id);
+      this.currentNodeID = id;
+      return;
+    }
+
     if (this.pendingMerges.length > 0) {
       for (const sourceID of this.pendingMerges) {
         this.sequenceFlow(sourceID, id);
@@ -654,7 +664,7 @@ export class Workflow {
     this.currentNodeID = id;
   }
 
-  public start(id: string): Workflow {
+  public start(id: string = 'start'): Workflow {
     this.startEvent(id);
     this.connectNode(id);
     return this;
@@ -688,15 +698,13 @@ export class Workflow {
     return this;
   }
 
-  public if(condition: string, thenFn: (b: Branch) => void): IfElseBuilder {
+  public if(condition: string | { toString(): string }, thenFn: (b: Branch) => void): IfElseBuilder {
     const gwID = `gw_${this.currentNodeID}_decision`;
     this.exclusiveGateway(gwID, 'Decision Gateway');
+    this.connectNode(gwID);
 
-    if (this.currentNodeID) {
-      this.sequenceFlow(this.currentNodeID, gwID);
-    }
-
-    const thenBranch = new Branch(this, gwID, gwID, true, condition);
+    const condStr = typeof condition === 'string' ? condition : condition.toString();
+    const thenBranch = new Branch(this, gwID, gwID, true, condStr);
     thenFn(thenBranch);
 
     if (!thenBranch.hasEnded && thenBranch.currentNodeID !== gwID) {
@@ -706,7 +714,7 @@ export class Workflow {
     return new IfElseBuilder(this, gwID);
   }
 
-  public startEvent(id: string): StartEventBuilder {
+  public startEvent(id: string = 'start'): StartEventBuilder {
     const node: NodeAST = { type: 'startEvent', id, name: 'Start' };
     this.nodes.push(node);
     return new StartEventBuilder(this, id);
@@ -781,11 +789,27 @@ export class Workflow {
   }
 
   public toAST(): WorkflowAST {
+    const nodes = [...this.nodes];
+    const flows = [...this.flows];
+
+    const sourceIDs = new Set(flows.map(f => f.source));
+
+    for (const node of this.nodes) {
+      if (node.type === 'endEvent' || node.type === 'startEvent') {
+        continue;
+      }
+      if (!sourceIDs.has(node.id)) {
+        const endID = `end_${node.id}`;
+        nodes.push({ type: 'endEvent', id: endID, name: 'Process Finished' });
+        flows.push({ id: `flow-${node.id}-${endID}`, source: node.id, target: endID, condition: '' });
+      }
+    }
+
     return {
       id: this.id,
       name: this.name,
-      nodes: this.nodes,
-      flows: this.flows
+      nodes,
+      flows
     };
   }
 
@@ -847,4 +871,43 @@ export class Workflow {
 
     return result.xml;
   }
+}
+
+export class Expression {
+  constructor(public expr: string) {}
+  public toString(): string {
+    return `\${${this.expr}}`;
+  }
+}
+
+export class Variable {
+  constructor(public name: string) {}
+  public eq(value: any): Expression {
+    const valStr = typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value);
+    return new Expression(`${this.name} == ${valStr}`);
+  }
+  public ne(value: any): Expression {
+    const valStr = typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value);
+    return new Expression(`${this.name} != ${valStr}`);
+  }
+  public gt(value: any): Expression {
+    return new Expression(`${this.name} > ${value}`);
+  }
+  public gte(value: any): Expression {
+    return new Expression(`${this.name} >= ${value}`);
+  }
+  public lt(value: any): Expression {
+    return new Expression(`${this.name} < ${value}`);
+  }
+  public lte(value: any): Expression {
+    return new Expression(`${this.name} <= ${value}`);
+  }
+}
+
+export function V(name: string): Variable {
+  return new Variable(name);
+}
+
+export function v(name: string): Variable {
+  return new Variable(name);
 }

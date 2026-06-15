@@ -1,4 +1,4 @@
-use nativebpm_client::builder::Workflow;
+use nativebpm_client::{Workflow, v};
 use nativebpm_client::apis::{configuration, default_api};
 
 #[tokio::main]
@@ -9,16 +9,14 @@ async fn main() {
     let mut workflow = Workflow::new("native-demo", "Workflow as Code");
 
     // Chain starting from the start event
-    workflow.start("start")
-        .if_branch("${isUrgent == true}", |b| {
+    workflow
+        .if_branch(v("isUrgent").eq(true), |b| {
             b.user("reviewOrder", "Review Order Details", |ut| {
                 ut.assignee("sales_representative")
-            })
-            .end("end_review", "Process Finished");
+            });
         })
         .else_branch(|b| {
-            b.service("notifyCustomer", "Send Confirmation Email", "email_topic", |st| st)
-                .end("end_default", "Process Finished");
+            b.service("notifyCustomer", "Send Confirmation Email", "email_topic", |st| st);
         });
 
     // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
