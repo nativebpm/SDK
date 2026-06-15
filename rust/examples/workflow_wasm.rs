@@ -10,12 +10,13 @@ async fn main() {
 
     // Chain starting from the start event
     workflow
-        .if_branch(v("isUrgent").eq(true), |b| {
+        .when(v("isUrgent").eq(true))
+        .then(|b| {
             b.user("reviewOrder", "Review Order Details", |ut| {
                 ut.assignee("sales_representative")
             });
         })
-        .else_branch(|b| {
+        .otherwise(|b| {
             b.service("notifyCustomer", "Send Confirmation Email", "email_topic", |st| st);
         });
 

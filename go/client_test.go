@@ -215,13 +215,14 @@ func TestBlockClosureDSL(t *testing.T) {
 	
 	wf.
 		User("task1", "User Approval").
-		If(V("approved").Eq(true), func(b *Branch) {
-			b.Service("publish", "Publish Page", "publish-topic", func(st *ServiceTaskBuilder) {
+		When(V("approved").Eq(true)).
+		Then(func(flow *Branch) {
+			flow.Service("publish", "Publish Page", "publish-topic", func(st *ServiceTaskBuilder) {
 				st.Wasm("./publish.wasm")
 			})
 		}).
-		Else(func(b *Branch) {
-			b.Service("reject", "Notify Reject", "reject-topic")
+		Otherwise(func(flow *Branch) {
+			flow.Service("reject", "Notify Reject", "reject-topic")
 		})
 
 	xml, err := wf.BuildXML(ctx)

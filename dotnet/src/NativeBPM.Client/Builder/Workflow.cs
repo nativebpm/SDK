@@ -507,27 +507,17 @@ namespace NativeBPM.Client.Builder
             return this;
         }
 
-        public IfElseBuilder If(string condition, Action<Branch> thenFn)
+        public WhenBuilder When(string condition)
         {
             string gwID = "gw_" + this.currentNodeID + "_decision";
             this.ExclusiveGateway(gwID, "Decision Gateway");
-
             this.ConnectNode(gwID);
-
-            Branch thenBranch = new Branch(this, gwID, gwID, true, condition);
-            thenFn(thenBranch);
-
-            if (!thenBranch.HasEnded && thenBranch.currentNodeID != gwID)
-            {
-                this.PendingMerges.Add(thenBranch.currentNodeID);
-            }
-
-            return new IfElseBuilder(this, gwID);
+            return new WhenBuilder(this, gwID, condition);
         }
 
-        public IfElseBuilder If(Expression condition, Action<Branch> thenFn)
+        public WhenBuilder When(Expression condition)
         {
-            return If(condition.ToString(), thenFn);
+            return When(condition.ToString());
         }
 
         public void Dispose()
@@ -1136,41 +1126,59 @@ namespace NativeBPM.Client.Builder
             return this;
         }
 
-        public IfElseBranchBuilder If(string condition, Action<Branch> thenFn)
+        public WhenBranchBuilder When(string condition)
         {
             string gwID = "gw_" + this.currentNodeID + "_decision";
             Workflow.ExclusiveGateway(gwID, "Decision Gateway");
             ConnectNode(gwID);
-
-            Branch thenBranch = new Branch(Workflow, gwID, gwID, true, condition);
-            thenFn(thenBranch);
-
-            if (!thenBranch.HasEnded && thenBranch.currentNodeID != gwID)
-            {
-                Workflow.PendingMerges.Add(thenBranch.currentNodeID);
-            }
-
-            return new IfElseBranchBuilder(this, gwID);
+            return new WhenBranchBuilder(this, gwID, condition);
         }
 
-        public IfElseBranchBuilder If(Expression condition, Action<Branch> thenFn)
+        public WhenBranchBuilder When(Expression condition)
         {
-            return If(condition.ToString(), thenFn);
+            return When(condition.ToString());
         }
     }
 
-    public class IfElseBuilder
+    public class WhenBuilder
+    {
+        private readonly Workflow workflow;
+        private readonly string gatewayID;
+        private readonly string condition;
+
+        public WhenBuilder(Workflow workflow, string gatewayID, string condition)
+        {
+            this.workflow = workflow;
+            this.gatewayID = gatewayID;
+            this.condition = condition;
+        }
+
+        public ThenBuilder Then(Action<Branch> thenFn)
+        {
+            Branch thenBranch = new Branch(workflow, gatewayID, gatewayID, true, condition);
+            thenFn(thenBranch);
+
+            if (!thenBranch.HasEnded && thenBranch.currentNodeID != gatewayID)
+            {
+                workflow.PendingMerges.Add(thenBranch.currentNodeID);
+            }
+
+            return new ThenBuilder(workflow, gatewayID);
+        }
+    }
+
+    public class ThenBuilder
     {
         private readonly Workflow workflow;
         private readonly string gatewayID;
 
-        public IfElseBuilder(Workflow workflow, string gatewayID)
+        public ThenBuilder(Workflow workflow, string gatewayID)
         {
             this.workflow = workflow;
             this.gatewayID = gatewayID;
         }
 
-        public Workflow Else(Action<Branch> elseFn)
+        public Workflow Otherwise(Action<Branch> elseFn)
         {
             Branch elseBranch = new Branch(workflow, gatewayID, gatewayID, false, "");
             elseFn(elseBranch);
@@ -1184,18 +1192,45 @@ namespace NativeBPM.Client.Builder
         }
     }
 
-    public class IfElseBranchBuilder
+    public class WhenBranchBuilder
+    {
+        private readonly Branch branch;
+        private readonly string gatewayID;
+        private readonly string condition;
+
+        public WhenBranchBuilder(Branch branch, string gatewayID, string condition)
+        {
+            this.branch = branch;
+            this.gatewayID = gatewayID;
+            this.condition = condition;
+        }
+
+        public ThenBranchBuilder Then(Action<Branch> thenFn)
+        {
+            Branch thenBranch = new Branch(branch.Workflow, gatewayID, gatewayID, true, condition);
+            thenFn(thenBranch);
+
+            if (!thenBranch.HasEnded && thenBranch.currentNodeID != gatewayID)
+            {
+                branch.Workflow.PendingMerges.Add(thenBranch.currentNodeID);
+            }
+
+            return new ThenBranchBuilder(branch, gatewayID);
+        }
+    }
+
+    public class ThenBranchBuilder
     {
         private readonly Branch branch;
         private readonly string gatewayID;
 
-        public IfElseBranchBuilder(Branch branch, string gatewayID)
+        public ThenBranchBuilder(Branch branch, string gatewayID)
         {
             this.branch = branch;
             this.gatewayID = gatewayID;
         }
 
-        public Branch Else(Action<Branch> elseFn)
+        public Branch Otherwise(Action<Branch> elseFn)
         {
             Branch elseBranch = new Branch(branch.Workflow, gatewayID, gatewayID, false, "");
             elseFn(elseBranch);

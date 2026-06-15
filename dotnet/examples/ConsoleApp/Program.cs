@@ -90,12 +90,12 @@ namespace ConsoleApp
             using var workflow = new Workflow("native-demo", "Workflow as Code");
 
             // Chain starting with dynamic if statement (auto-start will prepend start event)
-            workflow.If(V("isUrgent").Eq(true), b => {
+            workflow.When(V("isUrgent").Eq(true)).Then(b => {
                     b.User("reviewOrder", "Review Order Details", ut => {
                         ut.Assignee("sales_representative");
                     });
                 })
-                .Else(b => {
+                .Otherwise(b => {
                     b.Service("notifyCustomer", "Send Confirmation Email", "email_topic");
                 });
 
@@ -167,12 +167,12 @@ namespace ConsoleApp
                        .Prompt("Analyze transaction for fraud: ${orderAmount}")
                        .ResultVar("isFraudulent");
                 })
-                .If(V("isFraudulent").Eq(true), b => {
+                .When(V("isFraudulent").Eq(true)).Then(b => {
                     b.User("userTask", "Manual Fraud Approval", ut => {
                         ut.Assignee("security_officer");
                     });
                 })
-                .Else(b => {
+                .Otherwise(b => {
                     // empty branch (will auto-route to end event)
                 });
 

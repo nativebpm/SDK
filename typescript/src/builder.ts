@@ -557,27 +557,35 @@ export class Branch {
     return this;
   }
 
-  public if(condition: string | { toString(): string }, thenFn: (b: Branch) => void): IfElseBranchBuilder {
+  public when(condition: string | { toString(): string }): WhenBranchBuilder {
     const gwID = `gw_${this.currentNodeID}_decision`;
     this.workflow.exclusiveGateway(gwID, 'Decision Gateway');
     this.connectNode(gwID);
 
     const condStr = typeof condition === 'string' ? condition : condition.toString();
-    const thenBranch = new Branch(this.workflow, gwID, gwID, true, condStr);
-    thenFn(thenBranch);
-
-    if (!thenBranch.hasEnded && thenBranch.currentNodeID !== gwID) {
-      ((this.workflow as any).pendingMerges as string[]).push(thenBranch.currentNodeID);
-    }
-
-    return new IfElseBranchBuilder(this, gwID);
+    return new WhenBranchBuilder(this, gwID, condStr);
   }
 }
 
-export class IfElseBuilder {
+export class WhenBuilder {
+  constructor(public workflow: Workflow, public gatewayID: string, public condition: string) {}
+
+  public then(thenFn: (flow: Branch) => void): ThenBuilder {
+    const thenBranch = new Branch(this.workflow, this.gatewayID, this.gatewayID, true, this.condition);
+    thenFn(thenBranch);
+
+    if (!thenBranch.hasEnded && thenBranch.currentNodeID !== this.gatewayID) {
+      ((this.workflow as any).pendingMerges as string[]).push(thenBranch.currentNodeID);
+    }
+
+    return new ThenBuilder(this.workflow, this.gatewayID);
+  }
+}
+
+export class ThenBuilder {
   constructor(public workflow: Workflow, public gatewayID: string) {}
 
-  public else(elseFn: (b: Branch) => void): Workflow {
+  public otherwise(elseFn: (flow: Branch) => void): Workflow {
     const elseBranch = new Branch(this.workflow, this.gatewayID, this.gatewayID, false);
     elseFn(elseBranch);
 
@@ -589,10 +597,25 @@ export class IfElseBuilder {
   }
 }
 
-export class IfElseBranchBuilder {
+export class WhenBranchBuilder {
+  constructor(public branch: Branch, public gatewayID: string, public condition: string) {}
+
+  public then(thenFn: (flow: Branch) => void): ThenBranchBuilder {
+    const thenBranch = new Branch(this.branch.workflow, this.gatewayID, this.gatewayID, true, this.condition);
+    thenFn(thenBranch);
+
+    if (!thenBranch.hasEnded && thenBranch.currentNodeID !== this.gatewayID) {
+      ((this.branch.workflow as any).pendingMerges as string[]).push(thenBranch.currentNodeID);
+    }
+
+    return new ThenBranchBuilder(this.branch, this.gatewayID);
+  }
+}
+
+export class ThenBranchBuilder {
   constructor(public branch: Branch, public gatewayID: string) {}
 
-  public else(elseFn: (b: Branch) => void): Branch {
+  public otherwise(elseFn: (flow: Branch) => void): Branch {
     const elseBranch = new Branch(this.branch.workflow, this.gatewayID, this.gatewayID, false);
     elseFn(elseBranch);
 
@@ -698,20 +721,13 @@ export class Workflow {
     return this;
   }
 
-  public if(condition: string | { toString(): string }, thenFn: (b: Branch) => void): IfElseBuilder {
+  public when(condition: string | { toString(): string }): WhenBuilder {
     const gwID = `gw_${this.currentNodeID}_decision`;
     this.exclusiveGateway(gwID, 'Decision Gateway');
     this.connectNode(gwID);
 
     const condStr = typeof condition === 'string' ? condition : condition.toString();
-    const thenBranch = new Branch(this, gwID, gwID, true, condStr);
-    thenFn(thenBranch);
-
-    if (!thenBranch.hasEnded && thenBranch.currentNodeID !== gwID) {
-      this.pendingMerges.push(thenBranch.currentNodeID);
-    }
-
-    return new IfElseBuilder(this, gwID);
+    return new WhenBuilder(this, gwID, condStr);
   }
 
   public startEvent(id: string = 'start'): StartEventBuilder {

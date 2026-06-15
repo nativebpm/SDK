@@ -179,21 +179,35 @@ export declare class Branch {
     service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Branch;
     ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Branch;
     end(id: string, name: string): Branch;
-    if(condition: string | {
+    when(condition: string | {
         toString(): string;
-    }, thenFn: (b: Branch) => void): IfElseBranchBuilder;
+    }): WhenBranchBuilder;
 }
-export declare class IfElseBuilder {
+export declare class WhenBuilder {
+    workflow: Workflow;
+    gatewayID: string;
+    condition: string;
+    constructor(workflow: Workflow, gatewayID: string, condition: string);
+    then(thenFn: (flow: Branch) => void): ThenBuilder;
+}
+export declare class ThenBuilder {
     workflow: Workflow;
     gatewayID: string;
     constructor(workflow: Workflow, gatewayID: string);
-    else(elseFn: (b: Branch) => void): Workflow;
+    otherwise(elseFn: (flow: Branch) => void): Workflow;
 }
-export declare class IfElseBranchBuilder {
+export declare class WhenBranchBuilder {
+    branch: Branch;
+    gatewayID: string;
+    condition: string;
+    constructor(branch: Branch, gatewayID: string, condition: string);
+    then(thenFn: (flow: Branch) => void): ThenBranchBuilder;
+}
+export declare class ThenBranchBuilder {
     branch: Branch;
     gatewayID: string;
     constructor(branch: Branch, gatewayID: string);
-    else(elseFn: (b: Branch) => void): Branch;
+    otherwise(elseFn: (flow: Branch) => void): Branch;
 }
 export declare class Workflow {
     private id;
@@ -211,9 +225,9 @@ export declare class Workflow {
     user(id: string, name: string, config?: (t: UserTaskBuilder) => void): Workflow;
     service(id: string, name: string, topic: string, config?: (t: ServiceTaskBuilder) => void): Workflow;
     ai(id: string, name: string, config?: (t: AITaskBuilder) => void): Workflow;
-    if(condition: string | {
+    when(condition: string | {
         toString(): string;
-    }, thenFn: (b: Branch) => void): IfElseBuilder;
+    }): WhenBuilder;
     startEvent(id?: string): StartEventBuilder;
     endEvent(id: string, name: string): Workflow;
     serviceTask(id: string, name: string, topic: string): ServiceTaskBuilder;

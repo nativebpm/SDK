@@ -11,15 +11,16 @@ async function testDSL() {
   console.log("Running TypeScript closure block DSL tests...");
 
   const workflow = new Workflow('ts-closure-process', 'TS Closure Process');
-  workflow.start()
+  workflow
     .user('task1', 'User Task')
-    .if(v('approved').eq(true), (b) => {
-      b.service('publish', 'Publish Page', 'publish-topic', (st) => {
+    .when(v('approved').eq(true))
+    .then((flow) => {
+      flow.service('publish', 'Publish Page', 'publish-topic', (st) => {
         st.wasm('./publish.wasm');
       });
     })
-    .else((b) => {
-      b.service('reject', 'Notify Reject', 'reject-topic');
+    .otherwise((flow) => {
+      flow.service('reject', 'Notify Reject', 'reject-topic');
     });
 
   const xml = await workflow.buildXML(wasmPath);

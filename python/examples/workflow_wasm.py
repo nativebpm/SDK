@@ -8,11 +8,11 @@ def main():
     workflow = Workflow('native-demo', 'Workflow as Code')
     
     # Chain starting from the start event
-    workflow.if_branch(v('isUrgent').eq(True), lambda b: (
+    workflow.when(v('isUrgent').eq(True)).then(lambda b: (
         b.user('reviewOrder', 'Review Order Details', lambda ut: (
             ut.assignee('sales_representative')
         ))
-    )).else_branch(lambda b: (
+    )).otherwise(lambda b: (
         b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic')
     ))
         

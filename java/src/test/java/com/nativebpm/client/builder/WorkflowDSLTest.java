@@ -33,12 +33,12 @@ public class WorkflowDSLTest {
         Workflow workflow = new Workflow("closure-process", "Closure Process", rawBytes);
 
         workflow.user("task1", "User Approval")
-                .ifBranch(V("approved").eq(true), b -> {
+                .when(V("approved").eq(true)).then(b -> {
                     b.service("publish", "Publish Page", "publish-topic", st -> {
                         st.wasm("./publish.wasm");
                     });
                 })
-                .elseBranch(b -> {
+                .otherwise(b -> {
                     b.service("reject", "Notify Reject", "reject-topic");
                 });
 

@@ -17,12 +17,12 @@ def main():
                .prompt('Analyze transaction for fraud: ${orderAmount}')
                .result_var('isFraudulent')
         ))\
-        .if_branch(v('isFraudulent').eq(True), lambda b: (
+        .when(v('isFraudulent').eq(True)).then(lambda b: (
             b.user('userTask', 'Manual Fraud Approval', lambda ut: (
                 ut.assignee('security_officer')
             ))
         ))\
-        .else_branch(lambda b: (
+        .otherwise(lambda b: (
             None
         ))
     

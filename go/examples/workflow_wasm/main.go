@@ -15,15 +15,16 @@ func main() {
 	// 1. Build workflow as code (without WASM tasks) using Fluent API method chaining
 	workflow := nativebpm.NewWorkflow("native-demo", "Workflow as Code")
 
-	// Chain starting from the start event
+	// Chain starting with dynamic when condition (auto-start will prepend start event)
 	workflow.
-		If(nativebpm.V("isUrgent").Eq(true), func(b *nativebpm.Branch) {
-			b.User("reviewOrder", "Review Order Details", func(ut *nativebpm.UserTaskBuilder) {
+		When(nativebpm.V("isUrgent").Eq(true)).
+		Then(func(flow *nativebpm.Branch) {
+			flow.User("reviewOrder", "Review Order Details", func(ut *nativebpm.UserTaskBuilder) {
 				ut.Assignee("sales_representative")
 			})
 		}).
-		Else(func(b *nativebpm.Branch) {
-			b.Service("notifyCustomer", "Send Confirmation Email", "email_topic")
+		Otherwise(func(flow *nativebpm.Branch) {
+			flow.Service("notifyCustomer", "Send Confirmation Email", "email_topic")
 		})
 
 	// Compile the workflow AST to standard BPMN 2.0 XML using the default embedded Go engine

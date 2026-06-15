@@ -123,11 +123,11 @@ class TestPythonSDK(unittest.TestCase):
         print("Running Python SDK closure block DSL test...")
         workflow = Workflow('closure-process', 'Closure Process')
         
-        workflow.user('task1', 'User Approval').if_branch(v('approved').eq(True), lambda b: (
+        workflow.user('task1', 'User Approval').when(v('approved').eq(True)).then(lambda b: (
             b.service('publish', 'Publish Page', 'publish-topic', lambda st: (
                 st.wasm('./publish.wasm')
             ))
-        )).else_branch(lambda b: (
+        )).otherwise(lambda b: (
             b.service('reject', 'Notify Reject', 'reject-topic')
         ))
 
@@ -146,11 +146,11 @@ class TestPythonSDK(unittest.TestCase):
         
         workflow.user('task1', 'User Approval')
         
-        @workflow.if_branch(v('approved').eq(True))
+        @workflow.when(v('approved').eq(True))
         def then_branch(b):
             b.service('publish', 'Publish Page', 'publish-topic', lambda st: st.wasm('./publish.wasm'))
             
-        @then_branch.else_branch()
+        @then_branch.otherwise()
         def else_branch(b):
             b.service('reject', 'Notify Reject', 'reject-topic')
 

@@ -21,12 +21,12 @@ public class WorkflowWithWasmPluginsExample {
                        .prompt("Analyze transaction for fraud: ${orderAmount}")
                        .resultVar("isFraudulent");
                 })
-                .ifBranch(V("isFraudulent").eq(true), b -> {
+                .when(V("isFraudulent").eq(true)).then(b -> {
                     b.user("userTask", "Manual Fraud Approval", ut -> {
                         ut.assignee("security_officer");
                     });
                 })
-                .elseBranch(b -> {
+                .otherwise(b -> {
                     // empty branch (will auto-route to end event)
                 });
 

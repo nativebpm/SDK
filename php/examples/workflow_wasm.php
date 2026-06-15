@@ -11,12 +11,12 @@ echo "🔨 Building workflow dynamically using Fluent API...\n";
 $workflow = new Workflow("native-demo", "Workflow as Code");
 
 // Chain starting with dynamic if statement (auto-start will prepend start event)
-$workflow->if(Workflow::V('isUrgent')->eq(true), function($b) {
+$workflow->when(Workflow::V('isUrgent')->eq(true))->then(function($b) {
         $b->user("reviewOrder", "Review Order Details", function($ut) {
             $ut->assignee("sales_representative");
         });
     })
-    ->else(function($b) {
+    ->otherwise(function($b) {
         $b->service("notifyCustomer", "Send Confirmation Email", "email_topic");
     });
 

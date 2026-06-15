@@ -203,36 +203,53 @@ public class Workflow {
             return this;
         }
 
-        public IfElseBranchBuilder ifBranch(String condition, Consumer<Branch> thenFn) {
+        public WhenBranchBuilder when(String condition) {
             String gwID = "gw_" + this.currentNodeID + "_decision";
             workflow.exclusiveGateway(gwID, "Decision Gateway");
             connectNode(gwID);
 
             Branch thenBranch = new Branch(workflow, gwID, gwID, true, condition);
-            thenFn.accept(thenBranch);
-
-            if (!thenBranch.hasEnded && !thenBranch.currentNodeID.equals(gwID)) {
-                workflow.pendingMerges.add(thenBranch.currentNodeID);
-            }
-
-            return new IfElseBranchBuilder(this, gwID);
+            return new WhenBranchBuilder(this, gwID, condition);
         }
 
-        public IfElseBranchBuilder ifBranch(Expression condition, Consumer<Branch> thenFn) {
-            return ifBranch(condition.toString(), thenFn);
+        public WhenBranchBuilder when(Expression condition) {
+            return when(condition.toString());
         }
     }
 
-    public static class IfElseBuilder {
+    public static class WhenBuilder {
+        private final Workflow workflow;
+        private final String gatewayID;
+        private final String condition;
+
+        public WhenBuilder(Workflow workflow, String gatewayID, String condition) {
+            this.workflow = workflow;
+            this.gatewayID = gatewayID;
+            this.condition = condition;
+        }
+
+        public ThenBuilder then(Consumer<Branch> thenFn) {
+            Branch thenBranch = new Branch(workflow, gatewayID, gatewayID, true, condition);
+            thenFn.accept(thenBranch);
+
+            if (!thenBranch.hasEnded && !thenBranch.currentNodeID.equals(gatewayID)) {
+                workflow.pendingMerges.add(thenBranch.currentNodeID);
+            }
+
+            return new ThenBuilder(workflow, gatewayID);
+        }
+    }
+
+    public static class ThenBuilder {
         private final Workflow workflow;
         private final String gatewayID;
 
-        public IfElseBuilder(Workflow workflow, String gatewayID) {
+        public ThenBuilder(Workflow workflow, String gatewayID) {
             this.workflow = workflow;
             this.gatewayID = gatewayID;
         }
 
-        public Workflow elseBranch(Consumer<Branch> elseFn) {
+        public Workflow otherwise(Consumer<Branch> elseFn) {
             Branch elseBranch = new Branch(workflow, gatewayID, gatewayID, false, "");
             elseFn.accept(elseBranch);
 
@@ -244,16 +261,39 @@ public class Workflow {
         }
     }
 
-    public static class IfElseBranchBuilder {
+    public static class WhenBranchBuilder {
+        private final Branch branch;
+        private final String gatewayID;
+        private final String condition;
+
+        public WhenBranchBuilder(Branch branch, String gatewayID, String condition) {
+            this.branch = branch;
+            this.gatewayID = gatewayID;
+            this.condition = condition;
+        }
+
+        public ThenBranchBuilder then(Consumer<Branch> thenFn) {
+            Branch thenBranch = new Branch(branch.workflow, gatewayID, gatewayID, true, condition);
+            thenFn.accept(thenBranch);
+
+            if (!thenBranch.hasEnded && !thenBranch.currentNodeID.equals(gatewayID)) {
+                branch.workflow.pendingMerges.add(thenBranch.currentNodeID);
+            }
+
+            return new ThenBranchBuilder(branch, gatewayID);
+        }
+    }
+
+    public static class ThenBranchBuilder {
         private final Branch branch;
         private final String gatewayID;
 
-        public IfElseBranchBuilder(Branch branch, String gatewayID) {
+        public ThenBranchBuilder(Branch branch, String gatewayID) {
             this.branch = branch;
             this.gatewayID = gatewayID;
         }
 
-        public Branch elseBranch(Consumer<Branch> elseFn) {
+        public Branch otherwise(Consumer<Branch> elseFn) {
             Branch elseBranch = new Branch(branch.workflow, gatewayID, gatewayID, false, "");
             elseFn.accept(elseBranch);
 
@@ -348,23 +388,15 @@ public class Workflow {
         return this;
     }
 
-    public IfElseBuilder ifBranch(String condition, Consumer<Branch> thenFn) {
+    public WhenBuilder when(String condition) {
         String gwID = "gw_" + this.currentNodeID + "_decision";
         this.exclusiveGateway(gwID, "Decision Gateway");
         connectNode(gwID);
-
-        Branch thenBranch = new Branch(this, gwID, gwID, true, condition);
-        thenFn.accept(thenBranch);
-
-        if (!thenBranch.hasEnded && !thenBranch.currentNodeID.equals(gwID)) {
-            this.pendingMerges.add(thenBranch.currentNodeID);
-        }
-
-        return new IfElseBuilder(this, gwID);
+        return new WhenBuilder(this, gwID, condition);
     }
 
-    public IfElseBuilder ifBranch(Expression condition, Consumer<Branch> thenFn) {
-        return ifBranch(condition.toString(), thenFn);
+    public WhenBuilder when(Expression condition) {
+        return when(condition.toString());
     }
 
     public StartEventBuilder startEvent(String id) {

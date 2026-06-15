@@ -6,13 +6,14 @@ export async function run() {
   // 1. Build workflow as code (without WASM tasks) using closure DSL
   const workflow = new Workflow('native-demo', 'Workflow as Code');
   workflow
-    .if(v('isUrgent').eq(true), b => {
-      b.user('reviewOrder', 'Review Order Details', ut => {
+    .when(v('isUrgent').eq(true))
+    .then(flow => {
+      flow.user('reviewOrder', 'Review Order Details', ut => {
         ut.assignee('sales_representative');
       });
     })
-    .else(b => {
-      b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic');
+    .otherwise(flow => {
+      flow.service('notifyCustomer', 'Send Confirmation Email', 'email_topic');
     });
   
   // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine

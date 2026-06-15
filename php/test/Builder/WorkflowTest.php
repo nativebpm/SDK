@@ -144,10 +144,10 @@ class WorkflowTest extends TestCase
         $workflow->user("task1", "User Task 1", function($ut) {
                 $ut->assignee("admin");
             })
-            ->if(Workflow::v('is_urgent')->eq(true), function($b) {
+            ->when(Workflow::v('is_urgent')->eq(true))->then(function($b) {
                 $b->service("task2", "Urgent Task", "urgent_topic");
             })
-            ->else(function($b) {
+            ->otherwise(function($b) {
                 $b->service("task3", "Normal Task", "normal_topic");
             });
 

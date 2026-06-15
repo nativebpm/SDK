@@ -229,12 +229,12 @@ namespace NativeBPM.Client.Test.Builder
             using var workflow = new Workflow("closure-process", "Closure Process", rawBytes);
 
             workflow.User("task1", "User Approval")
-                .If(Workflow.V("approved").Eq(true), b => {
+                .When(Workflow.V("approved").Eq(true)).Then(b => {
                     b.Service("publish", "Publish Page", "publish-topic", st => {
                         st.Wasm("./publish.wasm");
                     });
                 })
-                .Else(b => {
+                .Otherwise(b => {
                     b.Service("reject", "Notify Reject", "reject-topic");
                 });
 

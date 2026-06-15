@@ -15,7 +15,7 @@ func main() {
 	// 1. Build workflow as code using Fluent API method chaining
 	workflow := nativebpm.NewWorkflow("wasm-demo", "Workflow with Guest WASM Plugins")
 
-	// Chain starting from start event
+	// Chain starting from first service task (auto-start will prepend start event)
 	workflow.
 		Service("calculate", "Calculate Totals", "payment_topic", func(st *nativebpm.ServiceTaskBuilder) {
 			st.Wasm("./calculate_total.wasm")
@@ -26,12 +26,13 @@ func main() {
 				Prompt("Analyze transaction for fraud: ${orderAmount}").
 				ResultVar("isFraudulent")
 		}).
-		If(nativebpm.V("isFraudulent").Eq(true), func(b *nativebpm.Branch) {
-			b.User("userTask", "Manual Fraud Approval", func(ut *nativebpm.UserTaskBuilder) {
+		When(nativebpm.V("isFraudulent").Eq(true)).
+		Then(func(flow *nativebpm.Branch) {
+			flow.User("userTask", "Manual Fraud Approval", func(ut *nativebpm.UserTaskBuilder) {
 				ut.Assignee("security_officer")
 			})
 		}).
-		Else(func(b *nativebpm.Branch) {
+		Otherwise(func(flow *nativebpm.Branch) {
 			// empty default else
 		})
 

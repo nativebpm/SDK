@@ -465,61 +465,85 @@ class Branch:
         self._has_ended = True
         return self
 
-    def if_branch(self, condition: Any, then_fn=None):
-        if then_fn is None:
-            def decorator(func):
-                return self.if_branch(condition, func)
-            return decorator
-
+    def when(self, condition: Any):
         gw_id = f"gw_{self._current_node_id}_decision"
         self._workflow.exclusive_gateway(gw_id, "Decision Gateway")
         self._connect_node(gw_id)
+        return WhenBranchBuilder(self, gw_id, str(condition))
 
-        then_branch = Branch(self._workflow, gw_id, gw_id, True, str(condition))
+class WhenBuilder:
+    def __init__(self, workflow: 'Workflow', gateway_id: str, condition: str):
+        self.workflow = workflow
+        self.gateway_id = gateway_id
+        self.condition = condition
+
+    def then(self, then_fn: Any) -> 'ThenBuilder':
+        then_branch = Branch(self.workflow, self.gateway_id, self.gateway_id, True, self.condition)
         then_fn(then_branch)
 
-        if not then_branch._has_ended and then_branch._current_node_id != gw_id:
-            self._workflow._pending_merges.append(then_branch._current_node_id)
+        if not then_branch._has_ended and then_branch._current_node_id != self.gateway_id:
+            self.workflow._pending_merges.append(then_branch._current_node_id)
 
-        return IfElseBranchBuilder(self, gw_id)
+        return ThenBuilder(self.workflow, self.gateway_id)
 
-class IfElseBuilder:
+    def __call__(self, then_fn: Any) -> 'ThenBuilder':
+        return self.then(then_fn)
+
+class ThenBuilder:
     def __init__(self, workflow: 'Workflow', gateway_id: str):
-        self._workflow = workflow
-        self._gateway_id = gateway_id
+        self.workflow = workflow
+        self.gateway_id = gateway_id
 
-    def else_branch(self, else_fn=None) -> 'Workflow':
+    def otherwise(self, else_fn=None) -> Any:
         if else_fn is None:
             def decorator(func):
-                return self.else_branch(func)
+                return self.otherwise(func)
             return decorator
 
-        else_branch = Branch(self._workflow, self._gateway_id, self._gateway_id, False)
+        else_branch = Branch(self.workflow, self.gateway_id, self.gateway_id, False)
         else_fn(else_branch)
 
-        if not else_branch._has_ended and else_branch._current_node_id != self._gateway_id:
-            self._workflow._pending_merges.append(else_branch._current_node_id)
+        if not else_branch._has_ended and else_branch._current_node_id != self.gateway_id:
+            self.workflow._pending_merges.append(else_branch._current_node_id)
 
-        return self._workflow
+        return self.workflow
 
-class IfElseBranchBuilder:
+class WhenBranchBuilder:
+    def __init__(self, branch: Branch, gateway_id: str, condition: str):
+        self.branch = branch
+        self.gateway_id = gateway_id
+        self.condition = condition
+
+    def then(self, then_fn: Any) -> 'ThenBranchBuilder':
+        then_branch = Branch(self.branch._workflow, self.gateway_id, self.gateway_id, True, self.condition)
+        then_fn(then_branch)
+
+        if not then_branch._has_ended and then_branch._current_node_id != self.gateway_id:
+            self.branch._workflow._pending_merges.append(then_branch._current_node_id)
+
+        return ThenBranchBuilder(self.branch, self.gateway_id)
+
+    def __call__(self, then_fn: Any) -> 'ThenBranchBuilder':
+        return self.then(then_fn)
+
+class ThenBranchBuilder:
     def __init__(self, branch: Branch, gateway_id: str):
-        self._branch = branch
-        self._gateway_id = gateway_id
+        self.branch = branch
+        self.gateway_id = gateway_id
 
-    def else_branch(self, else_fn=None) -> Branch:
+    def otherwise(self, else_fn=None) -> Any:
         if else_fn is None:
             def decorator(func):
-                return self.else_branch(func)
+                return self.otherwise(func)
             return decorator
 
-        else_branch = Branch(self._branch._workflow, self._gateway_id, self._gateway_id, False)
+        else_branch = Branch(self.branch._workflow, self.gateway_id, self.gateway_id, False)
         else_fn(else_branch)
 
-        if not else_branch._has_ended and else_branch._current_node_id != self._gateway_id:
-            self._branch._workflow._pending_merges.append(else_branch._current_node_id)
+        if not else_branch._has_ended and else_branch._current_node_id != self.gateway_id:
+            self.branch._workflow._pending_merges.append(else_branch._current_node_id)
 
-        return self._branch
+        return self.branch
 
 class Workflow:
     def __init__(self, id_str: str, name: str, wasm_input: Optional[Any] = None):
@@ -620,23 +644,11 @@ class Workflow:
         self._connect_node(node_id)
         return self
 
-    def if_branch(self, condition: Any, then_fn=None):
-        if then_fn is None:
-            def decorator(func):
-                return self.if_branch(condition, func)
-            return decorator
-
+    def when(self, condition: Any) -> WhenBuilder:
         gw_id = f"gw_{self._current_node_id}_decision"
         self.exclusive_gateway(gw_id, "Decision Gateway")
         self._connect_node(gw_id)
-
-        then_branch = Branch(self, gw_id, gw_id, True, str(condition))
-        then_fn(then_branch)
-
-        if not then_branch._has_ended and then_branch._current_node_id != gw_id:
-            self._pending_merges.append(then_branch._current_node_id)
-
-        return IfElseBuilder(self, gw_id)
+        return WhenBuilder(self, gw_id, str(condition))
 
     def start_event(self, node_id: str = "start") -> StartEventBuilder:
         self._nodes.append({'type': 'startEvent', 'id': node_id, 'name': 'Start'})

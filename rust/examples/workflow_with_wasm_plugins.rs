@@ -19,12 +19,13 @@ async fn main() {
                 .prompt("Analyze transaction for fraud: ${orderAmount}")
                 .result_var("isFraudulent")
         })
-        .if_branch(v("isFraudulent").eq(true), |b| {
+        .when(v("isFraudulent").eq(true))
+        .then(|b| {
             b.user("userTask", "Manual Fraud Approval", |ut| {
                 ut.assignee("security_officer")
             });
         })
-        .else_branch(|_b| {
+        .otherwise(|_b| {
             // empty default else
         });
 

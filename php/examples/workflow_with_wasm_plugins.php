@@ -20,12 +20,12 @@ $workflow->service("calculate", "Calculate Totals", "payment_topic", function($s
             ->prompt('Analyze transaction for fraud: ${orderAmount}')
             ->resultVar("isFraudulent");
     })
-    ->if(Workflow::V('isFraudulent')->eq(true), function($b) {
+    ->when(Workflow::V('isFraudulent')->eq(true))->then(function($b) {
         $b->user("userTask", "Manual Fraud Approval", function($ut) {
             $ut->assignee("security_officer");
         });
     })
-    ->else(function($b) {
+    ->otherwise(function($b) {
         // empty branch (will auto-route to end event)
     });
 

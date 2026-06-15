@@ -408,19 +408,11 @@ class Workflow {
         return $this;
     }
 
-    public function if($condition, callable $thenFn): IfElseBuilder {
+    public function when($condition): WhenBuilder {
         $gwID = "gw_" . $this->currentNodeID . "_decision";
         $this->exclusiveGateway($gwID, "Decision Gateway");
         $this->connectNode($gwID);
-
-        $thenBranch = new Branch($this, $gwID, $gwID, true, (string)$condition);
-        $thenFn($thenBranch);
-
-        if (!$thenBranch->hasEnded && $thenBranch->currentNodeID !== $gwID) {
-            $this->pendingMerges[] = $thenBranch->currentNodeID;
-        }
-
-        return new IfElseBuilder($this, $gwID);
+        return new WhenBuilder($this, $gwID, (string)$condition);
     }
 
     public static function V(string $name): Variable {
@@ -1066,23 +1058,38 @@ class Branch {
         return $this;
     }
 
-    public function if($condition, callable $thenFn): IfElseBranchBuilder {
+    public function when($condition): WhenBranchBuilder {
         $gwID = "gw_" . $this->currentNodeID . "_decision";
         $this->workflow->exclusiveGateway($gwID, "Decision Gateway");
         $this->connectNode($gwID);
-
-        $thenBranch = new Branch($this->workflow, $gwID, $gwID, true, (string)$condition);
-        $thenFn($thenBranch);
-
-        if (!$thenBranch->hasEnded && $thenBranch->currentNodeID !== $gwID) {
-            $this->workflow->pendingMerges[] = $thenBranch->currentNodeID;
-        }
-
-        return new IfElseBranchBuilder($this, $gwID);
+        return new WhenBranchBuilder($this, $gwID, (string)$condition);
     }
 }
 
-class IfElseBuilder {
+class WhenBuilder {
+    private Workflow $workflow;
+    private string $gatewayID;
+    private string $condition;
+
+    public function __construct(Workflow $workflow, string $gatewayID, string $condition) {
+        $this->workflow = $workflow;
+        $this->gatewayID = $gatewayID;
+        $this->condition = $condition;
+    }
+
+    public function then(callable $thenFn): ThenBuilder {
+        $thenBranch = new Branch($this->workflow, $this->gatewayID, $this->gatewayID, true, $this->condition);
+        $thenFn($thenBranch);
+
+        if (!$thenBranch->hasEnded && $thenBranch->currentNodeID !== $this->gatewayID) {
+            $this->workflow->pendingMerges[] = $thenBranch->currentNodeID;
+        }
+
+        return new ThenBuilder($this->workflow, $this->gatewayID);
+    }
+}
+
+class ThenBuilder {
     private Workflow $workflow;
     private string $gatewayID;
 
@@ -1091,7 +1098,7 @@ class IfElseBuilder {
         $this->gatewayID = $gatewayID;
     }
 
-    public function else(callable $elseFn): Workflow {
+    public function otherwise(callable $elseFn): Workflow {
         $elseBranch = new Branch($this->workflow, $this->gatewayID, $this->gatewayID, false, "");
         $elseFn($elseBranch);
 
@@ -1103,7 +1110,30 @@ class IfElseBuilder {
     }
 }
 
-class IfElseBranchBuilder {
+class WhenBranchBuilder {
+    private Branch $branch;
+    private string $gatewayID;
+    private string $condition;
+
+    public function __construct(Branch $branch, string $gatewayID, string $condition) {
+        $this->branch = $branch;
+        $this->gatewayID = $gatewayID;
+        $this->condition = $condition;
+    }
+
+    public function then(callable $thenFn): ThenBranchBuilder {
+        $thenBranch = new Branch($this->branch->workflow, $this->gatewayID, $this->gatewayID, true, $this->condition);
+        $thenFn($thenBranch);
+
+        if (!$thenBranch->hasEnded && $thenBranch->currentNodeID !== $this->gatewayID) {
+            $this->branch->workflow->pendingMerges[] = $thenBranch->currentNodeID;
+        }
+
+        return new ThenBranchBuilder($this->branch, $this->gatewayID);
+    }
+}
+
+class ThenBranchBuilder {
     private Branch $branch;
     private string $gatewayID;
 
@@ -1112,7 +1142,7 @@ class IfElseBranchBuilder {
         $this->gatewayID = $gatewayID;
     }
 
-    public function else(callable $elseFn): Branch {
+    public function otherwise(callable $elseFn): Branch {
         $elseBranch = new Branch($this->branch->workflow, $this->gatewayID, $this->gatewayID, false, "");
         $elseFn($elseBranch);
 

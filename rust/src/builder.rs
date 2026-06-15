@@ -907,32 +907,18 @@ impl Workflow {
         self
     }
 
-    pub fn if_branch<C, F>(&mut self, condition: C, then_fn: F) -> IfElseBuilder<'_>
+    pub fn when<C>(&mut self, condition: C) -> WhenBuilder<'_>
     where
         C: ToCondition,
-        F: FnOnce(&mut Branch<'_>)
     {
         let gw_id = format!("gw_{}_decision", self.current_node_id);
         self.exclusive_gateway(&gw_id, "Decision Gateway");
         self.connect_node(&gw_id);
 
-        let mut then_b = Branch {
+        WhenBuilder {
             workflow: self,
-            gateway_id: gw_id.clone(),
-            current_node_id: gw_id.clone(),
-            is_conditional: true,
-            condition: Some(condition.to_condition()),
-            has_ended: false,
-        };
-        then_fn(&mut then_b);
-
-        if !then_b.has_ended && then_b.current_node_id != gw_id {
-            then_b.workflow.pending_merges.push(then_b.current_node_id);
-        }
-
-        IfElseBuilder {
-            workflow: then_b.workflow,
             gateway_id: gw_id,
+            condition: condition.to_condition(),
         }
     }
 }
@@ -1015,43 +1001,61 @@ impl<'a> Branch<'a> {
         self
     }
 
-    pub fn if_branch<C, F>(&mut self, condition: C, then_fn: F) -> IfElseBranchBuilder<'_, 'a>
+    pub fn when<C>(&mut self, condition: C) -> WhenBranchBuilder<'_, 'a>
     where
         C: ToCondition,
-        F: FnOnce(&mut Branch<'_>)
     {
         let gw_id = format!("gw_{}_decision", self.current_node_id);
         self.workflow.exclusive_gateway(&gw_id, "Decision Gateway");
         self.connect_node(&gw_id);
 
-        let mut then_b = Branch {
-            workflow: &mut *self.workflow,
-            gateway_id: gw_id.clone(),
-            current_node_id: gw_id.clone(),
-            is_conditional: true,
-            condition: Some(condition.to_condition()),
-            has_ended: false,
-        };
-        then_fn(&mut then_b);
-
-        if !then_b.has_ended && then_b.current_node_id != gw_id {
-            then_b.workflow.pending_merges.push(then_b.current_node_id);
-        }
-
-        IfElseBranchBuilder {
+        WhenBranchBuilder {
             branch: self,
             gateway_id: gw_id,
+            condition: condition.to_condition(),
         }
     }
 }
 
-pub struct IfElseBuilder<'a> {
+pub struct WhenBuilder<'a> {
+    pub workflow: &'a mut Workflow,
+    pub gateway_id: String,
+    pub condition: String,
+}
+
+impl<'a> WhenBuilder<'a> {
+    pub fn then<F>(self, then_fn: F) -> ThenBuilder<'a>
+    where
+        F: FnOnce(&mut Branch<'_>)
+    {
+        let mut then_b = Branch {
+            workflow: self.workflow,
+            gateway_id: self.gateway_id.clone(),
+            current_node_id: self.gateway_id.clone(),
+            is_conditional: true,
+            condition: Some(self.condition),
+            has_ended: false,
+        };
+        then_fn(&mut then_b);
+
+        if !then_b.has_ended && then_b.current_node_id != self.gateway_id {
+            then_b.workflow.pending_merges.push(then_b.current_node_id);
+        }
+
+        ThenBuilder {
+            workflow: then_b.workflow,
+            gateway_id: self.gateway_id,
+        }
+    }
+}
+
+pub struct ThenBuilder<'a> {
     pub workflow: &'a mut Workflow,
     pub gateway_id: String,
 }
 
-impl<'a> IfElseBuilder<'a> {
-    pub fn else_branch<F>(self, else_fn: F) -> &'a mut Workflow
+impl<'a> ThenBuilder<'a> {
+    pub fn otherwise<F>(self, else_fn: F) -> &'a mut Workflow
     where
         F: FnOnce(&mut Branch<'_>)
     {
@@ -1073,13 +1077,45 @@ impl<'a> IfElseBuilder<'a> {
     }
 }
 
-pub struct IfElseBranchBuilder<'b, 'a> {
+pub struct WhenBranchBuilder<'b, 'a> {
+    pub branch: &'b mut Branch<'a>,
+    pub gateway_id: String,
+    pub condition: String,
+}
+
+impl<'b, 'a> WhenBranchBuilder<'b, 'a> {
+    pub fn then<F>(self, then_fn: F) -> ThenBranchBuilder<'b, 'a>
+    where
+        F: FnOnce(&mut Branch<'_>)
+    {
+        let mut then_b = Branch {
+            workflow: &mut *self.branch.workflow,
+            gateway_id: self.gateway_id.clone(),
+            current_node_id: self.gateway_id.clone(),
+            is_conditional: true,
+            condition: Some(self.condition),
+            has_ended: false,
+        };
+        then_fn(&mut then_b);
+
+        if !then_b.has_ended && then_b.current_node_id != self.gateway_id {
+            then_b.workflow.pending_merges.push(then_b.current_node_id);
+        }
+
+        ThenBranchBuilder {
+            branch: self.branch,
+            gateway_id: self.gateway_id,
+        }
+    }
+}
+
+pub struct ThenBranchBuilder<'b, 'a> {
     pub branch: &'b mut Branch<'a>,
     pub gateway_id: String,
 }
 
-impl<'b, 'a> IfElseBranchBuilder<'b, 'a> {
-    pub fn else_branch<F>(self, else_fn: F) -> &'b mut Branch<'a>
+impl<'b, 'a> ThenBranchBuilder<'b, 'a> {
+    pub fn otherwise<F>(self, else_fn: F) -> &'b mut Branch<'a>
     where
         F: FnOnce(&mut Branch<'_>)
     {
@@ -1129,11 +1165,12 @@ mod tests {
         let mut w = Workflow::new("test-process-dsl", "Test Process DSL");
         w.start("start")
             .user("task1", "User Task 1", |t| t.assignee("admin"))
-            .if_branch("${is_urgent == true}", |b| {
+            .when("${is_urgent == true}")
+            .then(|b| {
                 b.service("task2", "Urgent Task", "urgent_topic", |s| s)
                     .end("end_urgent", "Urgent Finished");
             })
-            .else_branch(|b| {
+            .otherwise(|b| {
                 b.service("task3", "Normal Task", "normal_topic", |s| s)
                     .end("end_normal", "Normal Finished");
             });

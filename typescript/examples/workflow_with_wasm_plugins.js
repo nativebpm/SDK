@@ -15,12 +15,13 @@ export async function run() {
         .prompt('Analyze transaction for fraud: ${orderAmount}')
         .resultVar('isFraudulent');
     })
-    .if(v('isFraudulent').eq(true), b => {
-      b.user('userTask', 'Manual Fraud Approval', ut => {
+    .when(v('isFraudulent').eq(true))
+    .then(flow => {
+      flow.user('userTask', 'Manual Fraud Approval', ut => {
         ut.assignee('security_officer');
       });
     })
-    .else(b => {
+    .otherwise(flow => {
       // empty default else
     });
   

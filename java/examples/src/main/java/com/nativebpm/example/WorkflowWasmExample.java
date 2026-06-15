@@ -13,12 +13,12 @@ public class WorkflowWasmExample {
 
         // Chain starting from the start event
         workflow
-                .ifBranch(V("isUrgent").eq(true), b -> {
+                .when(V("isUrgent").eq(true)).then(b -> {
                     b.user("reviewOrder", "Review Order Details", ut -> {
                         ut.assignee("sales_representative");
                     });
                 })
-                .elseBranch(b -> {
+                .otherwise(b -> {
                     b.service("notifyCustomer", "Send Confirmation Email", "email_topic");
                 });
 
