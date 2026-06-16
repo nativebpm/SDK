@@ -35,6 +35,8 @@ Click on the language badges below to navigate to their respective subdirectorie
 | **.NET (C#)** | ![.NET](https://img.shields.io/badge/.NET-512BD4?style=flat-square&logo=dotnet&logoColor=white) | [.NET Client & Builder](./dotnet) |
 | **PHP** | ![PHP](https://img.shields.io/badge/PHP-777BB4?style=flat-square&logo=php&logoColor=white) | [PHP Client & Builder](./php) |
 | **Rust** | ![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white) | [Rust Client & Builder](./rust) |
+| **Kotlin** | ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | [Kotlin Client](./kotlin) |
+| **Swift** | ![Swift](https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white) | [Swift Client](./swift) |
 
 ---
 
@@ -42,7 +44,7 @@ Click on the language badges below to navigate to their respective subdirectorie
 
 NativeBPM features a state-of-the-art **Workflow-as-Code** builder. Instead of writing verbose BPMN 2.0 XML by hand or using external visual tools, developers can write type-safe, fluent code in their host language.
 
-To ensure strict parity, identical schema output, and instant local validation across all 7 languages, NativeBPM compiles these code-defined ASTs using a single **embedded WebAssembly (WASM) core compiler** (`core.wasm`). 
+To ensure strict parity, identical schema output, and instant local validation across all 7 languages (Go, Python, JS/TS, Java, .NET, PHP, Rust), NativeBPM compiles these code-defined ASTs using a single **embedded WebAssembly (WASM) core compiler** (`core.wasm`). 
 
 ### How it Works
 
@@ -111,6 +113,16 @@ Every language has its unique ecosystem, strengths, and philosophy. NativeBPM em
 * **Maximum Performance**: Zero runtime cost and zero-garbage-collector execution for absolute memory safety and speed.
 * **Direct WASM Synergy**: Rust compiles to and interacts with WASM runtimes (like Wasmtime) with the highest possible efficiency.
 * **Bulletproof Safety**: The compiler enforces strict ownership rules, preventing runtime data races in distributed workers.
+
+### 🚀 Kotlin (Android / JVM)
+* **Mobile & Backend Ready**: Native Kotlin REST client, perfect for Android apps, backend microservices, or Kotlin Multiplatform projects.
+* **Modern Concurrency**: Built with OkHttp and coroutines compatibility for lightweight asynchronous requests.
+* **Clean Syntax**: Elegant Kotlin properties and builders that map directly to the platform API.
+
+### 🍎 Swift (iOS / macOS)
+* **Native Apple Integration**: Native Swift implementation using URLSession and modern async/await for smooth integration into iOS, macOS, or watchOS apps.
+* **Strict Type Safety**: Fully compatible with Swift Codable schemas and AnyCodable variables, avoiding JSON deserialization issues.
+* **Lightweight Bundle**: REST-only client, avoiding WebAssembly and runtime overhead to keep your mobile application binary size tiny.
 
 ---
 

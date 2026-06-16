@@ -1,7 +1,7 @@
-.PHONY: generate generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust build-core-wasm
+.PHONY: generate generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift build-core-wasm
 
 # Unified code generator target for all polyglot SDKs using local openapi.yaml
-generate: generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust
+generate: generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift
 
 generate-go:
 	docker run --rm -v "$$(pwd)/..:/local" openapitools/openapi-generator-cli generate \
@@ -51,6 +51,20 @@ generate-rust:
 		-g rust \
 		-o /local/sdk/rust \
 		--additional-properties=packageName=nativebpm-client
+
+generate-kotlin:
+	docker run --rm -v "$$(pwd)/..:/local" openapitools/openapi-generator-cli generate \
+		-i /local/sdk/openapi.yaml \
+		-g kotlin \
+		-o /local/sdk/kotlin \
+		--additional-properties=groupId=com.nativebpm,artifactId=nativebpm-kotlin-client,artifactVersion=1.0.0,packageName=com.nativebpm.client,library=jvm-okhttp4
+
+generate-swift:
+	docker run --rm -v "$$(pwd)/..:/local" openapitools/openapi-generator-cli generate \
+		-i /local/sdk/openapi.yaml \
+		-g swift5 \
+		-o /local/sdk/swift \
+		--additional-properties=projectName=NativeBPMClient,responseAs=AsyncAwait
 
 build-core-wasm:
 	GOOS=wasip1 GOARCH=wasm go build -o ./go/core.wasm ../nativebpm/cmd/wasm-compiler/

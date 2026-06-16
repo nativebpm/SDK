@@ -35,6 +35,8 @@
 | **.NET (C#)** | ![.NET](https://img.shields.io/badge/.NET-512BD4?style=flat-square&logo=dotnet&logoColor=white) | [Клиент и конструктор .NET](./dotnet) |
 | **PHP** | ![PHP](https://img.shields.io/badge/PHP-777BB4?style=flat-square&logo=php&logoColor=white) | [Клиент и конструктор PHP](./php) |
 | **Rust** | ![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white) | [Клиент и конструктор Rust](./rust) |
+| **Kotlin** | ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | [Клиент Kotlin](./kotlin) |
+| **Swift** | ![Swift](https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white) | [Клиент Swift](./swift) |
 
 ---
 
@@ -111,6 +113,16 @@ flowchart TD
 * **Максимальная эффективность**: Отсутствие накладных расходов во время выполнения (zero-cost abstractions) и отсутствие сборщика мусора гарантируют предсказуемую скорость.
 * **Нативная синергия с WASM**: Rust взаимодействует с WASM-рантаймом (через Wasmtime) с наивысшей производительностью и минимальным потреблением памяти.
 * **Гарантированная безопасность**: Компилятор предотвращает состояние гонки (data races) при параллельной обработке задач распределенными воркерами.
+
+### 🚀 Kotlin (Android / JVM)
+* **Готов к мобильной и бэкенд разработке**: Нативный клиент REST на Kotlin, идеально подходящий для приложений под Android, бэкенд-микросервисов или проектов Kotlin Multiplatform.
+* **Современная асинхронность**: Построен на базе OkHttp с легкой интеграцией с корутинами (Coroutines) для эффективного выполнения запросов.
+* **Лаконичный синтаксис**: Элегантные свойства Kotlin и fluent-билдеры, напрямую сопоставимые с API платформы.
+
+### 🍎 Swift (iOS / macOS)
+* **Нативная интеграция Apple**: Реализация на чистом Swift с использованием URLSession и современного механизма async/await для бесшовной интеграции в приложения для iOS, macOS или watchOS.
+* **Строгая типизация**: Полная совместимость со схемами Swift Codable и типом AnyCodable для безопасной работы с переменными без проблем с сериализацией JSON.
+* **Легковесный размер**: Исключительно REST-клиент без оверхеда на WebAssembly, что сохраняет размер бинарного файла вашего мобильного приложения минимальным.
 
 ---
 
