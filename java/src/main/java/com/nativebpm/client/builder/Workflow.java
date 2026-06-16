@@ -304,6 +304,10 @@ public class Workflow {
 
             return workflow;
         }
+
+        public Workflow Else(Consumer<Branch> elseFn) {
+            return otherwise(elseFn);
+        }
     }
 
     public static class WhenBranchBuilder {
@@ -347,6 +351,10 @@ public class Workflow {
             }
 
             return branch;
+        }
+
+        public Branch Else(Consumer<Branch> elseFn) {
+            return otherwise(elseFn);
         }
     }
 

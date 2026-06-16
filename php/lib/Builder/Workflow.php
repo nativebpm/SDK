@@ -595,6 +595,10 @@ class ThenBuilder {
 
         return $this->workflow;
     }
+
+    public function else(callable $elseFn): Workflow {
+        return $this->otherwise($elseFn);
+    }
 }
 
 class WhenBranchBuilder {
@@ -638,6 +642,10 @@ class ThenBranchBuilder {
         }
 
         return $this->branch;
+    }
+
+    public function else(callable $elseFn): Branch {
+        return $this->otherwise($elseFn);
     }
 }
 

@@ -475,8 +475,8 @@ func (wb *WhenBuilder) Then(thenFn func(flow *Branch)) *ThenBuilder {
 	}
 }
 
-// Otherwise defines the default path on the main workflow when the condition evaluates to false.
-func (tb *ThenBuilder) Otherwise(elseFn func(flow *Branch)) *Workflow {
+// Else defines the default path on the main workflow when the condition evaluates to false.
+func (tb *ThenBuilder) Else(elseFn func(flow *Branch)) *Workflow {
 	elseBranch := &Branch{
 		workflow:      tb.workflow,
 		gatewayID:     tb.gatewayID,
@@ -491,6 +491,11 @@ func (tb *ThenBuilder) Otherwise(elseFn func(flow *Branch)) *Workflow {
 	}
 
 	return tb.workflow
+}
+
+// Otherwise defines the default path on the main workflow when the condition evaluates to false.
+func (tb *ThenBuilder) Otherwise(elseFn func(flow *Branch)) *Workflow {
+	return tb.Else(elseFn)
 }
 
 func (b *Branch) connectNode(id string) {
@@ -604,8 +609,8 @@ func (wbb *WhenBranchBuilder) Then(thenFn func(sub *Branch)) *ThenBranchBuilder 
 	}
 }
 
-// Otherwise defines the nested default path when the condition evaluates to false.
-func (tbb *ThenBranchBuilder) Otherwise(elseFn func(sub *Branch)) *Branch {
+// Else defines the nested default path when the condition evaluates to false.
+func (tbb *ThenBranchBuilder) Else(elseFn func(sub *Branch)) *Branch {
 	elseBranch := &Branch{
 		workflow:      tbb.branch.workflow,
 		gatewayID:     tbb.gatewayID,
@@ -620,6 +625,11 @@ func (tbb *ThenBranchBuilder) Otherwise(elseFn func(sub *Branch)) *Branch {
 	}
 
 	return tbb.branch
+}
+
+// Otherwise defines the nested default path when the condition evaluates to false.
+func (tbb *ThenBranchBuilder) Otherwise(elseFn func(sub *Branch)) *Branch {
+	return tbb.Else(elseFn)
 }
 
 func decompressWasmIfNeeded(data []byte) ([]byte, error) {

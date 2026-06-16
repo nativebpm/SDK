@@ -740,6 +740,11 @@ namespace NativeBPM.Client.Builder
 
             return workflow;
         }
+
+        public Workflow Else(Action<Branch> elseFn)
+        {
+            return Otherwise(elseFn);
+        }
     }
 
     public class WhenBranchBuilder
@@ -791,6 +796,11 @@ namespace NativeBPM.Client.Builder
             }
 
             return branch;
+        }
+
+        public Branch Else(Action<Branch> elseFn)
+        {
+            return Otherwise(elseFn);
         }
     }
 

@@ -86,6 +86,7 @@ export declare class ThenBuilder {
     workflow: Workflow;
     gatewayID: string;
     constructor(workflow: Workflow, gatewayID: string);
+    else(elseFn: (flow: Branch) => void): Workflow;
     otherwise(elseFn: (flow: Branch) => void): Workflow;
 }
 export declare class WhenBranchBuilder {
@@ -99,6 +100,7 @@ export declare class ThenBranchBuilder {
     branch: Branch;
     gatewayID: string;
     constructor(branch: Branch, gatewayID: string);
+    else(elseFn: (flow: Branch) => void): Branch;
     otherwise(elseFn: (flow: Branch) => void): Branch;
 }
 export declare class Workflow {

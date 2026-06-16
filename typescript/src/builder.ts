@@ -202,7 +202,7 @@ export class WhenBuilder {
 export class ThenBuilder {
   constructor(public workflow: Workflow, public gatewayID: string) {}
 
-  public otherwise(elseFn: (flow: Branch) => void): Workflow {
+  public else(elseFn: (flow: Branch) => void): Workflow {
     const elseBranch = new Branch(this.workflow, this.gatewayID, this.gatewayID, false);
     elseFn(elseBranch);
 
@@ -211,6 +211,10 @@ export class ThenBuilder {
     }
 
     return this.workflow;
+  }
+
+  public otherwise(elseFn: (flow: Branch) => void): Workflow {
+    return this.else(elseFn);
   }
 }
 
@@ -232,7 +236,7 @@ export class WhenBranchBuilder {
 export class ThenBranchBuilder {
   constructor(public branch: Branch, public gatewayID: string) {}
 
-  public otherwise(elseFn: (flow: Branch) => void): Branch {
+  public else(elseFn: (flow: Branch) => void): Branch {
     const elseBranch = new Branch(this.branch.workflow, this.gatewayID, this.gatewayID, false);
     elseFn(elseBranch);
 
@@ -241,6 +245,10 @@ export class ThenBranchBuilder {
     }
 
     return this.branch;
+  }
+
+  public otherwise(elseFn: (flow: Branch) => void): Branch {
+    return this.else(elseFn);
   }
 }
 

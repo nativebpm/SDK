@@ -618,6 +618,14 @@ impl<'a> ThenBuilder<'a> {
 
         else_b.workflow
     }
+
+    #[allow(non_snake_case)]
+    pub fn Else<F>(self, else_fn: F) -> &'a mut Workflow
+    where
+        F: FnOnce(&mut Branch<'_>)
+    {
+        self.otherwise(else_fn)
+    }
 }
 
 pub struct WhenBranchBuilder<'b, 'a> {
@@ -677,6 +685,14 @@ impl<'b, 'a> ThenBranchBuilder<'b, 'a> {
         }
 
         self.branch
+    }
+
+    #[allow(non_snake_case)]
+    pub fn Else<F>(self, else_fn: F) -> &'b mut Branch<'a>
+    where
+        F: FnOnce(&mut Branch<'_>)
+    {
+        self.otherwise(else_fn)
     }
 }
 

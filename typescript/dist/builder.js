@@ -154,13 +154,16 @@ export class ThenBuilder {
         this.workflow = workflow;
         this.gatewayID = gatewayID;
     }
-    otherwise(elseFn) {
+    else(elseFn) {
         const elseBranch = new Branch(this.workflow, this.gatewayID, this.gatewayID, false);
         elseFn(elseBranch);
         if (!elseBranch.hasEnded && elseBranch.currentNodeID !== this.gatewayID) {
             this.workflow.pendingMerges.push(elseBranch.currentNodeID);
         }
         return this.workflow;
+    }
+    otherwise(elseFn) {
+        return this.else(elseFn);
     }
 }
 export class WhenBranchBuilder {
@@ -188,13 +191,16 @@ export class ThenBranchBuilder {
         this.branch = branch;
         this.gatewayID = gatewayID;
     }
-    otherwise(elseFn) {
+    else(elseFn) {
         const elseBranch = new Branch(this.branch.workflow, this.gatewayID, this.gatewayID, false);
         elseFn(elseBranch);
         if (!elseBranch.hasEnded && elseBranch.currentNodeID !== this.gatewayID) {
             this.branch.workflow.pendingMerges.push(elseBranch.currentNodeID);
         }
         return this.branch;
+    }
+    otherwise(elseFn) {
+        return this.else(elseFn);
     }
 }
 export class Workflow {

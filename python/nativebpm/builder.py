@@ -154,6 +154,9 @@ class ThenBuilder:
 
         return self.workflow
 
+    def Else(self, else_fn=None) -> Any:
+        return self.otherwise(else_fn)
+
 class WhenBranchBuilder:
     def __init__(self, branch: Branch, gateway_id: str, condition: str):
         self.branch = branch
@@ -190,6 +193,9 @@ class ThenBranchBuilder:
             self.branch._workflow._pending_merges.append(else_branch._current_node_id)
 
         return self.branch
+
+    def Else(self, else_fn=None) -> Any:
+        return self.otherwise(else_fn)
 
 class Workflow:
     def __init__(self, id_str: str, name: str, wasm_input: Optional[Any] = None):
