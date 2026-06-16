@@ -1,8 +1,13 @@
 package nativebpm
 
 import (
+	"bytes"
 	"context"
-	"os"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
 )
 
 // Client wraps the generated APIClient to provide a Fluent API.
@@ -71,6 +76,8 @@ func (b *ListDefinitionsBuilder) Send(ctx context.Context) ([]ProcessDefinition,
 
 type DeployDefinitionBuilder struct {
 	service *DefinitionsService
+	id      string
+	name    string
 	bpmnXML []byte
 	err     error
 }
@@ -80,10 +87,12 @@ func (s *DefinitionsService) Deploy() *DeployDefinitionBuilder {
 }
 
 func (b *DeployDefinitionBuilder) WithID(id string) *DeployDefinitionBuilder {
+	b.id = id
 	return b
 }
 
 func (b *DeployDefinitionBuilder) WithName(name string) *DeployDefinitionBuilder {
+	b.name = name
 	return b
 }
 
@@ -96,24 +105,77 @@ func (b *DeployDefinitionBuilder) Send(ctx context.Context) (*ProcessDefinition,
 	if b.err != nil {
 		return nil, b.err
 	}
-	tmpFile, err := os.CreateTemp("", "*.bpmn")
+	if b.id == "" {
+		return nil, fmt.Errorf("missing deployment field: ID")
+	}
+	if b.name == "" {
+		return nil, fmt.Errorf("missing deployment field: Name")
+	}
+	if len(b.bpmnXML) == 0 {
+		return nil, fmt.Errorf("missing deployment field: BPMN XML data")
+	}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Write fields
+	if err := writer.WriteField("id", b.id); err != nil {
+		return nil, err
+	}
+	if err := writer.WriteField("name", b.name); err != nil {
+		return nil, err
+	}
+
+	// Write file
+	part, err := writer.CreateFormFile("file", b.name+".bpmn")
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(tmpFile.Name())
-	defer tmpFile.Close()
-
-	if _, err := tmpFile.Write(b.bpmnXML); err != nil {
+	if _, err := part.Write(b.bpmnXML); err != nil {
 		return nil, err
 	}
-	if _, err := tmpFile.Seek(0, 0); err != nil {
+	if err := writer.Close(); err != nil {
 		return nil, err
 	}
 
-	res, _, err := b.service.client.apiClient.DefaultAPI.DeployDefinition(ctx).
-		File(tmpFile).
-		Execute()
-	return res, err
+	cfg := b.service.client.apiClient.cfg
+	serverURL := cfg.Servers[0].URL
+	reqURL := serverURL + "/api/deploy"
+
+	req, err := http.NewRequestWithContext(ctx, "POST", reqURL, body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Accept", "application/json")
+	for k, v := range cfg.DefaultHeader {
+		req.Header.Set(k, v)
+	}
+
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to deploy: status=%d, body=%s", resp.StatusCode, string(respBody))
+	}
+
+	var result ProcessDefinition
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 // InstancesService manages process runs

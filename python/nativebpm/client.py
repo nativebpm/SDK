@@ -73,8 +73,11 @@ class DeployDefinitionBuilder:
         self._name = name_val
         return self
 
-    def with_bpmn(self, bpmn_val: bytes) -> 'DeployDefinitionBuilder':
-        self._bpmn_xml = bpmn_val
+    def with_bpmn(self, bpmn_val: Any) -> 'DeployDefinitionBuilder':
+        if isinstance(bpmn_val, str):
+            self._bpmn_xml = bpmn_val.encode('utf-8')
+        else:
+            self._bpmn_xml = bpmn_val
         return self
 
     def send(self) -> ProcessDefinition:
