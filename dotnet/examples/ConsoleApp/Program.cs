@@ -95,7 +95,7 @@ namespace ConsoleApp
                         ut.Assignee("sales_representative");
                     });
                 })
-                .Otherwise(b => {
+                .Else(b => {
                     b.Service("notifyCustomer", "Send Confirmation Email", "email_topic");
                 });
 
@@ -172,7 +172,7 @@ namespace ConsoleApp
                         ut.Assignee("security_officer");
                     });
                 })
-                .Otherwise(b => {
+                .Else(b => {
                     // empty branch (will auto-route to end event)
                 });
 

@@ -21,7 +21,7 @@ export async function run() {
         ut.assignee('security_officer');
       });
     })
-    .otherwise(flow => {
+    .else(flow => {
       // empty default else
     });
   

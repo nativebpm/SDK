@@ -25,7 +25,7 @@ $workflow->service("calculate", "Calculate Totals", "payment_topic", function($s
             $ut->assignee("security_officer");
         });
     })
-    ->otherwise(function($b) {
+    ->else(function($b) {
         // empty branch (will auto-route to end event)
     });
 

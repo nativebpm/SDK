@@ -18,7 +18,7 @@ public class WorkflowWasmExample {
                         ut.assignee("sales_representative");
                     });
                 })
-                .otherwise(b -> {
+                .Else(b -> {
                     b.service("notifyCustomer", "Send Confirmation Email", "email_topic");
                 });
 

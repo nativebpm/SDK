@@ -12,7 +12,7 @@ def main():
         b.user('reviewOrder', 'Review Order Details', lambda ut: (
             ut.assignee('sales_representative')
         ))
-    )).otherwise(lambda b: (
+    )).Else(lambda b: (
         b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic')
     ))
         

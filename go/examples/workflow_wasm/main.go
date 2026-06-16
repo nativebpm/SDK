@@ -21,7 +21,7 @@ func main() {
 		Then(func(flow *nativebpm.Branch) {
 			flow.User("reviewOrder", "Review Order Details", nativebpm.M{"assignee": "sales_representative"})
 		}).
-		Otherwise(func(flow *nativebpm.Branch) {
+		Else(func(flow *nativebpm.Branch) {
 			flow.Service("notifyCustomer", "Send Confirmation Email", "email_topic")
 		})
 

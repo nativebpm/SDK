@@ -16,7 +16,7 @@ async fn main() {
                 ut.assignee("sales_representative")
             });
         })
-        .otherwise(|b| {
+        .Else(|b| {
             b.service("notifyCustomer", "Send Confirmation Email", "email_topic", |st| st);
         });
 

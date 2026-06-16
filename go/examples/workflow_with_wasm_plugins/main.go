@@ -28,7 +28,7 @@ func main() {
 		Then(func(flow *nativebpm.Branch) {
 			flow.User("userTask", "Manual Fraud Approval", nativebpm.M{"assignee": "security_officer"})
 		}).
-		Otherwise(func(flow *nativebpm.Branch) {
+		Else(func(flow *nativebpm.Branch) {
 			// empty default else
 		})
 

@@ -12,7 +12,7 @@ export async function run() {
         ut.assignee('sales_representative');
       });
     })
-    .otherwise(flow => {
+    .else(flow => {
       flow.service('notifyCustomer', 'Send Confirmation Email', 'email_topic');
     });
   

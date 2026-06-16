@@ -26,7 +26,7 @@ public class WorkflowWithWasmPluginsExample {
                         ut.assignee("security_officer");
                     });
                 })
-                .otherwise(b -> {
+                .Else(b -> {
                     // empty branch (will auto-route to end event)
                 });
 

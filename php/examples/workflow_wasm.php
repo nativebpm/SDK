@@ -16,7 +16,7 @@ $workflow->when(Workflow::V('isUrgent')->eq(true))->then(function($b) {
             $ut->assignee("sales_representative");
         });
     })
-    ->otherwise(function($b) {
+    ->else(function($b) {
         $b->service("notifyCustomer", "Send Confirmation Email", "email_topic");
     });
 
