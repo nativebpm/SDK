@@ -267,7 +267,7 @@ type WhenBuilder struct {
 	condition string
 }
 
-// ThenBuilder facilitates chaining Otherwise() after Then() at the workflow level.
+// ThenBuilder facilitates chaining Else() after Then() at the workflow level.
 type ThenBuilder struct {
 	workflow  *Workflow
 	gatewayID string
@@ -280,7 +280,7 @@ type WhenBranchBuilder struct {
 	condition string
 }
 
-// ThenBranchBuilder facilitates chaining Otherwise() after Then() at the branch level.
+// ThenBranchBuilder facilitates chaining Else() after Then() at the branch level.
 type ThenBranchBuilder struct {
 	branch    *Branch
 	gatewayID string

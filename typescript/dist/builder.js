@@ -129,9 +129,6 @@ export class ThenBuilder {
         }
         return this.workflow;
     }
-    otherwise(elseFn) {
-        return this.else(elseFn);
-    }
 }
 export class WhenBranchBuilder {
     branch;
@@ -165,9 +162,6 @@ export class ThenBranchBuilder {
             this.branch.workflow.pendingMerges.push(elseBranch.currentNodeID);
         }
         return this.branch;
-    }
-    otherwise(elseFn) {
-        return this.else(elseFn);
     }
 }
 export class Workflow {

@@ -516,7 +516,8 @@ pub struct ThenBuilder<'a> {
 }
 
 impl<'a> ThenBuilder<'a> {
-    pub fn otherwise<F>(self, else_fn: F) -> &'a mut Workflow
+    #[allow(non_snake_case)]
+    pub fn Else<F>(self, else_fn: F) -> &'a mut Workflow
     where
         F: FnOnce(&mut Branch<'_>)
     {
@@ -535,14 +536,6 @@ impl<'a> ThenBuilder<'a> {
         }
 
         else_b.workflow
-    }
-
-    #[allow(non_snake_case)]
-    pub fn Else<F>(self, else_fn: F) -> &'a mut Workflow
-    where
-        F: FnOnce(&mut Branch<'_>)
-    {
-        self.otherwise(else_fn)
     }
 }
 
@@ -584,7 +577,8 @@ pub struct ThenBranchBuilder<'b, 'a> {
 }
 
 impl<'b, 'a> ThenBranchBuilder<'b, 'a> {
-    pub fn otherwise<F>(self, else_fn: F) -> &'b mut Branch<'a>
+    #[allow(non_snake_case)]
+    pub fn Else<F>(self, else_fn: F) -> &'b mut Branch<'a>
     where
         F: FnOnce(&mut Branch<'_>)
     {
@@ -603,14 +597,6 @@ impl<'b, 'a> ThenBranchBuilder<'b, 'a> {
         }
 
         self.branch
-    }
-
-    #[allow(non_snake_case)]
-    pub fn Else<F>(self, else_fn: F) -> &'b mut Branch<'a>
-    where
-        F: FnOnce(&mut Branch<'_>)
-    {
-        self.otherwise(else_fn)
     }
 }
 
@@ -645,7 +631,7 @@ mod tests {
                 b.service("task2", "Urgent Task", "urgent_topic", serde_json::json!({}))
                     .end("end_urgent", "Urgent Finished");
             })
-            .otherwise(|b| {
+            .Else(|b| {
                 b.service("task3", "Normal Task", "normal_topic", serde_json::json!({}))
                     .end("end_normal", "Normal Finished");
             });
