@@ -7,8 +7,6 @@ class TestPythonSDK(unittest.TestCase):
         
         workflow = Workflow('test-process', 'Test Process Schema')
         
-        workflow.start()
-        
         workflow.service('task1', 'Service Task 1', 'service-topic', wasm='./my_task.wasm')
             
         workflow.exclusive_gateway('gateway', 'Join/Split')
@@ -54,8 +52,6 @@ class TestPythonSDK(unittest.TestCase):
     def test_business_rule_task(self):
         print("Running Python SDK business rule task AST test...")
         workflow = Workflow('dmn-test', 'DMN Test Process')
-
-        workflow.start()
 
         workflow.business_rule(
             'ruleTask', 'Determine Discount', 'determine_discount',

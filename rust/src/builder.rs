@@ -639,8 +639,7 @@ mod tests {
     #[test]
     fn test_workflow_builder_closure_dsl() {
         let mut w = Workflow::new("test-process-dsl", "Test Process DSL");
-        w.start()
-            .user("task1", "User Task 1", serde_json::json!({ "assignee": "admin" }))
+        w.user("task1", "User Task 1", serde_json::json!({ "assignee": "admin" }))
             .when("is_urgent == true")
             .then(|b| {
                 b.service("task2", "Urgent Task", "urgent_topic", serde_json::json!({}))

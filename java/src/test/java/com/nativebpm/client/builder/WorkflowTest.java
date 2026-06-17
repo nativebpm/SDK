@@ -15,8 +15,6 @@ public class WorkflowTest {
         System.out.println("Running Java SDK workflow AST test...");
         Workflow workflow = new Workflow("test-process", "Test Process Schema");
 
-        workflow.start();
-
         workflow.service("task1", "Service Task 1", "service-topic", Map.of("wasm", "./my_task.wasm"));
 
         workflow.exclusiveGateway("gateway", "Join/Split");
@@ -63,7 +61,7 @@ public class WorkflowTest {
 
         for (int i = 0; i < 200; i++) {
             Workflow workflow = new Workflow("load-test-" + i, "Load Test " + i);
-            workflow.start().end("end", "End");
+            workflow.end("end", "End");
             String json = workflow.toJSON();
             assertNotNull(json);
             
@@ -84,7 +82,7 @@ public class WorkflowTest {
          System.out.println("Running Java SDK business rule task test...");
          Workflow workflow = new Workflow("dmn-test", "DMN Test Process");
 
-         workflow.start().businessRule("ruleTask", "Determine Discount", "determine_discount", Map.of(
+         workflow.businessRule("ruleTask", "Determine Discount", "determine_discount", Map.of(
              "hitPolicy", "UNIQUE",
              "inputs", List.of(
                  Map.of("expression", "membership", "type", "string"),
