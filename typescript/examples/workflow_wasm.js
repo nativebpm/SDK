@@ -16,21 +16,13 @@ export async function run() {
       flow.service('notifyCustomer', 'Send Confirmation Email', 'email_topic');
     });
   
-  // Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
-  const bpmnXML = await workflow.buildXML();
-  console.log("✓ Successfully compiled native workflow AST to BPMN 2.0 XML.");
-  
   // 2. Deploy and start process definition using the Fluent Client API
   const client = new Client("http://localhost:8080", "test-bearer-token");
   
-  console.log("\nDeploying to NativeBPM engine...");
+  console.log("\nDeploying to NativeBPM engine (JSON AST compiled server-side)...");
   try {
-    // Deploy process definition
-    const definition = await client.definitions().deploy()
-      .withID("native-demo")
-      .withName("Workflow as Code")
-      .withBPMN(bpmnXML)
-      .send();
+    // Deploy process definition directly via Workflow object
+    const definition = await client.deploy(workflow);
     console.log(`✓ Deployed process definition (hash: ${definition.hash})`);
     
     // Start a process instance with input variables

@@ -23,9 +23,7 @@ fun main() {
 
     try {
         println("Deploying workflow definition...")
-        val definition = client.definitions().deploy()
-            .withWorkflow(workflow)
-            .send()
+        val definition = client.deploy(workflow)
         println("✓ Deployed process definition (hash: ${definition.hash})")
 
         println("Starting process instance...")

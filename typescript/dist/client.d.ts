@@ -13,6 +13,7 @@ export declare class Client {
     constructor(baseUrl: string, apiToken: string);
     getHeaders(): Record<string, string>;
     getBaseUrl(): string;
+    deploy(workflow: Workflow): Promise<ProcessDefinition>;
     definitions(): DefinitionsService;
     instances(): InstancesService;
     tasks(): TasksService;

@@ -4,6 +4,7 @@ import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from nativebpm import (
     Client,
+    Workflow,
     ProcessDefinition,
     ProcessInstance,
     HistoryRecord,
@@ -358,11 +359,8 @@ class TestPythonClientFluentAPI(unittest.TestCase):
         self.assertEqual(defs[0].name, "Test Process")
 
         # Deploy definition
-        new_def = self.client.definitions().deploy()\
-            .with_id("test-proc")\
-            .with_name("Test Process")\
-            .with_bpmn(b"<xml></xml>")\
-            .send()
+        workflow = Workflow("test-proc", "Test Process")
+        new_def = self.client.deploy(workflow)
         self.assertEqual(new_def.id, "test-proc")
 
     def test_instances(self):

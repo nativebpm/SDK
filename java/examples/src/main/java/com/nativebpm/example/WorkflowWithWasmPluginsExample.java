@@ -4,7 +4,7 @@ import com.nativebpm.client.builder.Workflow;
 import static com.nativebpm.client.builder.Workflow.V;
 
 public class WorkflowWithWasmPluginsExample {
-    public static String buildWorkflow() throws Exception {
+    public static Workflow buildWorkflow() throws Exception {
         System.out.println("=== NativeBPM Java SDK: Workflow with Guest WASM Plugins ===");
 
         // 1. Build workflow dynamically using Workflow as Code Fluent API
@@ -30,8 +30,6 @@ public class WorkflowWithWasmPluginsExample {
                     // empty branch (will auto-route to end event)
                 });
 
-        String bpmnXml = workflow.buildXML();
-        System.out.println("✓ Successfully compiled WASM workflow AST to BPMN 2.0 XML.");
-        return bpmnXml;
+        return workflow;
     }
 }

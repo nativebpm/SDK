@@ -33,9 +33,7 @@ func main() {
 
 	fmt.Println("\nDeploying to NativeBPM engine (JSON AST compiled server-side)...")
 	// Deploy process definition directly via Workflow object
-	definition, err := client.Definitions().Deploy().
-		WithWorkflow(workflow).
-		Send(ctx)
+	definition, err := client.Deploy(ctx, workflow)
 	if err != nil {
 		fmt.Printf("Note: Local API Engine deployment skipped. Details: %v\n", err)
 		return

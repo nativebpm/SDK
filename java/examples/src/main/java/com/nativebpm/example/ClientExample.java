@@ -1,17 +1,13 @@
 package com.nativebpm.example;
 
-import com.nativebpm.client.ApiClient;
-import com.nativebpm.client.ApiException;
+import com.nativebpm.client.Client;
 import com.nativebpm.client.api.DefaultApi;
+import com.nativebpm.client.ApiException;
 import com.nativebpm.client.model.ProcessDefinition;
 import com.nativebpm.client.model.ProcessInstance;
 import com.nativebpm.client.model.StartInstanceRequest;
 import com.nativebpm.client.builder.Workflow;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,27 +16,17 @@ public class ClientExample {
     public static void main(String[] args) {
         System.out.println("🚀 NativeBPM Java SDK Example Starting...");
 
-        // 1. Initialize ApiClient
-        ApiClient client = new ApiClient();
-        client.setBasePath("http://localhost:8080");
-        client.addDefaultHeader("Authorization", "Bearer test-bearer-token");
+        // 1. Initialize client facade
+        Client client = new Client("http://localhost:8080", "test-bearer-token");
+        DefaultApi api = client.getDefaultApi();
 
-        DefaultApi api = new DefaultApi(client);
-
-        // Temp files for deployment multipart upload
-        File tempFile1 = null;
-        File tempFile2 = null;
         try {
             // SCENARIO 1: Workflow as Code (Without custom Guest WASM tasks)
             System.out.println("--------------------------------------------------");
-            String bpmnXml1 = WorkflowWasmExample.buildWorkflow();
-            tempFile1 = File.createTempFile("nativeProcess", ".bpmn");
-            try (FileWriter writer = new FileWriter(tempFile1, StandardCharsets.UTF_8)) {
-                writer.write(bpmnXml1);
-            }
+            Workflow workflow1 = WorkflowWasmExample.buildWorkflow();
 
-            System.out.println("📦 Deploying native process definition...");
-            ProcessDefinition def1 = api.deployDefinition(tempFile1);
+            System.out.println("📦 Deploying native process definition directly via JSON AST...");
+            ProcessDefinition def1 = client.deploy(workflow1);
             System.out.println("✅ Deployed! ID: " + def1.getId() + ", Hash: " + def1.getHash());
 
             System.out.println("⚡ Starting native process instance...");
@@ -54,14 +40,10 @@ public class ClientExample {
 
             // SCENARIO 2: Workflow with Guest WASM Plugins
             System.out.println("--------------------------------------------------");
-            String bpmnXml2 = WorkflowWithWasmPluginsExample.buildWorkflow();
-            tempFile2 = File.createTempFile("wasmProcess", ".bpmn");
-            try (FileWriter writer = new FileWriter(tempFile2, StandardCharsets.UTF_8)) {
-                writer.write(bpmnXml2);
-            }
+            Workflow workflow2 = WorkflowWithWasmPluginsExample.buildWorkflow();
 
-            System.out.println("📦 Deploying WASM process definition...");
-            ProcessDefinition def2 = api.deployDefinition(tempFile2);
+            System.out.println("📦 Deploying WASM process definition directly via JSON AST...");
+            ProcessDefinition def2 = client.deploy(workflow2);
             System.out.println("✅ Deployed! ID: " + def2.getId() + ", Hash: " + def2.getHash());
 
             System.out.println("⚡ Starting WASM process instance...");
@@ -95,16 +77,9 @@ public class ClientExample {
             System.err.println("❌ API Request failed! Response code: " + e.getCode());
             System.err.println("Response body: " + e.getResponseBody());
             e.printStackTrace();
-        } catch (IOException e) {
-            System.err.println("❌ IO error occurred!");
+        } catch (Exception e) {
+            System.err.println("❌ Error occurred!");
             e.printStackTrace();
-        } finally {
-            if (tempFile1 != null && tempFile1.exists()) {
-                tempFile1.delete();
-            }
-            if (tempFile2 != null && tempFile2.exists()) {
-                tempFile2.delete();
-            }
         }
     }
 }

@@ -22,6 +22,9 @@ class Client:
             'Authorization': f'Bearer {self._api_token}'
         }
 
+    def deploy(self, workflow: Any) -> ProcessDefinition:
+        return self.definitions().deploy().with_workflow(workflow).send()
+
     def definitions(self) -> 'DefinitionsService':
         return DefinitionsService(self)
 

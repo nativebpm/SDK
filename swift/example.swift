@@ -20,9 +20,7 @@ func runExample() async {
     
     do {
         print("Deploying workflow definition...")
-        let definition = try await client.definitions().deploy()
-            .withWorkflow(workflow)
-            .send()
+        let definition = try await client.deploy(workflow)
         print("✓ Deployed process definition (hash: \(definition.hash))")
         
         print("Starting process instance...")

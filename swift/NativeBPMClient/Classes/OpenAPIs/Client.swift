@@ -18,6 +18,11 @@ public class Client {
         ]
     }
 
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    public func deploy(_ workflow: Workflow) async throws -> ProcessDefinition {
+        return try await definitions().deploy().withWorkflow(workflow).send()
+    }
+
     public func definitions() -> DefinitionsService {
         return DefinitionsService(client: self)
     }

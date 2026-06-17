@@ -26,6 +26,10 @@ class Client(val baseUrl: String, val apiToken: String) {
         defaultApi = DefaultApi(baseUrl, okHttpClient)
     }
 
+    fun deploy(workflow: com.nativebpm.client.builder.Workflow): ProcessDefinition {
+        return definitions().deploy().withWorkflow(workflow).send()
+    }
+
     fun definitions(): DefinitionsService {
         return DefinitionsService(this)
     }

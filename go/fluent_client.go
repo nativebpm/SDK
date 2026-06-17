@@ -31,6 +31,11 @@ func NewClient(hostURL, apiToken string) (*Client, error) {
 	}, nil
 }
 
+// Deploy compiles and deploys a process definition workflow schema to the engine.
+func (c *Client) Deploy(ctx context.Context, workflow *Workflow) (*ProcessDefinition, error) {
+	return c.Definitions().Deploy().WithWorkflow(workflow).Send(ctx)
+}
+
 // Definitions returns the Process Definitions management service.
 func (c *Client) Definitions() *DefinitionsService {
 	return &DefinitionsService{client: c}

@@ -31,6 +31,10 @@ export class Client {
     return this.baseUrl;
   }
 
+  public deploy(workflow: Workflow): Promise<ProcessDefinition> {
+    return this.definitions().deploy().withWorkflow(workflow).send();
+  }
+
   public definitions(): DefinitionsService {
     return new DefinitionsService(this);
   }

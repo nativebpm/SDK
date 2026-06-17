@@ -1,4 +1,4 @@
-import { Client } from "./dist/index.js";
+import { Client, Workflow } from "./dist/index.js";
 import * as http from "node:http";
 import assert from "node:assert";
 
@@ -128,11 +128,8 @@ async function runTests() {
     console.log("✓ definitions.list passed");
 
     // 2. Definitions Deploy
-    const newDef = await client.definitions().deploy()
-      .withID("test-proc")
-      .withName("Test Process")
-      .withBPMN("<xml></xml>")
-      .send();
+    const workflow = new Workflow("test-proc", "Test Process");
+    const newDef = await client.deploy(workflow);
     assert.strictEqual(newDef.id, "test-proc");
     console.log("✓ definitions.deploy passed");
 

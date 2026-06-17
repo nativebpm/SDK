@@ -17,12 +17,10 @@ def main():
     # 2. Deploy and start process definition using the Fluent Client API
     client = Client("http://localhost:8080", "test-bearer-token")
     
-    print("\nDeploying to NativeBPM engine...")
     try:
-        # Deploy process definition directly by passing the workflow instance
-        definition = client.definitions().deploy()\
-            .with_workflow(workflow)\
-            .send()
+        print("\nDeploying to NativeBPM engine (JSON AST compiled server-side)...")
+        # Deploy process definition directly via Workflow object
+        definition = client.deploy(workflow)
         print(f"✓ Deployed process definition (hash: {definition.hash})")
         
         # Start a process instance with input variables

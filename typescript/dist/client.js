@@ -15,6 +15,9 @@ export class Client {
     getBaseUrl() {
         return this.baseUrl;
     }
+    deploy(workflow) {
+        return this.definitions().deploy().withWorkflow(workflow).send();
+    }
     definitions() {
         return new DefinitionsService(this);
     }
