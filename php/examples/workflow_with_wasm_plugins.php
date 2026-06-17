@@ -13,9 +13,8 @@ echo "=== NativeBPM PHP SDK: Workflow with Guest WASM Plugins ===\n";
 echo "🔨 Building workflow dynamically using Fluent API...\n";
 $workflow = new Workflow("wasm-demo", "Workflow with Guest WASM Plugins");
 
-// Chain starting from first service task
-$workflow->start()
-    ->service("calculate", "Calculate Totals", "payment_topic", ["wasmPath" => "./calculate_total.wasm"])
+// Chain starting from first service task (auto-start will prepend start event)
+$workflow->service("calculate", "Calculate Totals", "payment_topic", ["wasmPath" => "./calculate_total.wasm"])
     ->ai("aiCheck", "AI Fraud Guard", [
         "provider" => "google",
         "model" => "gemini-2.5-flash",

@@ -7,8 +7,7 @@ import (
 
 func TestWorkflowBuilderJSON(t *testing.T) {
 	wf := NewWorkflow("test-process", "Test Process")
-	wf.Start().
-		Service("service1", "Service 1", "topic1", M{"wasm": "./my_wasm_module.wasm"}).
+	wf.Service("service1", "Service 1", "topic1", M{"wasm": "./my_wasm_module.wasm"}).
 		End("end", "End")
 
 	jsonData, err := wf.ToJSON()

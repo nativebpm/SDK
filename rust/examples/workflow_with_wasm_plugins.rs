@@ -8,9 +8,8 @@ async fn main() {
     // 1. Build workflow as code using Fluent API method chaining
     let mut workflow = Workflow::new("wasm-demo", "Workflow with Guest WASM Plugins");
 
-    // Chain starting from the start event
+    // Chain starting from first service task (auto-start will prepend start event)
     workflow
-        .start()
         .service("calculate", "Calculate Totals", "payment_topic", serde_json::json!({ "wasmPath": "./calculate_total.wasm" }))
         .ai("aiCheck", "AI Fraud Guard", serde_json::json!({
             "provider": "google",

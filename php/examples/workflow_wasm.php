@@ -13,9 +13,8 @@ echo "=== NativeBPM PHP SDK: Workflow as Code ===\n";
 echo "🔨 Building workflow dynamically using Fluent API...\n";
 $workflow = new Workflow("native-demo", "Workflow as Code");
 
-// Chain starting with start event
-$workflow->start()
-    ->when(Workflow::V('isUrgent')->eq(true))->then(function($b) {
+// Chain starting with dynamic when condition (auto-start will prepend start event)
+$workflow->when(Workflow::V('isUrgent')->eq(true))->then(function($b) {
         $b->user("reviewOrder", "Review Order Details", ["assignee" => "sales_representative"]);
     })
     ->else(function($b) {

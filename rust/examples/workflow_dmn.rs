@@ -8,8 +8,8 @@ async fn main() {
     // 1. Build workflow as code using Fluent API method chaining & inline DMN table definition
     let mut workflow = Workflow::new("dmn-demo", "Workflow with DMN Table");
 
-    // Chain starting from the start event
-    workflow.start()
+    // Chain starting from first business rule task (auto-start will prepend start event)
+    workflow
         .business_rule("calculate-discount", "Determine Discount", "discount-decision", serde_json::json!({
             "hitPolicy": "UNIQUE",
             "resultVar": "discountResult",

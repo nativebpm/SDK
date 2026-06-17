@@ -8,9 +8,8 @@ async fn main() {
     // 1. Build workflow as code using Fluent API method chaining
     let mut workflow = Workflow::new("native-demo", "Workflow as Code");
 
-    // Chain starting from the start event
+    // Chain starting with dynamic when condition (auto-start will prepend start event)
     workflow
-        .start()
         .when(v("isUrgent").eq(true))
         .then(|b| {
             b.user("reviewOrder", "Review Order Details", serde_json::json!({ "assignee": "sales_representative" }));
