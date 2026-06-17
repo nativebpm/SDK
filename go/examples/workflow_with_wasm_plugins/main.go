@@ -60,4 +60,35 @@ func main() {
 	} else {
 		fmt.Printf("XML output:\n%s\n", bpmnXML)
 	}
+
+	// 4. Deploy and start process definition using the Fluent Client API
+	client, err := nativebpm.NewClient("http://localhost:8080", "test-bearer-token")
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		return
+	}
+
+	fmt.Println("\nDeploying to NativeBPM engine...")
+	// Deploy process definition
+	definition, err := client.Definitions().Deploy().
+		WithID("wasm-demo").
+		WithName("Workflow with Guest WASM Plugins").
+		WithBPMN([]byte(bpmnXML)).
+		Send(ctx)
+	if err != nil {
+		fmt.Printf("Note: Local API Engine deployment skipped (ensure local server is running on :8080). Details: %v\n", err)
+		return
+	}
+	fmt.Printf("✓ Deployed process definition (hash: %s)\n", definition.Hash)
+
+	// Start a process instance with input variables
+	instance, err := client.Instances().Start("wasm-demo").
+		WithBusinessKey("tx-8837").
+		WithVariable("orderAmount", 2500).
+		Send(ctx)
+	if err != nil {
+		fmt.Printf("Error starting instance: %v\n", err)
+		return
+	}
+	fmt.Printf("✓ Started process instance ID: %s (completed: %t)\n", instance.Id, instance.Completed)
 }
