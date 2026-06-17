@@ -408,8 +408,12 @@ impl Workflow {
     }
 
     pub fn start(&mut self) -> &mut Self {
-        self.start_event("start");
-        self.connect_node("start");
+        self.start_with_id("start")
+    }
+
+    pub fn start_with_id(&mut self, id: &str) -> &mut Self {
+        self.start_event(id);
+        self.connect_node(id);
         self
     }
 
