@@ -16,7 +16,7 @@ func TestWorkflowBuilderAndWasm(t *testing.T) {
 	ctx := context.Background()
 
 	wf := NewWorkflow("test-process", "Test Process")
-	wf.Start("start").
+	wf.Start().
 		Service("service1", "Service 1", "topic1", M{"wasm": "./my_wasm_module.wasm"}).
 		End("end", "End")
 
@@ -42,7 +42,7 @@ func TestBuildXMLWithCompressedFormats(t *testing.T) {
 	ctx := context.Background()
 
 	wf := NewWorkflow("test-compressed", "Test Compressed")
-	wf.Start("start").End("end", "End")
+	wf.Start().End("end", "End")
 
 	// 1. Create compressed files in-memory
 	// Brotli
@@ -115,7 +115,7 @@ func TestBuildXMLWithPrecompile(t *testing.T) {
 	ctx := context.Background()
 
 	wf := NewWorkflow("precompile-test", "Precompile Test")
-	wf.Start("start").End("end", "End")
+	wf.Start().End("end", "End")
 
 	// Pre-compile compiler using WithCompilerBytes
 	_, err := wf.WithCompilerBytes(ctx, coreWasm)
@@ -138,7 +138,7 @@ func TestBusinessRuleTask(t *testing.T) {
 	ctx := context.Background()
 	wf := NewWorkflow("dmn-test", "DMN Test Process")
 
-	wf.Start("start").
+	wf.Start().
 		BusinessRule("ruleTask", "Determine Discount", "determine_discount", M{
 			"hitPolicy": "UNIQUE",
 			"inputs": []interface{}{
@@ -179,7 +179,7 @@ func TestBusinessRuleTask(t *testing.T) {
 func BenchmarkWorkflowBuilder(b *testing.B) {
 	ctx := context.Background()
 	wf := NewWorkflow("bench-process", "Bench Process")
-	wf.Start("start").
+	wf.Start().
 		Service("service1", "Service 1", "topic1", M{"wasm": "./my_wasm_module.wasm"}).
 		End("end", "End")
 

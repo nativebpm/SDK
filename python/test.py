@@ -13,7 +13,7 @@ class TestPythonSDK(unittest.TestCase):
         
         workflow = Workflow('test-process', 'Test Process Schema')
         
-        workflow.start('start')
+        workflow.start()
         
         workflow.service('task1', 'Service Task 1', 'service-topic', wasm='./my_task.wasm')
             
@@ -66,7 +66,7 @@ class TestPythonSDK(unittest.TestCase):
 
         # Compile with each
         workflow = Workflow('compressed-test', 'Compressed Test')
-        workflow.start('start')
+        workflow.start()
         workflow.end('end', 'End')
 
         for name, data in [("Brotli", br_bytes), ("Gzip", gz_bytes), ("Zip", zip_bytes)]:
@@ -77,7 +77,7 @@ class TestPythonSDK(unittest.TestCase):
     def test_constructor_compilation(self):
         print("Running Python SDK constructor compilation test...")
         workflow = Workflow('init-test', 'Init Test', DEFAULT_WASM_PATH)
-        workflow.start('start')
+        workflow.start()
         workflow.end('end', 'End')
 
         xml = workflow.build_xml()
@@ -88,7 +88,7 @@ class TestPythonSDK(unittest.TestCase):
         print("Running Python SDK business rule task test...")
         workflow = Workflow('dmn-test', 'DMN Test Process')
 
-        workflow.start('start')
+        workflow.start()
 
         workflow.business_rule(
             'ruleTask', 'Determine Discount', 'determine_discount',
