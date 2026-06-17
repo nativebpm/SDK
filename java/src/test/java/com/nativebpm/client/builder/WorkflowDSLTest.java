@@ -19,7 +19,7 @@ public class WorkflowDSLTest {
                 .when(V("approved").eq(true)).then(b -> {
                     b.service("publish", "Publish Page", "publish-topic", Map.of("wasm", "./publish.wasm"));
                 })
-                .otherwise(b -> {
+                .Else(b -> {
                     b.service("reject", "Notify Reject", "reject-topic");
                 });
 

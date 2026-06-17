@@ -199,7 +199,7 @@ public class Workflow {
             this.gatewayID = gatewayID;
         }
 
-        public Workflow otherwise(Consumer<Branch> elseFn) {
+        public Workflow Else(Consumer<Branch> elseFn) {
             Branch elseBranch = new Branch(workflow, gatewayID, gatewayID, false, "");
             elseFn.accept(elseBranch);
 
@@ -208,10 +208,6 @@ public class Workflow {
             }
 
             return workflow;
-        }
-
-        public Workflow Else(Consumer<Branch> elseFn) {
-            return otherwise(elseFn);
         }
     }
 
@@ -247,7 +243,7 @@ public class Workflow {
             this.gatewayID = gatewayID;
         }
 
-        public Branch otherwise(Consumer<Branch> elseFn) {
+        public Branch Else(Consumer<Branch> elseFn) {
             Branch elseBranch = new Branch(branch.workflow, gatewayID, gatewayID, false, "");
             elseFn.accept(elseBranch);
 
@@ -256,10 +252,6 @@ public class Workflow {
             }
 
             return branch;
-        }
-
-        public Branch Else(Consumer<Branch> elseFn) {
-            return otherwise(elseFn);
         }
     }
 

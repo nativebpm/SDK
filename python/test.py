@@ -88,7 +88,7 @@ class TestPythonSDK(unittest.TestCase):
         
         workflow.user('task1', 'User Approval').when(v('approved').eq(True)).then(lambda b: (
             b.service('publish', 'Publish Page', 'publish-topic', wasm='./publish.wasm')
-        )).otherwise(lambda b: (
+        )).Else(lambda b: (
             b.service('reject', 'Notify Reject', 'reject-topic')
         ))
 
@@ -110,7 +110,7 @@ class TestPythonSDK(unittest.TestCase):
         def then_branch(b):
             b.service('publish', 'Publish Page', 'publish-topic', wasm='./publish.wasm')
             
-        @then_branch.otherwise()
+        @then_branch.Else()
         def else_branch(b):
             b.service('reject', 'Notify Reject', 'reject-topic')
 
@@ -132,7 +132,7 @@ class TestPythonSDK(unittest.TestCase):
                 .then(lambda b: (
                     b.user('step1', 'User Step 1')
                 ))\
-                .otherwise(lambda b: (
+                .Else(lambda b: (
                     b.end('end', 'End Process')
                 ))
 

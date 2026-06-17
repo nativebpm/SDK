@@ -56,7 +56,7 @@ func TestBlockClosureDSL(t *testing.T) {
 		Then(func(flow *Branch) {
 			flow.Service("publish", "Publish Page", "publish-topic", M{"wasm": "./publish.wasm"})
 		}).
-		Otherwise(func(flow *Branch) {
+		Else(func(flow *Branch) {
 			flow.Service("reject", "Notify Reject", "reject-topic")
 		})
 

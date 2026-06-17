@@ -137,7 +137,7 @@ class WorkflowTest extends TestCase
             ->when(Workflow::v('is_urgent')->eq(true))->then(function($b) {
                 $b->service("task2", "Urgent Task", "urgent_topic");
             })
-            ->otherwise(function($b) {
+            ->else(function($b) {
                 $b->service("task3", "Normal Task", "normal_topic");
             });
 

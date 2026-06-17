@@ -180,9 +180,7 @@ export class ThenBuilder {
     return this.workflow;
   }
 
-  public otherwise(elseFn: (flow: Branch) => void): Workflow {
-    return this.else(elseFn);
-  }
+
 }
 
 export class WhenBranchBuilder {
@@ -214,9 +212,7 @@ export class ThenBranchBuilder {
     return this.branch;
   }
 
-  public otherwise(elseFn: (flow: Branch) => void): Branch {
-    return this.else(elseFn);
-  }
+
 }
 
 export class Workflow {

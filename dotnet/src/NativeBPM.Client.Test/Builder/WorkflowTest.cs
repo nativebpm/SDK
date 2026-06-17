@@ -238,7 +238,7 @@ namespace NativeBPM.Client.Test.Builder
                 .When(Workflow.V("approved").Eq(true)).Then(b => {
                     b.Service("publish", "Publish Page", "publish-topic", new Dictionary<string, object> { { "wasm", "./publish.wasm" } });
                 })
-                .Otherwise(b => {
+                .Else(b => {
                     b.Service("reject", "Notify Reject", "reject-topic");
                 });
 

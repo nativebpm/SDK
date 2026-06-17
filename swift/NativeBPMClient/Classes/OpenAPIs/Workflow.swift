@@ -188,18 +188,13 @@ public class ThenBuilder {
     }
     
     @discardableResult
-    public func otherwise(_ elseFn: (Branch) -> Void) -> Workflow {
+    public func `else`(_ elseFn: (Branch) -> Void) -> Workflow {
         let elseBranch = Branch(workflow: workflow, gatewayID: gatewayID, currentNodeID: gatewayID, isConditional: false, condition: "")
         elseFn(elseBranch)
         if !elseBranch.hasEnded && elseBranch.currentNodeID != gatewayID {
             workflow.pendingMerges.append(elseBranch.currentNodeID)
         }
         return workflow
-    }
-    
-    @discardableResult
-    public func `else`(_ elseFn: (Branch) -> Void) -> Workflow {
-        return otherwise(elseFn)
     }
 }
 

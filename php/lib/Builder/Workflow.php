@@ -472,7 +472,7 @@ class ThenBuilder {
         $this->gatewayID = $gatewayID;
     }
 
-    public function otherwise(callable $elseFn): Workflow {
+    public function else(callable $elseFn): Workflow {
         $elseBranch = new Branch($this->workflow, $this->gatewayID, $this->gatewayID, false, "");
         $elseFn($elseBranch);
 
@@ -481,10 +481,6 @@ class ThenBuilder {
         }
 
         return $this->workflow;
-    }
-
-    public function else(callable $elseFn): Workflow {
-        return $this->otherwise($elseFn);
     }
 }
 
@@ -520,7 +516,7 @@ class ThenBranchBuilder {
         $this->gatewayID = $gatewayID;
     }
 
-    public function otherwise(callable $elseFn): Branch {
+    public function else(callable $elseFn): Branch {
         $elseBranch = new Branch($this->branch->workflow, $this->gatewayID, $this->gatewayID, false, "");
         $elseFn($elseBranch);
 
@@ -529,10 +525,6 @@ class ThenBranchBuilder {
         }
 
         return $this->branch;
-    }
-
-    public function else(callable $elseFn): Branch {
-        return $this->otherwise($elseFn);
     }
 }
 

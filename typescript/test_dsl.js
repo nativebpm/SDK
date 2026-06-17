@@ -11,7 +11,7 @@ async function testDSL() {
     .then((flow) => {
       flow.service('publish', 'Publish Page', 'publish-topic', { wasm: './publish.wasm' });
     })
-    .otherwise((flow) => {
+    .else((flow) => {
       flow.service('reject', 'Notify Reject', 'reject-topic');
     });
 
@@ -44,7 +44,7 @@ async function testImplicitBackEdges() {
     .then((flow) => {
       flow.user('step1', 'User Step 1');
     })
-    .otherwise((flow) => {
+    .else((flow) => {
       flow.end('end', 'End Process');
     });
 

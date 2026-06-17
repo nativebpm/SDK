@@ -14,7 +14,7 @@ func runExample() async {
     workflow
         .when(V("isUrgent").eq(true)).then { b in
             b.user("reviewOrder", name: "Review Order Details", options: ["assignee": "sales_representative"])
-        }.otherwise { b in
+        }.else { b in
             b.service("notifyCustomer", name: "Send Confirmation Email", topic: "email_topic")
         }
     

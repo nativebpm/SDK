@@ -558,7 +558,7 @@ namespace NativeBPM.Client.Builder
             this.gatewayID = gatewayID;
         }
 
-        public Workflow Otherwise(Action<Branch> elseFn)
+        public Workflow Else(Action<Branch> elseFn)
         {
             Branch elseBranch = new Branch(workflow, gatewayID, gatewayID, false, "");
             elseFn(elseBranch);
@@ -569,11 +569,6 @@ namespace NativeBPM.Client.Builder
             }
 
             return workflow;
-        }
-
-        public Workflow Else(Action<Branch> elseFn)
-        {
-            return Otherwise(elseFn);
         }
     }
 
@@ -615,7 +610,7 @@ namespace NativeBPM.Client.Builder
             this.gatewayID = gatewayID;
         }
 
-        public Branch Otherwise(Action<Branch> elseFn)
+        public Branch Else(Action<Branch> elseFn)
         {
             Branch elseBranch = new Branch(branch.Workflow, gatewayID, gatewayID, false, "");
             elseFn(elseBranch);
@@ -626,11 +621,6 @@ namespace NativeBPM.Client.Builder
             }
 
             return branch;
-        }
-
-        public Branch Else(Action<Branch> elseFn)
-        {
-            return Otherwise(elseFn);
         }
     }
 

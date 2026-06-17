@@ -428,10 +428,7 @@ func (tb *ThenBuilder) Else(elseFn func(flow *Branch)) *Workflow {
 	return tb.workflow
 }
 
-// Otherwise defines the default path on the main workflow when the condition evaluates to false.
-func (tb *ThenBuilder) Otherwise(elseFn func(flow *Branch)) *Workflow {
-	return tb.Else(elseFn)
-}
+
 
 func (b *Branch) connectNode(id string) {
 	if b.hasEnded {
@@ -562,10 +559,7 @@ func (tbb *ThenBranchBuilder) Else(elseFn func(sub *Branch)) *Branch {
 	return tbb.branch
 }
 
-// Otherwise defines the nested default path when the condition evaluates to false.
-func (tbb *ThenBranchBuilder) Otherwise(elseFn func(sub *Branch)) *Branch {
-	return tbb.Else(elseFn)
-}
+
 
 
 

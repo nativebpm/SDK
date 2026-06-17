@@ -107,10 +107,10 @@ class ThenBuilder:
         self.workflow = workflow
         self.gateway_id = gateway_id
 
-    def otherwise(self, else_fn=None) -> Any:
+    def Else(self, else_fn=None) -> Any:
         if else_fn is None:
             def decorator(func):
-                return self.otherwise(func)
+                return self.Else(func)
             return decorator
 
         else_branch = Branch(self.workflow, self.gateway_id, self.gateway_id, False)
@@ -120,9 +120,6 @@ class ThenBuilder:
             self.workflow._pending_merges.append(else_branch._current_node_id)
 
         return self.workflow
-
-    def Else(self, else_fn=None) -> Any:
-        return self.otherwise(else_fn)
 
 class WhenBranchBuilder:
     def __init__(self, branch: Branch, gateway_id: str, condition: str):
@@ -147,10 +144,10 @@ class ThenBranchBuilder:
         self.branch = branch
         self.gateway_id = gateway_id
 
-    def otherwise(self, else_fn=None) -> Any:
+    def Else(self, else_fn=None) -> Any:
         if else_fn is None:
             def decorator(func):
-                return self.otherwise(func)
+                return self.Else(func)
             return decorator
 
         else_branch = Branch(self.branch._workflow, self.gateway_id, self.gateway_id, False)
@@ -160,9 +157,6 @@ class ThenBranchBuilder:
             self.branch._workflow._pending_merges.append(else_branch._current_node_id)
 
         return self.branch
-
-    def Else(self, else_fn=None) -> Any:
-        return self.otherwise(else_fn)
 
 class Workflow:
     def __init__(self, id_str: str, name: str):
