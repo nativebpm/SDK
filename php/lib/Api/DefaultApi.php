@@ -1728,6 +1728,192 @@ class DefaultApi
     }
 
     /**
+     * Operation deployWorkflow
+     *
+     * Deploy a Workflow directly as JSON AST.
+     *
+     * @param  \NativeBPM\Client\Builder\Workflow $workflow The workflow definition to deploy.
+     *
+     * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws \InvalidArgumentException
+     * @return \NativeBPM\Client\Model\ProcessDefinition
+     */
+    public function deployWorkflow(\NativeBPM\Client\Builder\Workflow $workflow)
+    {
+        list($response) = $this->deployWorkflowWithHttpInfo($workflow);
+        return $response;
+    }
+
+    /**
+     * Operation deployWorkflowWithHttpInfo
+     *
+     * Deploy a Workflow directly as JSON AST.
+     *
+     * @param  \NativeBPM\Client\Builder\Workflow $workflow The workflow definition to deploy.
+     *
+     * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws \InvalidArgumentException
+     * @return array
+     */
+    public function deployWorkflowWithHttpInfo(\NativeBPM\Client\Builder\Workflow $workflow)
+    {
+        $request = $this->deployWorkflowRequest($workflow);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int) $e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
+                );
+            } catch (ConnectException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int) $e->getCode(),
+                    null,
+                    null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+            if ($statusCode < 200 || $statusCode > 299) {
+                throw new ApiException(
+                    sprintf(
+                        '[%d] Error connecting to the API (%s)',
+                        $statusCode,
+                        (string) $request->getUri()
+                    ),
+                    $statusCode,
+                    $response->getHeaders(),
+                    (string) $response->getBody()
+                );
+            }
+
+            switch($statusCode) {
+                case 200:
+                    if ('\NativeBPM\Client\Model\ProcessDefinition' === '\SplFileObject') {
+                        $content = $response->getBody(); //stream goes to serializer
+                    } else {
+                        $content = (string) $response->getBody();
+                        if ('\NativeBPM\Client\Model\ProcessDefinition' !== 'string') {
+                            try {
+                                $content = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
+                            } catch (\JsonException $exception) {
+                                throw new ApiException(
+                                    sprintf(
+                                        'Error JSON decoding server response (%s)',
+                                        $request->getUri()
+                                    ),
+                                    $statusCode,
+                                    $response->getHeaders(),
+                                    $content
+                                );
+                            }
+                        }
+                    }
+
+                    return [
+                        \NativeBPM\Client\ObjectSerializer::deserialize($content, '\NativeBPM\Client\Model\ProcessDefinition', []),
+                        $response->getStatusCode(),
+                        $response->getHeaders()
+                    ];
+            }
+
+            $returnType = '\NativeBPM\Client\Model\ProcessDefinition';
+            if ($returnType === '\SplFileObject') {
+                $content = $response->getBody(); //stream goes to serializer
+            } else {
+                $content = (string) $response->getBody();
+                if ($returnType !== 'string') {
+                    try {
+                        $content = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
+                    } catch (\JsonException $exception) {
+                        throw new ApiException(
+                            sprintf(
+                                'Error JSON decoding server response (%s)',
+                                $request->getUri()
+                            ),
+                            $statusCode,
+                            $response->getHeaders(),
+                            $content
+                        );
+                    }
+                }
+            }
+
+            return [
+                \NativeBPM\Client\ObjectSerializer::deserialize($content, $returnType, []),
+                $response->getStatusCode(),
+                $response->getHeaders()
+            ];
+
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+                case 200:
+                    $data = \NativeBPM\Client\ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\NativeBPM\Client\Model\ProcessDefinition',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+                case 401:
+                    $data = \NativeBPM\Client\ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\NativeBPM\Client\Model\ListDefinitions401Response',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+                case 403:
+                    $data = \NativeBPM\Client\ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\NativeBPM\Client\Model\ListDefinitions401Response',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Create request for operation 'deployWorkflow'
+     *
+     * @param  \NativeBPM\Client\Builder\Workflow $workflow The workflow definition to deploy.
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Psr7\Request
+     */
+    public function deployWorkflowRequest(\NativeBPM\Client\Builder\Workflow $workflow)
+    {
+        $resourcePath = '/api/deploy';
+        $queryParams = [];
+        $headerParams = [];
+        $httpBody = json_encode($workflow->toAST());
+
+        $headers = $this->headerSelector->selectHeaders(
+            ['application/json'],
+            'application/json',
+            false
+        );
+
+        $query = \GuzzleHttp\Psr7\Query::build($queryParams);
+        return new Request(
+            'POST',
+            $this->config->getHost() . $resourcePath . ($query ? "?{$query}" : ''),
+            $headers,
+            $httpBody
+        );
+    }
+
+    /**
      * Operation deployDefinitionWithHttpInfo
      *
      * Deploy process definition

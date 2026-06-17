@@ -64,6 +64,7 @@ class DeployDefinitionBuilder:
         self._id = None
         self._name = None
         self._bpmn_xml = None
+        self._workflow = None
 
     def with_id(self, id_val: str) -> 'DeployDefinitionBuilder':
         self._id = id_val
@@ -80,7 +81,20 @@ class DeployDefinitionBuilder:
             self._bpmn_xml = bpmn_val
         return self
 
+    def with_workflow(self, workflow_val: Any) -> 'DeployDefinitionBuilder':
+        self._workflow = workflow_val
+        return self
+
     def send(self) -> ProcessDefinition:
+        url = f'{self.service.client._base_url}/api/deploy'
+        if self._workflow:
+            headers = dict(self.service.client._headers)
+            headers['Content-Type'] = 'application/json'
+            resp = requests.post(url, headers=headers, data=self._workflow.to_json())
+            if not resp.ok:
+                raise RuntimeError(f"Failed to deploy: {resp.text}")
+            return ProcessDefinition.model_validate(resp.json())
+
         if not self._id:
             raise ValueError("missing deployment field: ID")
         if not self._name:
@@ -88,7 +102,6 @@ class DeployDefinitionBuilder:
         if not self._bpmn_xml:
             raise ValueError("missing deployment field: BPMN XML data")
 
-        url = f'{self.service.client._base_url}/api/deploy'
         files = {
             'file': (self._name + '.bpmn', self._bpmn_xml, 'application/xml')
         }

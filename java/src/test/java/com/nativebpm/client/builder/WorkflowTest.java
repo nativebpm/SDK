@@ -1,40 +1,18 @@
 package com.nativebpm.client.builder;
 
 import org.junit.jupiter.api.Test;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WorkflowTest {
 
-    private byte[] getWasmBytes() throws IOException {
-        try (InputStream is = Workflow.class.getResourceAsStream("/core.wasm")) {
-            if (is == null) {
-                throw new IllegalStateException("core.wasm not found in resources");
-            }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = is.read(buf)) != -1) {
-                baos.write(buf, 0, n);
-            }
-            return baos.toByteArray();
-        }
-    }
-
     @Test
     public void testWorkflowGeneration() throws Exception {
-        System.out.println("Running Java SDK workflow compilation test...");
+        System.out.println("Running Java SDK workflow AST test...");
         Workflow workflow = new Workflow("test-process", "Test Process Schema");
 
         workflow.start();
@@ -54,89 +32,26 @@ public class WorkflowTest {
         workflow.sequenceFlowWithCondition("gateway", "end", "isApproved == false");
         workflow.sequenceFlow("userTask", "end");
 
-        String xml = workflow.buildXML();
-        assertNotNull(xml);
-        assertTrue(xml.contains("id=\"test-process\""));
-        assertTrue(xml.contains("name=\"Test Process Schema\""));
-        assertTrue(xml.contains("<startEvent id=\"start\""));
-        assertTrue(xml.contains("<serviceTask id=\"task1\" name=\"Service Task 1\""));
-        assertTrue(xml.contains("topic=\"service-topic\""));
-        assertTrue(xml.contains("wasmPath=\"./my_task.wasm\""));
-        assertTrue(xml.contains("<userTask id=\"userTask\" name=\"User Task Approve\""));
-        assertTrue(xml.contains("assignee=\"boss\""));
-        assertTrue(xml.contains("<exclusiveGateway id=\"gateway\" name=\"Join/Split\""));
-        assertTrue(xml.contains("isApproved == true"));
-        assertTrue(xml.contains("isApproved == false"));
-        assertTrue(xml.contains("<endEvent id=\"end\" name=\"Process Completed\""));
+        Map<String, Object> ast = workflow.toAST();
+        assertNotNull(ast);
+        assertEquals("test-process", ast.get("id"));
+        assertEquals("Test Process Schema", ast.get("name"));
+        
+        String json = workflow.toJSON();
+        assertTrue(json.contains("\"id\":\"test-process\""));
+        assertTrue(json.contains("\"name\":\"Test Process Schema\""));
+        assertTrue(json.contains("\"type\":\"startEvent\""));
+        assertTrue(json.contains("\"type\":\"serviceTask\""));
+        assertTrue(json.contains("\"topic\":\"service-topic\""));
+        assertTrue(json.contains("\"wasmPath\":\"./my_task.wasm\""));
+        assertTrue(json.contains("\"type\":\"userTask\""));
+        assertTrue(json.contains("\"assignee\":\"boss\""));
+        assertTrue(json.contains("\"type\":\"exclusiveGateway\""));
+        assertTrue(json.contains("\"condition\":\"isApproved == true\""));
+        assertTrue(json.contains("\"condition\":\"isApproved == false\""));
+        assertTrue(json.contains("\"type\":\"endEvent\""));
         System.out.println("✓ Java SDK assertions passed successfully!");
     }
-
-    private byte[] getBrotliCompressedWasmBytes() throws IOException {
-        try (InputStream is = WorkflowTest.class.getResourceAsStream("/core.wasm.br")) {
-            if (is == null) {
-                throw new IllegalStateException("core.wasm.br not found in resources");
-            }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = is.read(buf)) != -1) {
-                baos.write(buf, 0, n);
-            }
-            return baos.toByteArray();
-        }
-    }
-
-    @Test
-    public void testCompressedFormats() throws Exception {
-        System.out.println("Running Java SDK compressed formats test...");
-        byte[] rawBytes = getWasmBytes();
-
-        // 1. Brotli
-        byte[] brBytes = getBrotliCompressedWasmBytes();
-
-        // 2. Gzip
-        ByteArrayOutputStream gzOut = new ByteArrayOutputStream();
-        try (GZIPOutputStream gzos = new GZIPOutputStream(gzOut)) {
-            gzos.write(rawBytes);
-        }
-        byte[] gzBytes = gzOut.toByteArray();
-
-        // 3. Zip
-        ByteArrayOutputStream zipOut = new ByteArrayOutputStream();
-        try (ZipOutputStream zos = new ZipOutputStream(zipOut)) {
-            zos.putNextEntry(new ZipEntry("core.wasm"));
-            zos.write(rawBytes);
-            zos.closeEntry();
-        }
-        byte[] zipBytes = zipOut.toByteArray();
-
-        Workflow workflow = new Workflow("compressed-test", "Compressed Test");
-        workflow.start().end("end", "End");
-
-        String xmlBr = workflow.buildXML(brBytes);
-        assertTrue(xmlBr.contains("id=\"compressed-test\""));
-        System.out.println("✓ Java SDK successfully compiled process using Brotli compressed bytes.");
-
-        String xmlGz = workflow.buildXML(gzBytes);
-        assertTrue(xmlGz.contains("id=\"compressed-test\""));
-        System.out.println("✓ Java SDK successfully compiled process using Gzip compressed bytes.");
-
-        String xmlZip = workflow.buildXML(zipBytes);
-        assertTrue(xmlZip.contains("id=\"compressed-test\""));
-        System.out.println("✓ Java SDK successfully compiled process using Zip compressed bytes.");
-    }
-
-    @Test
-    public void testConstructorCompilation() throws Exception {
-        System.out.println("Running Java SDK constructor compilation test...");
-        byte[] rawBytes = getWasmBytes();
-        Workflow workflow = new Workflow("init-test", "Init Test", rawBytes);
-        workflow.start().end("end", "End");
-
-        String xml = workflow.buildXML();
-        assertTrue(xml.contains("id=\"init-test\""));
-        System.out.println("✓ Java SDK constructor compilation verified successfully.");
-     }
 
     @Test
     public void testLoadAndProfiling() throws Exception {
@@ -146,13 +61,11 @@ public class WorkflowTest {
         long baseline = runtime.totalMemory() - runtime.freeMemory();
         System.out.println(String.format("Baseline Memory: %.2f MB", baseline / (1024.0 * 1024.0)));
 
-        byte[] rawBytes = getWasmBytes();
-
         for (int i = 0; i < 200; i++) {
-            Workflow workflow = new Workflow("load-test-" + i, "Load Test " + i, rawBytes);
+            Workflow workflow = new Workflow("load-test-" + i, "Load Test " + i);
             workflow.start().end("end", "End");
-            String xml = workflow.buildXML();
-            assertNotNull(xml);
+            String json = workflow.toJSON();
+            assertNotNull(json);
             
             if ((i + 1) % 50 == 0) {
                 runtime.gc();
@@ -169,8 +82,7 @@ public class WorkflowTest {
      @Test
      public void testBusinessRuleTask() throws Exception {
          System.out.println("Running Java SDK business rule task test...");
-         byte[] rawBytes = getWasmBytes();
-         Workflow workflow = new Workflow("dmn-test", "DMN Test Process", rawBytes);
+         Workflow workflow = new Workflow("dmn-test", "DMN Test Process");
 
          workflow.start().businessRule("ruleTask", "Determine Discount", "determine_discount", Map.of(
              "hitPolicy", "UNIQUE",
@@ -189,12 +101,12 @@ public class WorkflowTest {
              "mapDecisionResult", "singleEntry"
          )).end("end", "End");
 
-         String xml = workflow.buildXML();
-         assertNotNull(xml);
-         assertTrue(xml.contains("businessRuleTask id=\"ruleTask\""));
-         assertTrue(xml.contains("decisionRef=\"determine_discount\""));
-         assertTrue(xml.contains("resultVariable=\"discountVar\""));
-         assertTrue(xml.contains("mapDecisionResult=\"singleEntry\""));
+         String json = workflow.toJSON();
+         assertNotNull(json);
+         assertTrue(json.contains("\"type\":\"businessRuleTask\""));
+         assertTrue(json.contains("\"decisionRef\":\"determine_discount\""));
+         assertTrue(json.contains("\"resultVar\":\"discountVar\""));
+         assertTrue(json.contains("\"mapDecisionResult\":\"singleEntry\""));
          System.out.println("✓ Java SDK business rule task verified successfully!");
      }
 }

@@ -18,7 +18,6 @@ This repository houses the client libraries and Fluent Workflow builders for all
 * **Raw OpenAPI Specification**: Exposed dynamically by the engine at `http://localhost:8080/api/openapi.json`.
 * **Central Repo Resources**:
   - [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/openapi.yaml): The platform OpenAPI 3.0 specification file.
-  - [core.wasm](file:///Users/user/github.com/nativebpm/sdk/core.wasm): The pre-compiled WebAssembly Workflow-as-Code core builder.
 
 ---
 
@@ -40,38 +39,38 @@ Click on the language badges below to navigate to their respective subdirectorie
 
 ---
 
-## 🛠️ WebAssembly-Powered Workflow-as-Code Compiler
+## 🛠️ Server-side Workflow-as-Code Compilation
 
 NativeBPM features a state-of-the-art **Workflow-as-Code** builder. Instead of writing verbose BPMN 2.0 XML by hand or using external visual tools, developers can write type-safe, fluent code in their host language.
 
-To ensure strict parity, identical schema output, and instant local validation across all 7 languages (Go, Python, JS/TS, Java, .NET, PHP, Rust), NativeBPM compiles these code-defined ASTs using a single **embedded WebAssembly (WASM) core compiler** (`core.wasm`). 
+To ensure client-side SDKs remain extremely lightweight, reliable, and free of heavy runtime dependencies (like WASM runtimes or local binary files), the compilation logic has been moved entirely to the server side. 
 
 ### How it Works
 
 ```mermaid
 flowchart TD
-    subgraph "Host Application (Go, Python, JS, Rust, etc.)"
-        API[Fluent Workflow API Builder] -->|Builds AST| AST[Workflow AST Struct]
+    subgraph "Host Application (Go, Python, JS, Rust, Swift, etc.)"
+        API[Fluent Workflow API Builder] -->|Builds AST| AST[Workflow AST JSON]
+        AST -->|Direct HTTP POST| REST[REST API Client]
     end
 
-    subgraph "Embedded Sandbox"
-        WASM_RUN[WASM Runtime: Wazero / Wasmtime] -->|Instantiates| CORE[core.wasm Compiler]
+    subgraph "NativeBPM Engine Server"
+        POST_DEPLOY[POST /api/deploy] -->|Receives JSON AST| COMPILER[Embedded Go-in-WASM Compiler]
+        COMPILER -->|Compiles & Validates| BPMN[BPMN 2.0 XML]
+        BPMN -->|Registers & Runs| ENGINE[Execution Engine]
     end
 
-    AST -->|Passes Schema to| WASM_RUN
-    CORE -->|Compiles & Validates| BPMN[BPMN 2.0 XML]
-    BPMN -->|Returns to Host| REST[REST API Client]
-    REST -->|Deploys to| ENGINE[NativeBPM Engine Server]
+    REST -->|Sends JSON AST| POST_DEPLOY
 
-    style CORE fill:#4F46E5,stroke:#fff,stroke-width:2px,color:#fff
+    style COMPILER fill:#4F46E5,stroke:#fff,stroke-width:2px,color:#fff
     style BPMN fill:#10B981,stroke:#fff,stroke-width:2px,color:#fff
     style ENGINE fill:#06B6D4,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
-Using lightweight runtimes like `wazero` in Go or `wasmtime` in Python, TypeScript, and Rust, the SDK loads and executes the compiled `core.wasm` binary in-memory. This guarantees:
-* **Zero Host Dependencies**: No local CLI tools or external compilation services required.
-* **Flawless parity**: The exact same BPMN validation and compilation logic runs identically on every platform.
-* **Blazing speed**: Compilation and validation run in milliseconds, in-process.
+By offloading the compilation to the engine backend, NativeBPM client SDKs require:
+* **Zero Client Dependencies**: No WebAssembly interpreters (like Wazero or Wasmtime) or local `.wasm` files are bundled.
+* **Flawless Stability**: Platform updates and schema validations are maintained server-side, meaning client SDKs do not need updates for compiler upgrades.
+* **App Store Policy Compliance**: Perfect for mobile platforms (iOS/macOS via Swift, Android via Kotlin) which strictly restrict JIT execution and arbitrary binary execution.
 
 ---
 

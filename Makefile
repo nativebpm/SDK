@@ -1,4 +1,4 @@
-.PHONY: generate generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift build-core-wasm
+.PHONY: generate generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift
 
 # Unified code generator target for all polyglot SDKs using local openapi.yaml
 generate: generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift
@@ -66,12 +66,4 @@ generate-swift:
 		-o /local/sdk/swift \
 		--additional-properties=projectName=NativeBPMClient,responseAs=AsyncAwait
 
-build-core-wasm:
-	GOOS=wasip1 GOARCH=wasm go build -o ./go/core.wasm ../nativebpm/cmd/wasm-compiler/
-	cp ./go/core.wasm ./java/src/main/resources/core.wasm || true
-	cp ./go/core.wasm ./dotnet/src/NativeBPM.Client/core.wasm || true
-	cp ./go/core.wasm ./python/nativebpm/core.wasm || true
-	cp ./go/core.wasm ./php/lib/core.wasm || true
-	cp ./go/core.wasm ./typescript/src/core.wasm || true
-	cp ./go/core.wasm ./typescript/dist/core.wasm || true
-	cp ./go/core.wasm ../core.wasm || true
+

@@ -1,27 +1,30 @@
 package com.nativebpm.client
 
-import java.io.IOException
+import com.nativebpm.client.builder.Workflow
+import com.nativebpm.client.builder.Workflow.V
 
 fun main() {
     println("=== NativeBPM Kotlin SDK Example ===")
 
+    // 1. Build workflow dynamically using Workflow as Code Fluent API
+    println("🔨 Building workflow dynamically using Fluent API...")
+    val workflow = Workflow("native-demo", "Workflow as Code")
+
+    // Chain starting with dynamic when condition (auto-start will prepend start event)
+    workflow
+        .when(V("isUrgent").eq(true)).then { b ->
+            b.user("reviewOrder", "Review Order Details", mapOf("assignee" to "sales_representative"))
+        }
+        .Else { b ->
+            b.service("notifyCustomer", "Send Confirmation Email", "email_topic")
+        }
+
     val client = Client("http://localhost:8080", "test-token")
-    
-    val bpmnXml = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
-          <bpmn:process id="native-demo" isExecutable="true">
-            <bpmn:startEvent id="start"/>
-          </bpmn:process>
-        </bpmn:definitions>
-    """.trimIndent()
 
     try {
         println("Deploying workflow definition...")
         val definition = client.definitions().deploy()
-            .withID("native-demo")
-            .withName("Workflow as Code")
-            .withBPMN(bpmnXml)
+            .withWorkflow(workflow)
             .send()
         println("✓ Deployed process definition (hash: ${definition.hash})")
 

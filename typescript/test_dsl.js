@@ -1,11 +1,5 @@
 import { Workflow, v } from './dist/index.js';
-import * as path from 'node:path';
 import * as assert from 'node:assert';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const wasmPath = path.resolve(__dirname, 'src/core.wasm');
 
 async function testDSL() {
   console.log("Running TypeScript closure block DSL tests...");
@@ -21,13 +15,20 @@ async function testDSL() {
       flow.service('reject', 'Notify Reject', 'reject-topic');
     });
 
-  const xml = await workflow.buildXML(wasmPath);
+  const ast = workflow.toAST();
   
-  assert.ok(xml.includes('id="ts-closure-process"'), "XML should contain process ID");
-  assert.ok(xml.includes('exclusiveGateway id="gw_task1_decision"'), "XML should contain decision gateway");
-  assert.ok(xml.includes('serviceTask id="publish"'), "XML should contain publish service task");
-  assert.ok(xml.includes('wasmPath="./publish.wasm"'), "XML should contain wasmPath on publish task");
-  assert.ok(xml.includes('serviceTask id="reject"'), "XML should contain reject service task");
+  assert.strictEqual(ast.id, 'ts-closure-process', "AST should contain process ID");
+  
+  const gatewayNode = ast.nodes.find(n => n.id === 'gw_task1_decision');
+  assert.ok(gatewayNode, "AST should contain decision gateway");
+  assert.strictEqual(gatewayNode.type, 'exclusiveGateway');
+
+  const publishNode = ast.nodes.find(n => n.id === 'publish');
+  assert.ok(publishNode, "AST should contain publish service task");
+  assert.strictEqual(publishNode.wasmPath, './publish.wasm', "AST should contain wasmPath on publish task");
+
+  const rejectNode = ast.nodes.find(n => n.id === 'reject');
+  assert.ok(rejectNode, "AST should contain reject service task");
   
   console.log("✓ TypeScript closure block DSL tests passed!");
 }
@@ -47,11 +48,13 @@ async function testImplicitBackEdges() {
       flow.end('end', 'End Process');
     });
 
-  const xml = await workflow.buildXML(wasmPath);
+  const ast = workflow.toAST();
 
-  const declCount = (xml.match(/<userTask id="step1"/g) || []).length;
-  assert.strictEqual(declCount, 1, "Should declare userTask 'step1' exactly once");
-  assert.ok(xml.includes('targetRef="step1"'), "Should contain back-edge sequence flow targeting step1");
+  const step1Nodes = ast.nodes.filter(n => n.id === 'step1');
+  assert.strictEqual(step1Nodes.length, 1, "Should declare userTask 'step1' exactly once");
+
+  const flowsToStep1 = ast.flows.filter(f => f.target === 'step1');
+  assert.ok(flowsToStep1.length > 0, "Should contain back-edge sequence flow targeting step1");
 
   console.log("✓ TypeScript implicit back-edges tests passed!");
 }

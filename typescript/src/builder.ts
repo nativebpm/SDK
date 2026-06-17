@@ -1,37 +1,4 @@
-import { WASI } from 'node:wasi';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import * as zlib from 'node:zlib';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const defaultWasmPath = path.resolve(__dirname, 'core.wasm');
-const compiledModuleCache = new Map<any, Promise<WebAssembly.Module>>();
-
-function decompressWasmIfNeeded(data: Uint8Array): Uint8Array {
-  if (data.length >= 4 && data[0] === 0x00 && data[1] === 0x61 && data[2] === 0x73 && data[3] === 0x6d) {
-    return data;
-  }
-  // Gzip check: 0x1f 0x8b
-  if (data.length >= 2 && data[0] === 0x1f && data[1] === 0x8b) {
-    try {
-      return new Uint8Array(zlib.gunzipSync(data));
-    } catch (err: any) {
-      throw new Error(`failed to decompress gzip wasm: ${err.message}`);
-    }
-  }
-  // Brotli check
-  try {
-    const decompressed = zlib.brotliDecompressSync(data);
-    if (decompressed.length >= 4 && decompressed[0] === 0x00 && decompressed[1] === 0x61 && decompressed[2] === 0x73 && decompressed[3] === 0x6d) {
-      return new Uint8Array(decompressed);
-    }
-  } catch (err) {
-    // ignore and fall through
-  }
-  throw new Error("unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)");
-}
+// Zero-dependency AST Workflow builder
 
 export interface InVariable {
   source: string;
@@ -253,42 +220,16 @@ export class ThenBranchBuilder {
 }
 
 export class Workflow {
-  private id: string;
-  private name: string;
-  private nodes: NodeAST[] = [];
-  private flows: FlowAST[] = [];
-  private compiledModulePromise: Promise<WebAssembly.Module> | null = null;
+  public id: string;
+  public name: string;
+  public nodes: NodeAST[] = [];
+  public flows: FlowAST[] = [];
   private currentNodeID: string = '';
   private pendingMerges: string[] = [];
 
-  constructor(id: string, name: string, wasmInput?: string | Uint8Array) {
+  constructor(id: string, name: string) {
     this.id = id;
     this.name = name;
-    if (wasmInput !== undefined) {
-      this.initCompiler(wasmInput);
-    }
-  }
-
-  private initCompiler(wasmInput: string | Uint8Array): void {
-    const cacheKey = wasmInput;
-    if (compiledModuleCache.has(cacheKey)) {
-      this.compiledModulePromise = compiledModuleCache.get(cacheKey)!;
-      return;
-    }
-
-    let wasmBuffer: Uint8Array;
-    if (wasmInput instanceof Uint8Array) {
-      wasmBuffer = wasmInput;
-    } else {
-      if (!fs.existsSync(wasmInput)) {
-        throw new Error(`core.wasm not found at ${wasmInput}. Please compile it or specify a valid path.`);
-      }
-      wasmBuffer = new Uint8Array(fs.readFileSync(wasmInput));
-    }
-    const decompressedBytes = decompressWasmIfNeeded(wasmBuffer);
-    const promise = WebAssembly.compile(decompressedBytes as any);
-    compiledModuleCache.set(cacheKey, promise);
-    this.compiledModulePromise = promise;
   }
 
   private connectNode(id: string): void {
@@ -365,6 +306,10 @@ export class Workflow {
   }
 
   public startEvent(id: string = 'start'): Workflow {
+    if (this.findNode(id)) {
+      this.currentNodeID = id;
+      return this;
+    }
     const node: NodeAST = { type: 'startEvent', id, name: 'Start' };
     this.nodes.push(node);
     this.currentNodeID = id;
@@ -372,12 +317,14 @@ export class Workflow {
   }
 
   public endEvent(id: string, name: string): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'endEvent', id, name };
     this.nodes.push(node);
     return this;
   }
 
   public serviceTask(id: string, name: string, topic: string, opts?: Record<string, any>): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'serviceTask', id, name, topic };
     populateNodeProperties(node, opts);
     this.nodes.push(node);
@@ -385,6 +332,7 @@ export class Workflow {
   }
 
   public aiTask(id: string, name: string, opts?: Record<string, any>): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'aiServiceTask', id, name };
     populateNodeProperties(node, opts);
     this.nodes.push(node);
@@ -392,6 +340,7 @@ export class Workflow {
   }
 
   public userTask(id: string, name: string, opts?: Record<string, any>): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'userTask', id, name };
     populateNodeProperties(node, opts);
     this.nodes.push(node);
@@ -399,24 +348,28 @@ export class Workflow {
   }
 
   public exclusiveGateway(id: string, name: string): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'exclusiveGateway', id, name };
     this.nodes.push(node);
     return this;
   }
 
   public parallelGateway(id: string, name: string): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'parallelGateway', id, name };
     this.nodes.push(node);
     return this;
   }
 
   public eventBasedGateway(id: string, name: string): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'eventBasedGateway', id, name };
     this.nodes.push(node);
     return this;
   }
 
   public callActivity(id: string, name: string, calledElement: string, opts?: Record<string, any>): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'callActivity', id, name, calledElement };
     populateNodeProperties(node, opts);
     this.nodes.push(node);
@@ -424,6 +377,7 @@ export class Workflow {
   }
 
   public businessRuleTask(id: string, name: string, decisionRef: string, opts?: Record<string, any>): Workflow {
+    if (this.findNode(id)) return this;
     const node: NodeAST = { type: 'businessRuleTask', id, name, decisionRef };
     populateNodeProperties(node, opts);
     this.nodes.push(node);
@@ -469,63 +423,8 @@ export class Workflow {
     };
   }
 
-  public async buildXML(wasmInput?: string | Uint8Array): Promise<string> {
-    if (!this.compiledModulePromise) {
-      if (wasmInput !== undefined) {
-        this.initCompiler(wasmInput);
-      } else {
-        this.initCompiler(defaultWasmPath);
-      }
-    }
-
-    const wasmModule = await this.compiledModulePromise!;
-
-    const wasi = new WASI({
-      version: 'preview1',
-      args: [],
-      env: {},
-      preopens: {}
-    } as any);
-
-    const instance = await WebAssembly.instantiate(wasmModule, {
-      wasi_snapshot_preview1: wasi.wasiImport
-    });
-
-    wasi.start(instance);
-
-    const exports = instance.exports as any;
-    const allocate = exports.allocate;
-    const deallocate = exports.deallocate;
-    const compileWorkflow = exports.compileWorkflow;
-    const memory = exports.memory;
-
-    const astJson = JSON.stringify(this.toAST());
-    const encoder = new TextEncoder();
-    const astBytes = encoder.encode(astJson);
-
-    const inputPtr = allocate(astBytes.length);
-    const memView = new Uint8Array(memory.buffer);
-    memView.set(astBytes, inputPtr);
-
-    const resultPacked = compileWorkflow(inputPtr, astBytes.length);
-
-    const resultPtr = Number(resultPacked >> 32n);
-    const resultSize = Number(resultPacked & 0xFFFFFFFFn);
-
-    const resultBytes = new Uint8Array(memory.buffer, resultPtr, resultSize);
-    const decoder = new TextDecoder();
-    const resultJson = decoder.decode(resultBytes);
-
-    const result = JSON.parse(resultJson);
-
-    deallocate(inputPtr, astBytes.length);
-    deallocate(resultPtr, resultSize);
-
-    if (result.error) {
-      throw new Error(`Wasm workflow compilation failed: ${result.error}`);
-    }
-
-    return result.xml;
+  public toJSON(): string {
+    return JSON.stringify(this.toAST());
   }
 }
 

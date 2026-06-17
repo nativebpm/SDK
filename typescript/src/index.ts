@@ -18,9 +18,3 @@ export {
 
 export * from './client.js';
 
-export {
-  validateJSON,
-  parseSchema,
-  UIWidgetSpec,
-  ValidationResult
-} from './validator.js';

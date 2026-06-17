@@ -1,6 +1,7 @@
 import * as api from "./api/src/index.js";
 import * as http from "node:http";
 import * as https from "node:https";
+import { Workflow } from "./builder.js";
 
 // Export type shortcuts
 export type ProcessDefinition = api.ProcessDefinition;
@@ -80,6 +81,7 @@ export class DeployDefinitionBuilder {
   private id?: string;
   private name?: string;
   private bpmnXML?: Blob | Buffer | Uint8Array;
+  private workflow?: Workflow;
 
   constructor(private client: Client) {}
 
@@ -102,7 +104,30 @@ export class DeployDefinitionBuilder {
     return this;
   }
 
+  public withWorkflow(workflow: Workflow): this {
+    this.workflow = workflow;
+    return this;
+  }
+
   public async send(): Promise<ProcessDefinition> {
+    if (this.workflow) {
+      const astJson = this.workflow.toJSON();
+      const headers = {
+        ...this.client.getHeaders(),
+        "Content-Type": "application/json"
+      };
+      const res = await fetch(`${this.client.getBaseUrl()}/api/deploy`, {
+        method: "POST",
+        headers,
+        body: astJson
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Failed to deploy definition: ${text}`);
+      }
+      return res.json();
+    }
+
     if (!this.id) throw new Error("missing deployment field: ID");
     if (!this.name) throw new Error("missing deployment field: Name");
     if (!this.bpmnXML) throw new Error("missing deployment field: BPMN XML data");

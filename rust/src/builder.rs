@@ -1,53 +1,4 @@
-use std::io::Read;
 use serde::{Deserialize, Serialize};
-use wasmtime::*;
-use wasmtime_wasi::{WasiCtxBuilder, preview1::WasiP1Ctx};
-
-const DEFAULT_WASM_BYTES: &[u8] = include_bytes!("core.wasm");
-
-pub fn decompress_wasm_if_needed(data: &[u8]) -> Result<Vec<u8>, String> {
-    if data.len() >= 4 && &data[0..4] == b"\x00asm" {
-        return Ok(data.to_vec());
-    }
-
-    // Gzip check: 0x1f 0x8b
-    if data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b {
-        let mut decoder = flate2::read::GzDecoder::new(data);
-        let mut decompressed = Vec::new();
-        decoder.read_to_end(&mut decompressed)
-            .map_err(|e| format!("failed to decompress gzip wasm: {}", e))?;
-        return Ok(decompressed);
-    }
-
-    // Zip check: PK\x03\x04
-    if data.len() >= 4 && &data[0..4] == b"PK\x03\x04" {
-        let reader = std::io::Cursor::new(data);
-        let mut archive = zip::ZipArchive::new(reader)
-            .map_err(|e| format!("failed to open zip archive: {}", e))?;
-        for i in 0..archive.len() {
-            let mut file = archive.by_index(i)
-                .map_err(|e| format!("failed to read zip file entry: {}", e))?;
-            if file.name().ends_with(".wasm") {
-                let mut decompressed = Vec::new();
-                file.read_to_end(&mut decompressed)
-                    .map_err(|e| format!("failed to read wasm file from zip: {}", e))?;
-                return Ok(decompressed);
-            }
-        }
-        return Err("no .wasm file found inside zip archive".to_string());
-    }
-
-    // Brotli check
-    let mut decompressed = Vec::new();
-    let mut reader = brotli::Decompressor::new(data, 4096);
-    if reader.read_to_end(&mut decompressed).is_ok() {
-        if decompressed.len() >= 4 && &decompressed[0..4] == b"\x00asm" {
-            return Ok(decompressed);
-        }
-    }
-
-    Err("unsupported or invalid WebAssembly binary format".to_string())
-}
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Workflow {
@@ -156,6 +107,10 @@ impl Workflow {
     }
 
     pub fn start_event(&mut self, node_id: &str) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            self.current_node_id = node_id.to_string();
+            return self;
+        }
         self.nodes.push(serde_json::json!({
             "type": "startEvent",
             "id": node_id,
@@ -166,6 +121,9 @@ impl Workflow {
     }
 
     pub fn end_event(&mut self, node_id: &str, name: &str) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         self.nodes.push(serde_json::json!({
             "type": "endEvent",
             "id": node_id,
@@ -175,6 +133,9 @@ impl Workflow {
     }
 
     pub fn service_task(&mut self, node_id: &str, name: &str, topic: &str, options: serde_json::Value) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         let mut node = serde_json::json!({
             "type": "serviceTask",
             "id": node_id,
@@ -187,6 +148,9 @@ impl Workflow {
     }
 
     pub fn ai_task(&mut self, node_id: &str, name: &str, options: serde_json::Value) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         let mut node = serde_json::json!({
             "type": "aiServiceTask",
             "id": node_id,
@@ -198,6 +162,9 @@ impl Workflow {
     }
 
     pub fn user_task(&mut self, node_id: &str, name: &str, options: serde_json::Value) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         let mut node = serde_json::json!({
             "type": "userTask",
             "id": node_id,
@@ -209,6 +176,9 @@ impl Workflow {
     }
 
     pub fn exclusive_gateway(&mut self, node_id: &str, name: &str) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         self.nodes.push(serde_json::json!({
             "type": "exclusiveGateway",
             "id": node_id,
@@ -218,6 +188,9 @@ impl Workflow {
     }
 
     pub fn parallel_gateway(&mut self, node_id: &str, name: &str) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         self.nodes.push(serde_json::json!({
             "type": "parallelGateway",
             "id": node_id,
@@ -227,6 +200,9 @@ impl Workflow {
     }
 
     pub fn event_based_gateway(&mut self, node_id: &str, name: &str) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         self.nodes.push(serde_json::json!({
             "type": "eventBasedGateway",
             "id": node_id,
@@ -236,6 +212,9 @@ impl Workflow {
     }
 
     pub fn call_activity(&mut self, node_id: &str, name: &str, called_element: &str, options: serde_json::Value) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         let mut node = serde_json::json!({
             "type": "callActivity",
             "id": node_id,
@@ -248,6 +227,9 @@ impl Workflow {
     }
 
     pub fn business_rule_task(&mut self, node_id: &str, name: &str, decision_ref: &str, options: serde_json::Value) -> &mut Self {
+        if self.find_node(node_id).is_some() {
+            return self;
+        }
         let mut node = serde_json::json!({
             "type": "businessRuleTask",
             "id": node_id,
@@ -279,6 +261,17 @@ impl Workflow {
         self
     }
 
+    pub fn find_node(&self, node_id: &str) -> Option<&serde_json::Value> {
+        for n in &self.nodes {
+            if let Some(obj) = n.as_object() {
+                if obj.get("id").and_then(|v| v.as_str()) == Some(node_id) {
+                    return Some(n);
+                }
+            }
+        }
+        None
+    }
+
     pub fn find_node_mut(&mut self, node_id: &str) -> Option<&mut serde_json::Map<String, serde_json::Value>> {
         for n in &mut self.nodes {
             if let Some(obj) = n.as_object_mut() {
@@ -290,87 +283,8 @@ impl Workflow {
         None
     }
 
-    pub fn build_xml(&self) -> Result<String, String> {
-        self.build_xml_with_bytes(DEFAULT_WASM_BYTES)
-    }
-
-    pub fn build_xml_with_path(&self, path: &str) -> Result<String, String> {
-        let data = std::fs::read(path)
-            .map_err(|e| format!("failed to read wasm path {}: {}", path, e))?;
-        self.build_xml_with_bytes(&data)
-    }
-
-    pub fn build_xml_with_bytes(&self, wasm_bytes: &[u8]) -> Result<String, String> {
-        let decompressed_bytes = decompress_wasm_if_needed(wasm_bytes)?;
-
-        let config = Config::new();
-        let engine = Engine::new(&config).map_err(|e| e.to_string())?;
-
-        let mut linker = Linker::new(&engine);
-        wasmtime_wasi::preview1::add_to_linker_sync(&mut linker, |state: &mut WasiP1Ctx| state)
-            .map_err(|e| e.to_string())?;
-
-        let wasi = WasiCtxBuilder::new()
-            .inherit_stdout()
-            .inherit_stderr()
-            .build_p1();
-
-        let mut store = Store::new(&engine, wasi);
-        let module = Module::new(&engine, &decompressed_bytes).map_err(|e| e.to_string())?;
-        let instance = linker.instantiate(&mut store, &module).map_err(|e| e.to_string())?;
-
-        if let Some(start_func) = instance.get_typed_func::<(), ()>(&mut store, "_start").ok() {
-            let _ = start_func.call(&mut store, ());
-        }
-
-        let allocate = instance.get_typed_func::<i32, i32>(&mut store, "allocate")
-            .map_err(|e| format!("missing allocate export: {}", e))?;
-        let deallocate = instance.get_typed_func::<(i32, i32), ()>(&mut store, "deallocate")
-            .map_err(|e| format!("missing deallocate export: {}", e))?;
-        let compile_workflow = instance.get_typed_func::<(i32, i32), i64>(&mut store, "compileWorkflow")
-            .map_err(|e| format!("missing compileWorkflow export: {}", e))?;
-
-        let memory = instance.get_memory(&mut store, "memory")
-            .ok_or_else(|| "missing memory export".to_string())?;
-
-        let ast_json = serde_json::to_string(self).map_err(|e| e.to_string())?;
-        let ast_bytes = ast_json.as_bytes();
-
-        let input_ptr = allocate.call(&mut store, ast_bytes.len() as i32)
-            .map_err(|e| format!("failed to allocate wasm memory: {}", e))?;
-
-        memory.write(&mut store, input_ptr as usize, ast_bytes)
-            .map_err(|e| format!("failed to write to wasm memory: {}", e))?;
-
-        let packed_result = compile_workflow.call(&mut store, (input_ptr, ast_bytes.len() as i32))
-            .map_err(|e| format!("failed to run compileWorkflow: {}", e))?;
-
-        let result_ptr = ((packed_result >> 32) & 0xFFFFFFFF) as usize;
-        let result_size = (packed_result & 0xFFFFFFFF) as usize;
-
-        let mut result_bytes = vec![0u8; result_size];
-        memory.read(&store, result_ptr, &mut result_bytes)
-            .map_err(|e| format!("failed to read from wasm memory: {}", e))?;
-
-        let _ = deallocate.call(&mut store, (input_ptr, ast_bytes.len() as i32));
-        let _ = deallocate.call(&mut store, (result_ptr as i32, result_size as i32));
-
-        let result_str = String::from_utf8(result_bytes)
-            .map_err(|e| format!("invalid utf-8 compile result: {}", e))?;
-
-        let result_json: serde_json::Value = serde_json::from_str(&result_str)
-            .map_err(|e| format!("invalid json compile result: {}", e))?;
-
-        if let Some(err_val) = result_json.get("error").and_then(|v| v.as_str()) {
-            if !err_val.is_empty() {
-                return Err(format!("wasm compilation error: {}", err_val));
-            }
-        }
-
-        let xml = result_json.get("xml").and_then(|v| v.as_str())
-            .ok_or_else(|| "missing xml in compile result".to_string())?;
-
-        Ok(xml.to_string())
+    pub fn to_json(&self) -> Result<String, String> {
+        serde_json::to_string(self).map_err(|e| e.to_string())
     }
 }
 
@@ -713,13 +627,13 @@ mod tests {
         w.sequence_flow("start", "task1");
         w.sequence_flow("task1", "end");
 
-        let xml = w.build_xml();
-        assert!(xml.is_ok(), "failed to build xml: {:?}", xml.err());
-        let xml_str = xml.unwrap();
-        assert!(xml_str.contains("id=\"test-process\""));
-        assert!(xml_str.contains("id=\"start\""));
-        assert!(xml_str.contains("id=\"task1\""));
-        assert!(xml_str.contains("id=\"end\""));
+        let json_str = w.to_json();
+        assert!(json_str.is_ok(), "failed to build JSON AST: {:?}", json_str.err());
+        let json = json_str.unwrap();
+        assert!(json.contains("\"id\":\"test-process\""));
+        assert!(json.contains("\"id\":\"start\""));
+        assert!(json.contains("\"id\":\"task1\""));
+        assert!(json.contains("\"id\":\"end\""));
     }
 
     #[test]
@@ -737,37 +651,16 @@ mod tests {
                     .end("end_normal", "Normal Finished");
             });
 
-        let xml = w.build_xml();
-        assert!(xml.is_ok(), "failed to build xml: {:?}", xml.err());
-        let xml_str = xml.unwrap();
-        assert!(xml_str.contains("id=\"test-process-dsl\""));
-        assert!(xml_str.contains("id=\"start\""));
-        assert!(xml_str.contains("id=\"task1\""));
-        assert!(xml_str.contains("id=\"task2\""));
-        assert!(xml_str.contains("id=\"task3\""));
-        assert!(xml_str.contains("id=\"end_urgent\""));
-        assert!(xml_str.contains("id=\"end_normal\""));
-    }
-
-    #[test]
-    #[ignore]
-    fn test_workflow_builder_benchmark() {
-        let mut w = Workflow::new("benchmark-process", "Benchmark Process");
-        w.start_event("start")
-            .service_task("task1", "Service Task", "my-topic", serde_json::json!({ "wasm": "core.wasm" }))
-            .end_event("end", "End");
-        w.sequence_flow("start", "task1");
-        w.sequence_flow("task1", "end");
-
-        let iterations = 5;
-        let start = std::time::Instant::now();
-        for _ in 0..iterations {
-            let xml = w.build_xml().unwrap();
-            assert!(xml.contains("id=\"benchmark-process\""));
-        }
-        let duration = start.elapsed();
-        println!("Compiled {} workflows in {:?}", iterations, duration);
-        println!("Average compilation time per workflow: {:?}", duration / iterations);
+        let json_str = w.to_json();
+        assert!(json_str.is_ok(), "failed to build JSON AST: {:?}", json_str.err());
+        let json = json_str.unwrap();
+        assert!(json.contains("\"id\":\"test-process-dsl\""));
+        assert!(json.contains("\"id\":\"start\""));
+        assert!(json.contains("\"id\":\"task1\""));
+        assert!(json.contains("\"id\":\"task2\""));
+        assert!(json.contains("\"id\":\"task3\""));
+        assert!(json.contains("\"id\":\"end_urgent\""));
+        assert!(json.contains("\"id\":\"end_normal\""));
     }
 }
 
@@ -784,12 +677,6 @@ impl ToCondition for &str {
 impl ToCondition for String {
     fn to_condition(&self) -> String {
         self.clone()
-    }
-}
-
-impl ToCondition for Expression {
-    fn to_condition(&self) -> String {
-        self.to_condition()
     }
 }
 

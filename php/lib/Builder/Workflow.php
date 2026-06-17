@@ -7,79 +7,12 @@ class Workflow {
     private string $name;
     private array $nodes = [];
     private array $flows = [];
-    private ?\Throwable $err = null;
-    private ?string $decompressedWasmBytes = null;
     private string $currentNodeID = '';
     public array $pendingMerges = [];
 
     public function __construct(string $id, string $name, $wasmInput = null) {
         $this->id = $id;
         $this->name = $name;
-        if ($wasmInput !== null) {
-            try {
-                if (is_string($wasmInput) && strlen($wasmInput) < 1000 && file_exists($wasmInput)) {
-                    $data = file_get_contents($wasmInput);
-                    $this->decompressedWasmBytes = self::decompressWasmIfNeeded($data);
-                } else if (is_string($wasmInput) || (is_object($wasmInput) && method_exists($wasmInput, '__toString')) || is_scalar($wasmInput)) {
-                    $this->decompressedWasmBytes = self::decompressWasmIfNeeded((string)$wasmInput);
-                } else {
-                    throw new \InvalidArgumentException("Unsupported wasm input type");
-                }
-            } catch (\Throwable $t) {
-                $this->err = $t;
-            }
-        }
-    }
-
-    public static function decompressWasmIfNeeded(string $data): string {
-        if (strlen($data) >= 4 && substr($data, 0, 4) === "\x00asm") {
-            return $data;
-        }
-        // Gzip check
-        if (strlen($data) >= 2 && ord($data[0]) === 0x1f && ord($data[1]) === 0x8b) {
-            $decompressed = @gzdecode($data);
-            if ($decompressed !== false) {
-                return $decompressed;
-            }
-            throw new \Exception("Failed to decompress gzip wasm");
-        }
-        // Zip check
-        if (strlen($data) >= 4 && substr($data, 0, 4) === "PK\x03\x04") {
-            $tempFile = tempnam(sys_get_temp_dir(), 'wasm_zip');
-            file_put_contents($tempFile, $data);
-            try {
-                $zip = new \ZipArchive();
-                if ($zip->open($tempFile) === true) {
-                    try {
-                        for ($i = 0; $i < $zip->numFiles; $i++) {
-                            $name = $zip->getNameIndex($i);
-                            if (str_ends_with($name, '.wasm')) {
-                                return $zip->getFromIndex($i);
-                            }
-                        }
-                    } finally {
-                        $zip->close();
-                    }
-                }
-                throw new \Exception("no .wasm file found inside zip archive");
-            } finally {
-                if (file_exists($tempFile)) {
-                    unlink($tempFile);
-                }
-            }
-        }
-        // Brotli check
-        if (function_exists('brotli_uncompress')) {
-            try {
-                $decompressed = @brotli_uncompress($data);
-                if ($decompressed !== false && strlen($decompressed) >= 4 && substr($decompressed, 0, 4) === "\x00asm") {
-                    return $decompressed;
-                }
-            } catch (\Throwable $t) {
-                // ignore
-            }
-        }
-        throw new \Exception("unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)");
     }
 
     public function builder(): Workflow {
@@ -118,6 +51,10 @@ class Workflow {
     }
 
     public function startEvent(string $id): Workflow {
+        if ($this->findNode($id) !== null) {
+            $this->currentNodeID = $id;
+            return $this;
+        }
         $this->nodes[] = [
             'type' => 'startEvent',
             'id' => $id,
@@ -128,6 +65,9 @@ class Workflow {
     }
 
     public function endEvent(string $id, string $name): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $this->nodes[] = [
             'type' => 'endEvent',
             'id' => $id,
@@ -137,6 +77,9 @@ class Workflow {
     }
 
     public function serviceTask(string $id, string $name, string $topic, array $options = []): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $node = [
             'type' => 'serviceTask',
             'id' => $id,
@@ -149,6 +92,9 @@ class Workflow {
     }
 
     public function aiTask(string $id, string $name, array $options = []): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $node = [
             'type' => 'aiServiceTask',
             'id' => $id,
@@ -160,6 +106,9 @@ class Workflow {
     }
 
     public function userTask(string $id, string $name, array $options = []): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $node = [
             'type' => 'userTask',
             'id' => $id,
@@ -171,6 +120,9 @@ class Workflow {
     }
 
     public function exclusiveGateway(string $id, string $name): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $this->nodes[] = [
             'type' => 'exclusiveGateway',
             'id' => $id,
@@ -180,6 +132,9 @@ class Workflow {
     }
 
     public function parallelGateway(string $id, string $name): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $this->nodes[] = [
             'type' => 'parallelGateway',
             'id' => $id,
@@ -189,6 +144,9 @@ class Workflow {
     }
 
     public function eventBasedGateway(string $id, string $name): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $this->nodes[] = [
             'type' => 'eventBasedGateway',
             'id' => $id,
@@ -198,6 +156,9 @@ class Workflow {
     }
 
     public function callActivity(string $id, string $name, string $calledElement, array $options = []): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $node = [
             'type' => 'callActivity',
             'id' => $id,
@@ -210,6 +171,9 @@ class Workflow {
     }
 
     public function businessRuleTask(string $id, string $name, string $decisionRef, array $options = []): Workflow {
+        if ($this->findNode($id) !== null) {
+            return $this;
+        }
         $node = [
             'type' => 'businessRuleTask',
             'id' => $id,
@@ -300,90 +264,13 @@ class Workflow {
         ];
     }
 
-    public function buildXML($wasmInput = null): string {
-        if ($this->err !== null) {
-            throw $this->err;
-        }
-
-        $wasmBytes = $this->decompressedWasmBytes;
-        if ($wasmBytes === null) {
-            if ($wasmInput !== null) {
-                if (is_string($wasmInput)) {
-                    if (file_exists($wasmInput)) {
-                        $data = file_get_contents($wasmInput);
-                        $wasmBytes = self::decompressWasmIfNeeded($data);
-                    } else {
-                        $wasmBytes = self::decompressWasmIfNeeded($wasmInput);
-                    }
-                } else {
-                    $wasmBytes = self::decompressWasmIfNeeded((string)$wasmInput);
-                }
-            } else {
-                $fallbackPath = __DIR__ . '/../core.wasm';
-                if (!file_exists($fallbackPath)) {
-                    throw new \Exception("Embedded core.wasm not found. Please specify wasmInput.");
-                }
-                $wasmBytes = self::decompressWasmIfNeeded(file_get_contents($fallbackPath));
-            }
-        }
-
-        $tempWasmFile = tempnam(sys_get_temp_dir(), 'core_wasm');
-        file_put_contents($tempWasmFile, $wasmBytes);
-
-        try {
-            $astJson = json_encode($this->toAST());
-
-            $descriptorspec = [
-                0 => ["pipe", "r"],
-                1 => ["pipe", "w"],
-                2 => ["pipe", "w"]
-            ];
-
-            $cmd = "wasmtime run " . escapeshellarg($tempWasmFile) . " --cli";
-            $process = proc_open($cmd, $descriptorspec, $pipes);
-
-            if (!is_resource($process)) {
-                throw new \Exception("Failed to execute wasmtime command: $cmd. Ensure wasmtime CLI is installed.");
-            }
-
-            fwrite($pipes[0], $astJson);
-            fclose($pipes[0]);
-
-            $stdout = stream_get_contents($pipes[1]);
-            fclose($pipes[1]);
-
-            $stderr = stream_get_contents($pipes[2]);
-            fclose($pipes[2]);
-
-            $status = proc_close($process);
-            if ($status !== 0) {
-                throw new \Exception("wasmtime compilation process exited with code $status. Stderr: $stderr");
-            }
-
-            $result = json_decode($stdout, true);
-            if ($result === null) {
-                throw new \Exception("Failed to decode JSON output from wasm compiler: $stdout");
-            }
-
-            if (isset($result['error']) && $result['error'] !== '') {
-                throw new \Exception("Wasm workflow compilation failed: " . $result['error']);
-            }
-
-            return $result['xml'];
-        } finally {
-            if (file_exists($tempWasmFile)) {
-                unlink($tempWasmFile);
-            }
-        }
-    }
-
     private function connectNode(string $nodeId): void {
         $node = $this->findNode($nodeId);
         $hasStart = false;
         foreach ($this->nodes as $n) {
             if (($n['type'] ?? '') === 'startEvent') {
                 $hasStart = true;
-                $break;
+                break;
             }
         }
         if (!$hasStart && $node !== null && ($node['type'] ?? '') !== 'startEvent') {
@@ -410,6 +297,18 @@ class Workflow {
         return $this;
     }
 
+    public static function V(string $name): Variable {
+        return new Variable($name);
+    }
+
+    public static function Var(string $name): Variable {
+        return new Variable($name);
+    }
+
+    public static function v(string $name): Variable {
+        return new Variable($name);
+    }
+
     public function end(string $id, string $name): Workflow {
         $this->endEvent($id, $name);
         $this->connectNode($id);
@@ -418,52 +317,40 @@ class Workflow {
     }
 
     public function user(string $id, string $name, array $options = []): Workflow {
-        $this->userTask($id, $name, $options);
+        $this->userTask($id, $name, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function service(string $id, string $name, string $topic, array $options = []): Workflow {
-        $this->serviceTask($id, $name, $topic, $options);
+        $this->serviceTask($id, $name, $topic, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function ai(string $id, string $name, array $options = []): Workflow {
-        $this->aiTask($id, $name, $options);
+        $this->aiTask($id, $name, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function call(string $id, string $name, string $calledElement, array $options = []): Workflow {
-        $this->callActivity($id, $name, $calledElement, $options);
+        $this->callActivity($id, $name, $calledElement, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function businessRule(string $id, string $name, string $decisionRef, array $options = []): Workflow {
-        $this->businessRuleTask($id, $name, $decisionRef, $options);
+        $this->businessRuleTask($id, $name, $decisionRef, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function when($condition): WhenBuilder {
-        $gwID = "gw_" . $this->currentNodeID . "_decision";
-        $this->exclusiveGateway($gwID, "Decision Gateway");
+        $gwID = 'gw_' . $this->currentNodeID . '_decision';
+        $this->exclusiveGateway($gwID, 'Decision Gateway');
         $this->connectNode($gwID);
         return new WhenBuilder($this, $gwID, (string)$condition);
-    }
-
-    public static function V(string $name): Variable {
-        return new Variable($name);
-    }
-
-    public static function v(string $name): Variable {
-        return new Variable($name);
-    }
-
-    public static function var(string $name): Variable {
-        return new Variable($name);
     }
 }
 
@@ -509,31 +396,31 @@ class Branch {
     }
 
     public function user(string $id, string $name, array $options = []): Branch {
-        $this->workflow->userTask($id, $name, $options);
+        $this->workflow->userTask($id, $name, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function service(string $id, string $name, string $topic, array $options = []): Branch {
-        $this->workflow->serviceTask($id, $name, $topic, $options);
+        $this->workflow->serviceTask($id, $name, $topic, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function ai(string $id, string $name, array $options = []): Branch {
-        $this->workflow->aiTask($id, $name, $options);
+        $this->workflow->aiTask($id, $name, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function call(string $id, string $name, string $calledElement, array $options = []): Branch {
-        $this->workflow->callActivity($id, $name, $calledElement, $options);
+        $this->workflow->callActivity($id, $name, $calledElement, options);
         $this->connectNode($id);
         return $this;
     }
 
     public function businessRule(string $id, string $name, string $decisionRef, array $options = []): Branch {
-        $this->workflow->businessRuleTask($id, $name, $decisionRef, $options);
+        $this->workflow->businessRuleTask($id, $name, $decisionRef, options);
         $this->connectNode($id);
         return $this;
     }
@@ -546,8 +433,8 @@ class Branch {
     }
 
     public function when($condition): WhenBranchBuilder {
-        $gwID = "gw_" . $this->currentNodeID . "_decision";
-        $this->workflow->exclusiveGateway($gwID, "Decision Gateway");
+        $gwID = 'gw_' . $this->currentNodeID . '_decision';
+        $this->workflow->exclusiveGateway($gwID, 'Decision Gateway');
         $this->connectNode($gwID);
         return new WhenBranchBuilder($this, $gwID, (string)$condition);
     }

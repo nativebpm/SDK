@@ -62,6 +62,7 @@ export class DeployDefinitionBuilder {
     id;
     name;
     bpmnXML;
+    workflow;
     constructor(client) {
         this.client = client;
     }
@@ -82,7 +83,28 @@ export class DeployDefinitionBuilder {
         }
         return this;
     }
+    withWorkflow(workflow) {
+        this.workflow = workflow;
+        return this;
+    }
     async send() {
+        if (this.workflow) {
+            const astJson = this.workflow.toJSON();
+            const headers = {
+                ...this.client.getHeaders(),
+                "Content-Type": "application/json"
+            };
+            const res = await fetch(`${this.client.getBaseUrl()}/api/deploy`, {
+                method: "POST",
+                headers,
+                body: astJson
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Failed to deploy definition: ${text}`);
+            }
+            return res.json();
+        }
         if (!this.id)
             throw new Error("missing deployment field: ID");
         if (!this.name)

@@ -48,6 +48,7 @@ public class DeployDefinitionBuilder {
     private var id: String?
     private var name: String?
     private var bpmnXML: Data?
+    private var workflow: Workflow?
 
     public init(client: Client) {
         self.client = client
@@ -73,8 +74,41 @@ public class DeployDefinitionBuilder {
         return self
     }
 
+    public func withWorkflow(_ workflow: Workflow) -> Self {
+        self.workflow = workflow
+        return self
+    }
+
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     public func send() async throws -> ProcessDefinition {
+        if let currentWorkflow = workflow {
+            guard let jsonData = currentWorkflow.toJSONData() else {
+                throw NSError(domain: "NativeBPMClient", code: 400, userInfo: [NSLocalizedDescriptionKey: "Failed to serialize workflow to JSON"])
+            }
+
+            let url = URL(string: "\(client.baseURL)/api/deploy")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.setValue("Bearer \(client.apiToken)", forHTTPHeaderField: "Authorization")
+            request.httpBody = jsonData
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NSError(domain: "NativeBPMClient", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid server response"])
+            }
+
+            if httpResponse.statusCode >= 300 {
+                let errorMsg = String(data: data, encoding: .utf8) ?? "Unknown HTTP \(httpResponse.statusCode) error"
+                throw NSError(domain: "NativeBPMClient", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMsg])
+            }
+
+            let decoder = CodableHelper.jsonDecoder
+            return try decoder.decode(ProcessDefinition.self, from: data)
+        }
+
         guard let currentId = id else {
             throw NSError(domain: "NativeBPMClient", code: 400, userInfo: [NSLocalizedDescriptionKey: "missing deployment field: ID"])
         }

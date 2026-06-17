@@ -4,32 +4,24 @@ from nativebpm import Client, Workflow, v
 def main():
     print("=== NativeBPM Python SDK: Workflow as Code ===")
 
-    # 1. Build workflow as code (without WASM tasks) using Fluent API method chaining
+    # 1. Build workflow as code using Fluent API method chaining
     workflow = Workflow('native-demo', 'Workflow as Code')
     
     # Chain starting from the start event
     workflow.when(v('isUrgent').eq(True)).then(lambda b: (
-        b.user('reviewOrder', 'Review Order Details', lambda ut: (
-            ut.assignee('sales_representative')
-        ))
+        b.user('reviewOrder', 'Review Order Details', assignee='sales_representative')
     )).Else(lambda b: (
         b.service('notifyCustomer', 'Send Confirmation Email', 'email_topic')
     ))
         
-    # Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
-    bpmn_xml = workflow.build_xml()
-    print("✓ Successfully compiled native workflow AST to BPMN 2.0 XML.")
-    
     # 2. Deploy and start process definition using the Fluent Client API
     client = Client("http://localhost:8080", "test-bearer-token")
     
     print("\nDeploying to NativeBPM engine...")
     try:
-        # Deploy process definition
+        # Deploy process definition directly by passing the workflow instance
         definition = client.definitions().deploy()\
-            .with_id("native-demo")\
-            .with_name("Workflow as Code")\
-            .with_bpmn(bpmn_xml.encode('utf-8'))\
+            .with_workflow(workflow)\
             .send()
         print(f"✓ Deployed process definition (hash: {definition.hash})")
         

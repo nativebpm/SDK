@@ -1,13 +1,5 @@
 import { Workflow } from './dist/index.js';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import * as assert from 'node:assert';
-import * as zlib from 'node:zlib';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const wasmPath = path.resolve(__dirname, 'src/core.wasm');
 
 async function testBuilder() {
   console.log("Running TypeScript workflow builder tests...");
@@ -18,40 +10,23 @@ async function testBuilder() {
   workflow.endEvent('end', 'End');
   workflow.sequenceFlow('start', 'task1');
 
-  // Verify compilation with raw wasm path
-  const xmlRaw = await workflow.buildXML(wasmPath);
-  assert.ok(xmlRaw.includes('id="ts-process"'), "XML should contain process ID");
-  assert.ok(xmlRaw.includes('wasmPath="./payment.wasm"'), "XML should contain wasmPath");
-  console.log("✓ buildXML with raw path passed");
+  // Verify AST output
+  const ast = workflow.toAST();
+  assert.strictEqual(ast.id, 'ts-process', "AST should contain process ID");
+  assert.strictEqual(ast.name, 'TS Process', "AST should contain process Name");
+  
+  const task1Node = ast.nodes.find(n => n.id === 'task1');
+  assert.ok(task1Node, "AST should contain task1");
+  assert.strictEqual(task1Node.wasmPath, './payment.wasm', "AST should contain wasmPath");
+  console.log("✓ toAST structure passed");
 
-  // Verify compilation with Uint8Array buffer directly
-  const wasmBuffer = fs.readFileSync(wasmPath);
-  const xmlBuffer = await workflow.buildXML(wasmBuffer);
-  assert.ok(xmlBuffer.includes('id="ts-process"'), "XML should contain process ID");
-  console.log("✓ buildXML with Uint8Array buffer passed");
+  // Verify JSON output
+  const jsonStr = workflow.toJSON();
+  const parsed = JSON.parse(jsonStr);
+  assert.strictEqual(parsed.id, 'ts-process');
+  console.log("✓ toJSON serialization passed");
 
-  // Verify Brotli compression auto-decompression
-  const brBuffer = zlib.brotliCompressSync(wasmBuffer);
-  const xmlBr = await workflow.buildXML(brBuffer);
-  assert.ok(xmlBr.includes('id="ts-process"'), "XML should contain process ID");
-  console.log("✓ buildXML with Brotli compressed buffer passed");
-
-  // Verify Gzip compression auto-decompression
-  const gzBuffer = zlib.gzipSync(wasmBuffer);
-  const xmlGz = await workflow.buildXML(gzBuffer);
-  assert.ok(xmlGz.includes('id="ts-process"'), "XML should contain process ID");
-  console.log("✓ buildXML with Gzip compressed buffer passed");
-
-  // Verify constructor pre-compilation
-  const wfConstructor = new Workflow('ts-init-process', 'TS Init Process', wasmPath);
-  wfConstructor.startEvent('start');
-  wfConstructor.endEvent('end', 'End');
-  wfConstructor.sequenceFlow('start', 'end');
-  const xmlInit = await wfConstructor.buildXML();
-  assert.ok(xmlInit.includes('id="ts-init-process"'), "XML should contain process ID");
-  console.log("✓ buildXML with constructor pre-compilation passed");
-
-  // Verify BusinessRuleTask / DMN Rules Compiler
+  // Verify BusinessRuleTask / DMN Rules AST
   console.log("Running TypeScript business rule task DMN test...");
   const wfDmn = new Workflow('ts-dmn-process', 'TS DMN Process');
   wfDmn.startEvent('start');
@@ -75,14 +50,20 @@ async function testBuilder() {
   wfDmn.sequenceFlow('start', 'ruleTask');
   wfDmn.sequenceFlow('ruleTask', 'end');
 
-  const xmlDmn = await wfDmn.buildXML(wasmPath);
-  assert.ok(xmlDmn.includes('businessRuleTask id="ruleTask"'), "XML should contain businessRuleTask");
-  assert.ok(xmlDmn.includes('decisionRef="determine_discount"'), "XML should contain decisionRef");
-  assert.ok(xmlDmn.includes('resultVariable="discountVar"'), "XML should contain resultVariable");
-  assert.ok(xmlDmn.includes('mapDecisionResult="singleEntry"'), "XML should contain mapDecisionResult");
-  console.log("✓ buildXML with businessRuleTask DMN compiler passed");
+  const astDmn = wfDmn.toAST();
+  const ruleNode = astDmn.nodes.find(n => n.id === 'ruleTask');
+  assert.ok(ruleNode, "AST should contain ruleTask");
+  assert.strictEqual(ruleNode.type, 'businessRuleTask');
+  assert.strictEqual(ruleNode.decisionRef, 'determine_discount');
+  assert.strictEqual(ruleNode.hitPolicy, 'UNIQUE');
+  assert.strictEqual(ruleNode.resultVar, 'discountVar');
+  assert.strictEqual(ruleNode.mapDecisionResult, 'singleEntry');
+  assert.strictEqual(ruleNode.inputs.length, 2);
+  assert.strictEqual(ruleNode.outputs.length, 1);
+  assert.strictEqual(ruleNode.rules.length, 2);
+  console.log("✓ businessRuleTask DMN AST validation passed");
 
-  // 6. Memory profiling & load test
+  // Load test & memory profiling
   console.log("Starting load test & memory profiling for TypeScript SDK...");
   const startMem = process.memoryUsage().rss / (1024 * 1024);
   console.log(`Baseline Memory: ${startMem.toFixed(2)} MB`);
@@ -92,7 +73,7 @@ async function testBuilder() {
     wf.startEvent('start');
     wf.endEvent('end', 'End');
     wf.sequenceFlow('start', 'end');
-    await wf.buildXML(wasmPath);
+    wf.toJSON();
     if ((i + 1) % 50 === 0) {
       const currentMem = process.memoryUsage().rss / (1024 * 1024);
       console.log(`Iteration ${i + 1}/200 - Memory: ${currentMem.toFixed(2)} MB (Delta: ${(currentMem - startMem).toFixed(2)} MB)`);

@@ -4,42 +4,31 @@ def main():
     print("=== NativeBPM Python SDK: Workflow with Guest WASM Plugins ===")
 
     # 1. Build workflow as code using Fluent API method chaining
-    workflow = Workflow('wasm-demo', 'Workflow with Guest WASM Plugins', './nativebpm/core.wasm')
+    workflow = Workflow('wasm-demo', 'Workflow with Guest WASM Plugins')
     
     # Chain starting from the start event
     workflow\
-        .service('calculate', 'Calculate Totals', 'payment_topic', lambda st: (
-            st.wasm('./calculate_total.wasm')
-        ))\
-        .ai('aiCheck', 'AI Fraud Guard', lambda ait: (
-            ait.provider('google')
-               .model('gemini-2.5-flash')
-               .prompt('Analyze transaction for fraud: ${orderAmount}')
-               .result_var('isFraudulent')
-        ))\
+        .service('calculate', 'Calculate Totals', 'payment_topic', wasm='./calculate_total.wasm')\
+        .ai('aiCheck', 'AI Fraud Guard',
+            provider='google',
+            model='gemini-2.5-flash',
+            prompt='Analyze transaction for fraud: ${orderAmount}',
+            result_var='isFraudulent')\
         .when(v('isFraudulent').eq(True)).then(lambda b: (
-            b.user('userTask', 'Manual Fraud Approval', lambda ut: (
-                ut.assignee('security_officer')
-            ))
+            b.user('userTask', 'Manual Fraud Approval', assignee='security_officer')
         ))\
         .Else(lambda b: (
             None
         ))
-    
-    # Compile the workflow AST to standard BPMN 2.0 XML using the embedded Go engine
-    bpmn_xml = workflow.build_xml()
-    print("✓ Successfully compiled WASM workflow AST to BPMN 2.0 XML.")
     
     # 2. Deploy and start process definition using the Fluent Client API
     client = Client("http://localhost:8080", "test-bearer-token")
     
     print("\nDeploying to NativeBPM engine...")
     try:
-        # Deploy process definition
+        # Deploy process definition directly by passing the workflow instance
         definition = client.definitions().deploy()\
-            .with_id("wasm-demo")\
-            .with_name("Workflow with Guest WASM Plugins")\
-            .with_bpmn(bpmn_xml.encode('utf-8'))\
+            .with_workflow(workflow)\
             .send()
         print(f"✓ Deployed process definition (hash: {definition.hash})")
         

@@ -3,7 +3,6 @@ import sys
 import gc
 import psutil
 from nativebpm import Workflow
-from nativebpm.builder import DEFAULT_WASM_PATH
 
 def get_memory_usage():
     process = psutil.Process(os.getpid())
@@ -14,23 +13,24 @@ def run_load_test():
     
     # 1. Warm-up
     workflow = Workflow('load-test', 'Load Test Schema')
-    workflow.start_event('start').next('end')
+    workflow.start_event('start')
     workflow.end_event('end', 'End')
-    xml = workflow.build_xml()
+    workflow.sequence_flow('start', 'end')
+    json_str = workflow.to_json()
     
-    # Measure baseline memory after JIT compilation is complete
+    # Measure baseline memory
     gc.collect()
     baseline = get_memory_usage()
-    print(f"Baseline Memory (post JIT init): {baseline:.2f} MB")
+    print(f"Baseline Memory: {baseline:.2f} MB")
     
     # 2. Iterate and check memory growth
     iterations = 200
     for i in range(iterations):
-        # We recreate the workflow instance to check engine cleanup
         wf = Workflow(f'load-test-{i}', f'Load Test Schema {i}')
-        wf.start_event('start').next('end')
+        wf.start_event('start')
         wf.end_event('end', 'End')
-        xml = wf.build_xml()
+        wf.sequence_flow('start', 'end')
+        json_str = wf.to_json()
         
         if (i + 1) % 50 == 0:
             gc.collect()
@@ -41,7 +41,6 @@ def run_load_test():
     final = get_memory_usage()
     print(f"Final Memory: {final:.2f} MB (Delta: {final - baseline:.2f} MB)")
     
-    # Acceptable memory delta should be minimal (typically < 5MB overhead for runtime initialization/cache)
     if final - baseline > 15.0:
         print("WARNING: Possible memory leak detected in Python SDK!")
         sys.exit(1)

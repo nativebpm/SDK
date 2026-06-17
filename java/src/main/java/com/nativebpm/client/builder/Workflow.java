@@ -1,25 +1,7 @@
 package com.nativebpm.client.builder;
 
 import com.google.gson.Gson;
-import com.dylibso.chicory.runtime.ExportFunction;
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Memory;
-import com.dylibso.chicory.runtime.Store;
-import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.WasmModule;
-import com.dylibso.chicory.wasi.WasiOptions;
-import com.dylibso.chicory.wasi.WasiPreview1;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import java.util.function.Consumer;
 
 public class Workflow {
@@ -28,89 +10,12 @@ public class Workflow {
     private final List<Map<String, Object>> nodes = new ArrayList<>();
     private final List<Map<String, Object>> flows = new ArrayList<>();
 
-    private Throwable err;
-    private WasmModule compiledModule;
     private String currentNodeID = "";
     private final List<String> pendingMerges = new ArrayList<>();
 
-    public Workflow(String id, String name, Object... wasmInput) {
+    public Workflow(String id, String name) {
         this.id = id;
         this.name = name;
-        if (wasmInput.length > 0) {
-            try {
-                byte[] decompressedBytes;
-                Object input = wasmInput[0];
-                if (input instanceof byte[]) {
-                    decompressedBytes = decompressWasmIfNeeded((byte[]) input);
-                } else if (input instanceof String) {
-                    byte[] data = Files.readAllBytes(Paths.get((String) input));
-                    decompressedBytes = decompressWasmIfNeeded(data);
-                } else {
-                    throw new IllegalArgumentException("Unsupported wasm input type: " + input.getClass().getName());
-                }
-
-                try (ByteArrayInputStream bais = new ByteArrayInputStream(decompressedBytes)) {
-                    this.compiledModule = Parser.parse(bais);
-                }
-            } catch (Throwable t) {
-                this.err = t;
-            }
-        }
-    }
-
-    public static byte[] decompressWasmIfNeeded(byte[] data) throws Exception {
-        if (data.length >= 4 && data[0] == 0x00 && data[1] == 0x61 && data[2] == 0x73 && data[3] == 0x6d) {
-            return data;
-        }
-        // Gzip
-        if (data.length >= 2 && (data[0] & 0xFF) == 0x1f && (data[1] & 0xFF) == 0x8b) {
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                 GZIPInputStream gzis = new GZIPInputStream(bais);
-                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                byte[] buf = new byte[4096];
-                int n;
-                while ((n = gzis.read(buf)) != -1) {
-                    baos.write(buf, 0, n);
-                }
-                return baos.toByteArray();
-            }
-        }
-        // Zip
-        if (data.length >= 4 && data[0] == 0x50 && data[1] == 0x4b && data[2] == 0x03 && data[3] == 0x04) {
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                 ZipInputStream zis = new ZipInputStream(bais)) {
-                ZipEntry entry;
-                while ((entry = zis.getNextEntry()) != null) {
-                    if (entry.getName().endsWith(".wasm")) {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        byte[] buf = new byte[4096];
-                        int n;
-                        while ((n = zis.read(buf)) != -1) {
-                            baos.write(buf, 0, n);
-                        }
-                        return baos.toByteArray();
-                    }
-                }
-            }
-            throw new IllegalArgumentException("No .wasm file found inside zip archive");
-        }
-        // Brotli
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
-             org.brotli.dec.BrotliInputStream bis = new org.brotli.dec.BrotliInputStream(bais);
-             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = bis.read(buf)) != -1) {
-                baos.write(buf, 0, n);
-            }
-            byte[] decompressed = baos.toByteArray();
-            if (decompressed.length >= 4 && decompressed[0] == 0x00 && decompressed[1] == 0x61 && decompressed[2] == 0x73 && decompressed[3] == 0x6d) {
-                return decompressed;
-            }
-        } catch (Exception e) {
-            // ignore and fall through
-        }
-        throw new IllegalArgumentException("Unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)");
     }
 
     public Workflow builder() {
@@ -358,31 +263,31 @@ public class Workflow {
         }
     }
 
-    private void connectNode(String nodeId) {
-        Map<String, Object> node = findNode(nodeId);
+    private void connectNode(String id) {
+        Map<String, Object> node = findNode(id);
         boolean hasStart = false;
-        for (Map<String, Object> n : this.nodes) {
+        for (Map<String, Object> n : nodes) {
             if ("startEvent".equals(n.get("type"))) {
                 hasStart = true;
                 break;
             }
         }
         if (!hasStart && node != null && !"startEvent".equals(node.get("type"))) {
-            this.startEvent("start");
-            this.sequenceFlow("start", nodeId);
-            currentNodeID = nodeId;
+            startEvent("start");
+            sequenceFlow("start", id);
+            this.currentNodeID = id;
             return;
         }
 
         if (!pendingMerges.isEmpty()) {
-            for (String sourceId : pendingMerges) {
-                this.sequenceFlow(sourceId, nodeId);
+            for (String sourceID : pendingMerges) {
+                sequenceFlow(sourceID, id);
             }
             pendingMerges.clear();
-        } else if (!currentNodeID.isEmpty() && !currentNodeID.equals(nodeId)) {
-            this.sequenceFlow(currentNodeID, nodeId);
+        } else if (!currentNodeID.isEmpty() && !currentNodeID.equals(id)) {
+            sequenceFlow(currentNodeID, id);
         }
-        currentNodeID = nodeId;
+        currentNodeID = id;
     }
 
     public Workflow start() {
@@ -390,15 +295,15 @@ public class Workflow {
     }
 
     public Workflow start(String id) {
-        this.startEvent(id);
+        startEvent(id);
         connectNode(id);
         return this;
     }
 
     public Workflow end(String id, String name) {
-        this.endEvent(id, name);
+        endEvent(id, name);
         connectNode(id);
-        this.currentNodeID = "";
+        currentNodeID = "";
         return this;
     }
 
@@ -407,7 +312,7 @@ public class Workflow {
     }
 
     public Workflow user(String id, String name, Map<String, Object> options) {
-        this.userTask(id, name, options);
+        userTask(id, name, options);
         connectNode(id);
         return this;
     }
@@ -417,7 +322,7 @@ public class Workflow {
     }
 
     public Workflow service(String id, String name, String topic, Map<String, Object> options) {
-        this.serviceTask(id, name, topic, options);
+        serviceTask(id, name, topic, options);
         connectNode(id);
         return this;
     }
@@ -427,7 +332,7 @@ public class Workflow {
     }
 
     public Workflow ai(String id, String name, Map<String, Object> options) {
-        this.aiTask(id, name, options);
+        aiTask(id, name, options);
         connectNode(id);
         return this;
     }
@@ -437,7 +342,7 @@ public class Workflow {
     }
 
     public Workflow call(String id, String name, String calledElement, Map<String, Object> options) {
-        this.callActivity(id, name, calledElement, options);
+        callActivity(id, name, calledElement, options);
         connectNode(id);
         return this;
     }
@@ -447,14 +352,14 @@ public class Workflow {
     }
 
     public Workflow businessRule(String id, String name, String decisionRef, Map<String, Object> options) {
-        this.businessRuleTask(id, name, decisionRef, options);
+        businessRuleTask(id, name, decisionRef, options);
         connectNode(id);
         return this;
     }
 
     public WhenBuilder when(String condition) {
         String gwID = "gw_" + this.currentNodeID + "_decision";
-        this.exclusiveGateway(gwID, "Decision Gateway");
+        exclusiveGateway(gwID, "Decision Gateway");
         connectNode(gwID);
         return new WhenBuilder(this, gwID, condition);
     }
@@ -464,6 +369,10 @@ public class Workflow {
     }
 
     public Workflow startEvent(String id) {
+        if (findNode(id) != null) {
+            this.currentNodeID = id;
+            return this;
+        }
         Map<String, Object> node = new HashMap<>();
         node.put("type", "startEvent");
         node.put("id", id);
@@ -474,6 +383,7 @@ public class Workflow {
     }
 
     public Workflow endEvent(String id, String name) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "endEvent");
         node.put("id", id);
@@ -483,6 +393,7 @@ public class Workflow {
     }
 
     public Workflow serviceTask(String id, String name, String topic, Map<String, Object> options) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "serviceTask");
         node.put("id", id);
@@ -494,6 +405,7 @@ public class Workflow {
     }
 
     public Workflow aiTask(String id, String name, Map<String, Object> options) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "aiServiceTask");
         node.put("id", id);
@@ -504,6 +416,7 @@ public class Workflow {
     }
 
     public Workflow userTask(String id, String name, Map<String, Object> options) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "userTask");
         node.put("id", id);
@@ -514,6 +427,7 @@ public class Workflow {
     }
 
     public Workflow exclusiveGateway(String id, String name) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "exclusiveGateway");
         node.put("id", id);
@@ -523,6 +437,7 @@ public class Workflow {
     }
 
     public Workflow parallelGateway(String id, String name) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "parallelGateway");
         node.put("id", id);
@@ -532,6 +447,7 @@ public class Workflow {
     }
 
     public Workflow eventBasedGateway(String id, String name) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "eventBasedGateway");
         node.put("id", id);
@@ -541,6 +457,7 @@ public class Workflow {
     }
 
     public Workflow callActivity(String id, String name, String calledElement, Map<String, Object> options) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "callActivity");
         node.put("id", id);
@@ -552,6 +469,7 @@ public class Workflow {
     }
 
     public Workflow businessRuleTask(String id, String name, String decisionRef, Map<String, Object> options) {
+        if (findNode(id) != null) return this;
         Map<String, Object> node = new HashMap<>();
         node.put("type", "businessRuleTask");
         node.put("id", id);
@@ -635,87 +553,8 @@ public class Workflow {
         return ast;
     }
 
-    public String buildXML(Object... wasmInput) throws Exception {
-        if (this.err != null) {
-            if (this.err instanceof Exception) {
-                throw (Exception) this.err;
-            }
-            throw new RuntimeException(this.err);
-        }
-
-        if (this.compiledModule == null) {
-            byte[] decompressedBytes;
-            if (wasmInput.length > 0) {
-                Object input = wasmInput[0];
-                if (input instanceof byte[]) {
-                    decompressedBytes = decompressWasmIfNeeded((byte[]) input);
-                } else if (input instanceof String) {
-                    byte[] data = Files.readAllBytes(Paths.get((String) input));
-                    decompressedBytes = decompressWasmIfNeeded(data);
-                } else {
-                    throw new IllegalArgumentException("Unsupported wasm input type: " + input.getClass().getName());
-                }
-            } else {
-                // Default fallback: load core.wasm from resources/classpath
-                try (InputStream is = Workflow.class.getResourceAsStream("/core.wasm")) {
-                    if (is == null) {
-                        throw new IllegalStateException("Embedded core.wasm not found in resources/classpath. Please specify a path.");
-                    }
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    byte[] buf = new byte[4096];
-                    int n;
-                    while ((n = is.read(buf)) != -1) {
-                        baos.write(buf, 0, n);
-                    }
-                    decompressedBytes = decompressWasmIfNeeded(baos.toByteArray());
-                }
-            }
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(decompressedBytes)) {
-                this.compiledModule = Parser.parse(bais);
-            }
-        }
-
-        WasiOptions wasiOptions = WasiOptions.builder()
-                .withThrowOnExit0(false)
-                .withArguments(List.of("core.wasm"))
-                .withStderr(System.err)
-                .build();
-        WasiPreview1 wasi = WasiPreview1.builder()
-                .withOptions(wasiOptions)
-                .build();
-        Store store = new Store().addFunction(wasi.toHostFunctions());
-        Instance instance = Instance.builder(this.compiledModule)
-                .withImportValues(store.toImportValues())
-                .build();
-
-        Memory memory = instance.memory();
-        ExportFunction allocate = instance.export("allocate");
-        ExportFunction deallocate = instance.export("deallocate");
-        ExportFunction compileWorkflow = instance.export("compileWorkflow");
-
-        String astJson = new Gson().toJson(toAST());
-        byte[] astBytes = astJson.getBytes(StandardCharsets.UTF_8);
-
-        int inputPtr = (int) allocate.apply(astBytes.length)[0];
-        memory.write(inputPtr, astBytes);
-
-        long resultPacked = compileWorkflow.apply(inputPtr, astBytes.length)[0];
-
-        int resultPtr = (int) (resultPacked >>> 32);
-        int resultSize = (int) (resultPacked & 0xFFFFFFFFL);
-
-        byte[] resultBytes = memory.readBytes(resultPtr, resultSize);
-        String resultJson = new String(resultBytes, StandardCharsets.UTF_8);
-
-        deallocate.apply(inputPtr, astBytes.length);
-        deallocate.apply(resultPtr, resultSize);
-
-        Map<?, ?> result = new Gson().fromJson(resultJson, Map.class);
-        String error = (String) result.get("error");
-        if (error != null && !error.isEmpty()) {
-            throw new RuntimeException("Wasm workflow compilation failed: " + error);
-        }
-        return (String) result.get("xml");
+    public String toJSON() {
+        return new Gson().toJson(toAST());
     }
 
     public static class Expression {

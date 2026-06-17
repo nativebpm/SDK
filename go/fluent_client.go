@@ -75,11 +75,12 @@ func (b *ListDefinitionsBuilder) Send(ctx context.Context) ([]ProcessDefinition,
 }
 
 type DeployDefinitionBuilder struct {
-	service *DefinitionsService
-	id      string
-	name    string
-	bpmnXML []byte
-	err     error
+	service  *DefinitionsService
+	id       string
+	name     string
+	bpmnXML  []byte
+	workflow *Workflow
+	err      error
 }
 
 func (s *DefinitionsService) Deploy() *DeployDefinitionBuilder {
@@ -101,54 +102,72 @@ func (b *DeployDefinitionBuilder) WithBPMN(xmlData []byte) *DeployDefinitionBuil
 	return b
 }
 
+func (b *DeployDefinitionBuilder) WithWorkflow(workflow *Workflow) *DeployDefinitionBuilder {
+	b.workflow = workflow
+	return b
+}
+
 func (b *DeployDefinitionBuilder) Send(ctx context.Context) (*ProcessDefinition, error) {
 	if b.err != nil {
 		return nil, b.err
-	}
-	if b.id == "" {
-		return nil, fmt.Errorf("missing deployment field: ID")
-	}
-	if b.name == "" {
-		return nil, fmt.Errorf("missing deployment field: Name")
-	}
-	if len(b.bpmnXML) == 0 {
-		return nil, fmt.Errorf("missing deployment field: BPMN XML data")
-	}
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	// Write fields
-	if err := writer.WriteField("id", b.id); err != nil {
-		return nil, err
-	}
-	if err := writer.WriteField("name", b.name); err != nil {
-		return nil, err
-	}
-
-	// Write file
-	part, err := writer.CreateFormFile("file", b.name+".bpmn")
-	if err != nil {
-		return nil, err
-	}
-	if _, err := part.Write(b.bpmnXML); err != nil {
-		return nil, err
-	}
-	if err := writer.Close(); err != nil {
-		return nil, err
 	}
 
 	cfg := b.service.client.apiClient.cfg
 	serverURL := cfg.Servers[0].URL
 	reqURL := serverURL + "/api/deploy"
 
+	var body io.Reader
+	var contentType string
+
+	if b.workflow != nil {
+		jsonData, err := b.workflow.ToJSON()
+		if err != nil {
+			return nil, err
+		}
+		body = bytes.NewReader(jsonData)
+		contentType = "application/json"
+	} else {
+		if b.id == "" {
+			return nil, fmt.Errorf("missing deployment field: ID")
+		}
+		if b.name == "" {
+			return nil, fmt.Errorf("missing deployment field: Name")
+		}
+		if len(b.bpmnXML) == 0 {
+			return nil, fmt.Errorf("missing deployment field: BPMN XML data")
+		}
+
+		buf := &bytes.Buffer{}
+		writer := multipart.NewWriter(buf)
+
+		if err := writer.WriteField("id", b.id); err != nil {
+			return nil, err
+		}
+		if err := writer.WriteField("name", b.name); err != nil {
+			return nil, err
+		}
+
+		part, err := writer.CreateFormFile("file", b.name+".bpmn")
+		if err != nil {
+			return nil, err
+		}
+		if _, err := part.Write(b.bpmnXML); err != nil {
+			return nil, err
+		}
+		if err := writer.Close(); err != nil {
+			return nil, err
+		}
+
+		body = buf
+		contentType = writer.FormDataContentType()
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "POST", reqURL, body)
 	if err != nil {
 		return nil, err
 	}
 
-	// Set headers
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Content-Type", contentType)
 	req.Header.Set("Accept", "application/json")
 	for k, v := range cfg.DefaultHeader {
 		req.Header.Set(k, v)

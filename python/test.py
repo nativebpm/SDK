@@ -1,15 +1,9 @@
-import gzip
-import io
-import zipfile
-import brotli
 import unittest
-from pathlib import Path
 from nativebpm import Workflow, v
-from nativebpm.builder import DEFAULT_WASM_PATH
 
 class TestPythonSDK(unittest.TestCase):
     def test_workflow_generation(self):
-        print("Running Python SDK workflow compilation test...")
+        print("Running Python SDK workflow AST test...")
         
         workflow = Workflow('test-process', 'Test Process Schema')
         
@@ -30,62 +24,35 @@ class TestPythonSDK(unittest.TestCase):
         workflow.sequence_flow_with_condition('gateway', 'end', 'isApproved == false')
         workflow.sequence_flow('userTask', 'end')
 
-        xml = workflow.build_xml()
-        print("Compilation successful! XML content:\n", xml[:200] + "...")
+        ast = workflow.to_ast()
+        print("AST structure generated successfully.")
 
-        self.assertTrue('id="test-process"' in xml)
-        self.assertTrue('name="Test Process Schema"' in xml)
-        self.assertTrue('<startEvent id="start"' in xml)
-        self.assertTrue('<serviceTask id="task1" name="Service Task 1"' in xml)
-        self.assertTrue('topic="service-topic"' in xml)
-        self.assertTrue('wasmPath="./my_task.wasm"' in xml)
-        self.assertTrue('<userTask id="userTask" name="User Task Approve"' in xml)
-        self.assertTrue('assignee="boss"' in xml)
-        self.assertTrue('<exclusiveGateway id="gateway" name="Join/Split"' in xml)
-        self.assertTrue('isApproved == true' in xml)
-        self.assertTrue('isApproved == false' in xml)
-        self.assertTrue('<endEvent id="end" name="Process Completed"' in xml)
-        print("All Python SDK assertions passed successfully!")
+        self.assertEqual(ast['id'], 'test-process')
+        self.assertEqual(ast['name'], 'Test Process Schema')
+        
+        # Check start node
+        start_node = next(n for n in ast['nodes'] if n['id'] == 'start')
+        self.assertEqual(start_node['type'], 'startEvent')
 
-    def test_compressed_formats(self):
-        print("Running Python SDK compressed formats test...")
-        raw_bytes = DEFAULT_WASM_PATH.read_bytes()
+        # Check service task
+        task1 = next(n for n in ast['nodes'] if n['id'] == 'task1')
+        self.assertEqual(task1['type'], 'serviceTask')
+        self.assertEqual(task1['name'], 'Service Task 1')
+        self.assertEqual(task1['topic'], 'service-topic')
+        self.assertEqual(task1['wasmPath'], './my_task.wasm')
 
-        # Brotli
-        br_bytes = brotli.compress(raw_bytes)
-        # Gzip
-        gz_io = io.BytesIO()
-        with gzip.GzipFile(fileobj=gz_io, mode='wb') as f:
-            f.write(raw_bytes)
-        gz_bytes = gz_io.getvalue()
-        # Zip
-        zip_io = io.BytesIO()
-        with zipfile.ZipFile(zip_io, 'w') as z:
-            z.writestr("core.wasm", raw_bytes)
-        zip_bytes = zip_io.getvalue()
+        # Check user task
+        user_task = next(n for n in ast['nodes'] if n['id'] == 'userTask')
+        self.assertEqual(user_task['type'], 'userTask')
+        self.assertEqual(user_task['assignee'], 'boss')
 
-        # Compile with each
-        workflow = Workflow('compressed-test', 'Compressed Test')
-        workflow.start()
-        workflow.end('end', 'End')
-
-        for name, data in [("Brotli", br_bytes), ("Gzip", gz_bytes), ("Zip", zip_bytes)]:
-            xml = workflow.build_xml(data)
-            self.assertTrue('id="compressed-test"' in xml)
-            print(f"✓ Python SDK successfully compiled process using {name} compressed bytes.")
-
-    def test_constructor_compilation(self):
-        print("Running Python SDK constructor compilation test...")
-        workflow = Workflow('init-test', 'Init Test', DEFAULT_WASM_PATH)
-        workflow.start()
-        workflow.end('end', 'End')
-
-        xml = workflow.build_xml()
-        self.assertTrue('id="init-test"' in xml)
-        print("✓ Python SDK constructor compilation verified successfully.")
+        # Check flows
+        self.assertTrue(any(f['source'] == 'gateway' and f['target'] == 'userTask' and f['condition'] == 'isApproved == true' for f in ast['flows']))
+        self.assertTrue(any(f['source'] == 'gateway' and f['target'] == 'end' and f['condition'] == 'isApproved == false' for f in ast['flows']))
+        print("All basic AST assertions passed!")
 
     def test_business_rule_task(self):
-        print("Running Python SDK business rule task test...")
+        print("Running Python SDK business rule task AST test...")
         workflow = Workflow('dmn-test', 'DMN Test Process')
 
         workflow.start()
@@ -110,16 +77,17 @@ class TestPythonSDK(unittest.TestCase):
 
         workflow.end('end', 'End')
 
-        xml = workflow.build_xml()
-        self.assertIsNotNone(xml)
-        self.assertTrue('businessRuleTask id="ruleTask"' in xml)
-        self.assertTrue('decisionRef="determine_discount"' in xml)
-        self.assertTrue('resultVariable="discountVar"' in xml)
-        self.assertTrue('mapDecisionResult="singleEntry"' in xml)
-        print("✓ Python SDK business rule task verified successfully!")
+        ast = workflow.to_ast()
+        rule_node = next(n for n in ast['nodes'] if n['id'] == 'ruleTask')
+        self.assertEqual(rule_node['type'], 'businessRuleTask')
+        self.assertEqual(rule_node['decisionRef'], 'determine_discount')
+        self.assertEqual(rule_node['hitPolicy'], 'UNIQUE')
+        self.assertEqual(rule_node['resultVar'], 'discountVar')
+        self.assertEqual(rule_node['mapDecisionResult'], 'singleEntry')
+        print("✓ Python SDK business rule task AST verified successfully!")
 
     def test_closure_dsl(self):
-        print("Running Python SDK closure block DSL test...")
+        print("Running Python SDK closure block DSL AST test...")
         workflow = Workflow('closure-process', 'Closure Process')
         
         workflow.user('task1', 'User Approval').when(v('approved').eq(True)).then(lambda b: (
@@ -128,17 +96,16 @@ class TestPythonSDK(unittest.TestCase):
             b.service('reject', 'Notify Reject', 'reject-topic')
         ))
 
-        xml = workflow.build_xml()
+        ast = workflow.to_ast()
         
-        self.assertTrue('id="closure-process"' in xml)
-        self.assertTrue('exclusiveGateway id="gw_task1_decision"' in xml)
-        self.assertTrue('serviceTask id="publish"' in xml)
-        self.assertTrue('wasmPath="./publish.wasm"' in xml)
-        self.assertTrue('serviceTask id="reject"' in xml)
-        print("✓ Python SDK closure block DSL test passed!")
+        self.assertEqual(ast['id'], 'closure-process')
+        self.assertTrue(any(n['id'] == 'gw_task1_decision' and n['type'] == 'exclusiveGateway' for n in ast['nodes']))
+        self.assertTrue(any(n['id'] == 'publish' and n['type'] == 'serviceTask' and n['wasmPath'] == './publish.wasm' for n in ast['nodes']))
+        self.assertTrue(any(n['id'] == 'reject' and n['type'] == 'serviceTask' for n in ast['nodes']))
+        print("✓ Python SDK closure block DSL AST test passed!")
 
     def test_closure_dsl_decorator(self):
-        print("Running Python SDK closure block DSL decorator test...")
+        print("Running Python SDK closure block DSL decorator AST test...")
         workflow = Workflow('closure-decorator', 'Closure Decorator Process')
         
         workflow.user('task1', 'User Approval')
@@ -151,17 +118,16 @@ class TestPythonSDK(unittest.TestCase):
         def else_branch(b):
             b.service('reject', 'Notify Reject', 'reject-topic')
 
-        xml = workflow.build_xml()
+        ast = workflow.to_ast()
         
-        self.assertTrue('id="closure-decorator"' in xml)
-        self.assertTrue('exclusiveGateway id="gw_task1_decision"' in xml)
-        self.assertTrue('serviceTask id="publish"' in xml)
-        self.assertTrue('wasmPath="./publish.wasm"' in xml)
-        self.assertTrue('serviceTask id="reject"' in xml)
-        print("✓ Python SDK closure block DSL decorator test passed!")
+        self.assertEqual(ast['id'], 'closure-decorator')
+        self.assertTrue(any(n['id'] == 'gw_task1_decision' and n['type'] == 'exclusiveGateway' for n in ast['nodes']))
+        self.assertTrue(any(n['id'] == 'publish' and n['type'] == 'serviceTask' and n['wasmPath'] == './publish.wasm' for n in ast['nodes']))
+        self.assertTrue(any(n['id'] == 'reject' and n['type'] == 'serviceTask' for n in ast['nodes']))
+        print("✓ Python SDK closure block DSL decorator AST test passed!")
 
     def test_implicit_back_edges(self):
-        print("Running Python SDK implicit back-edges test...")
+        print("Running Python SDK implicit back-edges AST test...")
         workflow = Workflow('back-edge-process', 'Back Edge Process')
 
         workflow.user('step1', 'User Step 1')\
@@ -174,16 +140,19 @@ class TestPythonSDK(unittest.TestCase):
                     b.end('end', 'End Process')
                 ))
 
-        xml = workflow.build_xml()
-        self.assertTrue('id="back-edge-process"' in xml)
+        ast = workflow.to_ast()
+        self.assertEqual(ast['id'], 'back-edge-process')
         
         # Verify only 1 declaration of userTask id="step1" exists
-        decl_count = xml.count('<userTask id="step1"')
+        decl_count = sum(1 for n in ast['nodes'] if n['id'] == 'step1')
         self.assertEqual(decl_count, 1)
 
         # Check for sequence flow targeting step1 (back-edge)
-        self.assertTrue('targetRef="step1"' in xml)
-        print("✓ Python SDK implicit back-edges test passed!")
+        self.assertTrue(any(f['target'] == 'step1' for f in ast['flows']))
+        print("✓ Python SDK implicit back-edges AST test passed!")
+
+if __name__ == '__main__':
+    unittest.main()
 
 if __name__ == '__main__':
     unittest.main()

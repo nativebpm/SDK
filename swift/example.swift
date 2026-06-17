@@ -9,21 +9,19 @@ func runExample() async {
     
     let client = Client(baseURL: "http://localhost:8080", apiToken: "test-token")
     
-    let bpmnXml = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
-          <bpmn:process id="native-demo" isExecutable="true">
-            <bpmn:startEvent id="start"/>
-          </bpmn:process>
-        </bpmn:definitions>
-    """
+    // 1. Build workflow dynamically using Fluent API
+    let workflow = Workflow(id: "native-demo", name: "Workflow as Code")
+    workflow
+        .when(V("isUrgent").eq(true)).then { b in
+            b.user("reviewOrder", name: "Review Order Details", options: ["assignee": "sales_representative"])
+        }.otherwise { b in
+            b.service("notifyCustomer", name: "Send Confirmation Email", topic: "email_topic")
+        }
     
     do {
         print("Deploying workflow definition...")
         let definition = try await client.definitions().deploy()
-            .withID("native-demo")
-            .withName("Workflow as Code")
-            .withBPMN(bpmnXml)
+            .withWorkflow(workflow)
             .send()
         print("✓ Deployed process definition (hash: \(definition.hash))")
         

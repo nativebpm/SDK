@@ -1,4 +1,5 @@
 import * as api from "./api/src/index.js";
+import { Workflow } from "./builder.js";
 export type ProcessDefinition = api.ProcessDefinition;
 export type ProcessInstance = api.ProcessInstance;
 export type HistoryRecord = api.HistoryRecord;
@@ -33,10 +34,12 @@ export declare class DeployDefinitionBuilder {
     private id?;
     private name?;
     private bpmnXML?;
+    private workflow?;
     constructor(client: Client);
     withID(id: string): this;
     withName(name: string): this;
     withBPMN(xml: string | Blob | Uint8Array | Buffer): this;
+    withWorkflow(workflow: Workflow): this;
     send(): Promise<ProcessDefinition>;
 }
 export declare class InstancesService {

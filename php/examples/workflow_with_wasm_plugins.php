@@ -13,34 +13,21 @@ echo "=== NativeBPM PHP SDK: Workflow with Guest WASM Plugins ===\n";
 echo "🔨 Building workflow dynamically using Fluent API...\n";
 $workflow = new Workflow("wasm-demo", "Workflow with Guest WASM Plugins");
 
-// Chain starting from first service task (auto-start will prepend start event)
-$workflow->service("calculate", "Calculate Totals", "payment_topic", function($st) {
-        $st->wasm("./calculate_total.wasm");
-    })
-    ->ai("aiCheck", "AI Fraud Guard", function($ait) {
-        $ait->provider("google")
-            ->model("gemini-2.5-flash")
-            ->prompt('Analyze transaction for fraud: ${orderAmount}')
-            ->resultVar("isFraudulent");
-    })
+// Chain starting from first service task
+$workflow->start()
+    ->service("calculate", "Calculate Totals", "payment_topic", ["wasmPath" => "./calculate_total.wasm"])
+    ->ai("aiCheck", "AI Fraud Guard", [
+        "provider" => "google",
+        "model" => "gemini-2.5-flash",
+        "prompt" => 'Analyze transaction for fraud: ${orderAmount}',
+        "resultVar" => "isFraudulent"
+    ])
     ->when(Workflow::V('isFraudulent')->eq(true))->then(function($b) {
-        $b->user("userTask", "Manual Fraud Approval", function($ut) {
-            $ut->assignee("security_officer");
-        });
+        $b->user("userTask", "Manual Fraud Approval", ["assignee" => "security_officer"]);
     })
     ->else(function($b) {
         // empty branch (will auto-route to end event)
     });
-
-$bpmnXml = $workflow->buildXML();
-echo "✓ Successfully compiled WASM workflow AST to BPMN 2.0 XML.\n";
-
-// Print a snippet of generated XML
-if (strlen($bpmnXml) > 300) {
-    echo "XML snippet:\n" . substr($bpmnXml, 0, 300) . "...\n";
-} else {
-    echo "XML output:\n" . $bpmnXml . "\n";
-}
 
 // 2. Deploy and start process definition using the REST API client
 $config = Configuration::getDefaultConfiguration()
@@ -49,13 +36,11 @@ $config = Configuration::getDefaultConfiguration()
 
 $api = new DefaultApi(new GuzzleHttp\Client(), $config);
 
-echo "\nDeploying to NativeBPM engine...\n";
-$tempFile = tempnam(sys_get_temp_dir(), 'bpmn_');
-file_put_contents($tempFile, $bpmnXml);
+echo "\nDeploying to NativeBPM engine (JSON AST compiled server-side)...\n";
 
 try {
-    // Deploy process definition
-    $definition = $api->deployDefinition($tempFile);
+    // Deploy process definition directly via JSON AST
+    $definition = $api->deployWorkflow($workflow);
     echo "✓ Deployed process definition (hash: " . $definition->getHash() . ")\n";
 
     // Start a process instance with input variables
@@ -77,8 +62,4 @@ try {
 
 } catch (Exception $e) {
     echo "Note: Local API Engine deployment skipped (ensure local server is running on :8080). Details: " . $e->getMessage() . "\n";
-} finally {
-    if (file_exists($tempFile)) {
-        unlink($tempFile);
-    }
 }

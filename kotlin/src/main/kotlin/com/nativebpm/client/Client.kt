@@ -49,6 +49,7 @@ class DeployDefinitionBuilder(private val client: Client) {
     private var id: String? = null
     private var name: String? = null
     private var bpmnXml: ByteArray? = null
+    private var workflow: com.nativebpm.client.builder.Workflow? = null
 
     fun withID(id: String): DeployDefinitionBuilder {
         this.id = id
@@ -70,7 +71,34 @@ class DeployDefinitionBuilder(private val client: Client) {
         return this
     }
 
+    fun withWorkflow(workflow: com.nativebpm.client.builder.Workflow): DeployDefinitionBuilder {
+        this.workflow = workflow
+        return this
+    }
+
     fun send(): ProcessDefinition {
+        val workflowInstance = workflow
+        if (workflowInstance != null) {
+            val jsonAst = workflowInstance.toJSON()
+            val mediaType = okhttp3.MediaType.parse("application/json")
+            val requestBody = jsonAst.toRequestBody(mediaType)
+            val request = Request.Builder()
+                .url("${client.baseUrl.trimEnd('/')}/api/deploy")
+                .post(requestBody)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .build()
+
+            client.okHttpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IOException("Failed to deploy definition: ${response.body?.string()}")
+                }
+                val bodyString = response.body?.string() ?: throw IOException("Empty response body")
+                return Serializer.moshi.adapter(ProcessDefinition::class.java).fromJson(bodyString)
+                    ?: throw IOException("Failed to parse deployment response")
+            }
+        }
+
         val currentId = id ?: throw IllegalArgumentException("missing deployment field: ID")
         val currentName = name ?: throw IllegalArgumentException("missing deployment field: Name")
         val xmlData = bpmnXml ?: throw IllegalArgumentException("missing deployment field: BPMN XML data")

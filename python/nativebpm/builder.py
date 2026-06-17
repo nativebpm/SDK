@@ -1,36 +1,5 @@
 import json
-import gzip
-import io
-import zipfile
-import brotli
-from pathlib import Path
 from typing import Any, Dict, List, Optional
-from wasmtime import Engine, Linker, Module, Store, WasiConfig, Config, ExitTrap
-
-DEFAULT_WASM_PATH = Path(__file__).parent / "core.wasm"
-
-def decompress_wasm_if_needed(data: bytes) -> bytes:
-    if len(data) >= 4 and data[:4] == b'\x00asm':
-        return data
-    # Gzip check: 0x1f 0x8b
-    if len(data) >= 2 and data[0] == 0x1f and data[1] == 0x8b:
-        with gzip.GzipFile(fileobj=io.BytesIO(data)) as f:
-            return f.read()
-    # Zip check: PK\x03\x04
-    if len(data) >= 4 and data[:4] == b'PK\x03\x04':
-        with zipfile.ZipFile(io.BytesIO(data)) as z:
-            for name in z.namelist():
-                if name.endswith('.wasm'):
-                    return z.read(name)
-        raise ValueError("no .wasm file found inside zip archive")
-    # Brotli check
-    try:
-        decompressed = brotli.decompress(data)
-        if len(decompressed) >= 4 and decompressed[:4] == b'\x00asm':
-            return decompressed
-    except Exception:
-        pass
-    raise ValueError("unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)")
 
 def to_camel_case(s: str) -> str:
     if s == "wasm":
@@ -46,8 +15,6 @@ def populate_node_properties(node: dict, kwargs: dict):
     for k, val in kwargs.items():
         key = to_camel_case(k)
         node[key] = val
-
-_COMPILER_CACHE = {}
 
 class Branch:
     def __init__(self, workflow: 'Workflow', gateway_id: str, current_node_id: str, is_conditional: bool, condition: Optional[str] = None):
@@ -198,54 +165,13 @@ class ThenBranchBuilder:
         return self.otherwise(else_fn)
 
 class Workflow:
-    def __init__(self, id_str: str, name: str, wasm_input: Optional[Any] = None):
+    def __init__(self, id_str: str, name: str):
         self._id = id_str
         self._name = name
         self._nodes: List[Dict[str, Any]] = []
         self._flows: List[Dict[str, Any]] = []
-        self._engine = None
-        self._compiled_module = None
         self._current_node_id = ""
         self._pending_merges: List[str] = []
-
-        if wasm_input is not None:
-            self.init_compiler(wasm_input)
-
-    def init_compiler(self, wasm_input: Any):
-        if isinstance(wasm_input, (bytes, bytearray)):
-            wasm_bytes = bytes(wasm_input)
-        else:
-            resolved_path = Path(wasm_input)
-            if not resolved_path.exists():
-                raise FileNotFoundError(f"core.wasm not found at {resolved_path}")
-            wasm_bytes = resolved_path.read_bytes()
-
-        decompressed_bytes = decompress_wasm_if_needed(wasm_bytes)
-
-        import hashlib
-        cache_key = hashlib.sha256(decompressed_bytes).digest()
-
-        global _COMPILER_CACHE
-        if cache_key in _COMPILER_CACHE:
-            self._engine, self._compiled_module = _COMPILER_CACHE[cache_key]
-            return
-
-        config = Config()
-        try:
-            config.signals_based_traps = False
-        except AttributeError:
-            config.signals_based_traps(False)
-        try:
-            config.macos_use_mach_ports = False
-        except AttributeError:
-            config.macos_use_mach_ports(False)
-
-        engine = Engine(config)
-        compiled_module = Module(engine, decompressed_bytes)
-
-        _COMPILER_CACHE[cache_key] = (engine, compiled_module)
-        self._engine = engine
-        self._compiled_module = compiled_module
 
     def _connect_node(self, node_id: str):
         node = self.find_node(node_id)
@@ -307,50 +233,71 @@ class Workflow:
         return WhenBuilder(self, gw_id, str(condition))
 
     def start_event(self, node_id: str = "start") -> 'Workflow':
+        if self.find_node(node_id):
+            self._current_node_id = node_id
+            return self
         self._nodes.append({'type': 'startEvent', 'id': node_id, 'name': 'Start'})
         return self
 
     def end_event(self, node_id: str, name: str) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         self._nodes.append({'type': 'endEvent', 'id': node_id, 'name': name})
         return self
 
     def service_task(self, node_id: str, name: str, topic: str, **kwargs) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         node = {'type': 'serviceTask', 'id': node_id, 'name': name, 'topic': topic}
         populate_node_properties(node, kwargs)
         self._nodes.append(node)
         return self
 
     def ai_task(self, node_id: str, name: str, **kwargs) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         node = {'type': 'aiServiceTask', 'id': node_id, 'name': name}
         populate_node_properties(node, kwargs)
         self._nodes.append(node)
         return self
 
     def user_task(self, node_id: str, name: str, **kwargs) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         node = {'type': 'userTask', 'id': node_id, 'name': name}
         populate_node_properties(node, kwargs)
         self._nodes.append(node)
         return self
 
     def exclusive_gateway(self, node_id: str, name: str) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         self._nodes.append({'type': 'exclusiveGateway', 'id': node_id, 'name': name})
         return self
 
     def parallel_gateway(self, node_id: str, name: str) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         self._nodes.append({'type': 'parallelGateway', 'id': node_id, 'name': name})
         return self
 
     def event_based_gateway(self, node_id: str, name: str) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         self._nodes.append({'type': 'eventBasedGateway', 'id': node_id, 'name': name})
         return self
 
     def call_activity(self, node_id: str, name: str, called_element: str, **kwargs) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         node = {'type': 'callActivity', 'id': node_id, 'name': name, 'calledElement': called_element}
         populate_node_properties(node, kwargs)
         self._nodes.append(node)
         return self
 
     def business_rule_task(self, node_id: str, name: str, decision_ref: str, **kwargs) -> 'Workflow':
+        if self.find_node(node_id):
+            return self
         node = {'type': 'businessRuleTask', 'id': node_id, 'name': name, 'decisionRef': decision_ref}
         populate_node_properties(node, kwargs)
         self._nodes.append(node)
@@ -396,69 +343,11 @@ class Workflow:
             'flows': flows
         }
 
-    def build_xml(self, wasm_input: Optional[Any] = None) -> str:
-        if self._compiled_module is None:
-            if wasm_input is not None:
-                self.init_compiler(wasm_input)
-            else:
-                self.init_compiler(DEFAULT_WASM_PATH)
-
-        engine = self._engine
-        linker = Linker(engine)
-        linker.define_wasi()
-
-        module = self._compiled_module
-        store = Store(engine)
-
-        wasi = WasiConfig()
-        wasi.inherit_stdout()
-        wasi.inherit_stderr()
-        store.set_wasi(wasi)
-
-        instance = linker.instantiate(store, module)
-
-        exports = instance.exports(store)
-        start = exports.get("_start")
-        if start:
-            try:
-                start(store)
-            except ExitTrap:
-                pass
-            except SystemExit:
-                pass
-
-        allocate = exports.get("allocate")
-        deallocate = exports.get("deallocate")
-        compile_workflow = exports.get("compileWorkflow")
-        memory = exports.get("memory")
-
-        ast_json = json.dumps(self.to_ast())
-        ast_bytes = ast_json.encode('utf-8')
-
-        input_ptr = allocate(store, len(ast_bytes))
-        memory.write(store, ast_bytes, input_ptr)
-
-        result_packed = compile_workflow(store, input_ptr, len(ast_bytes))
-
-        result_ptr = (result_packed >> 32) & 0xFFFFFFFF
-        result_size = result_packed & 0xFFFFFFFF
-
-        result_bytes = memory.read(store, result_ptr, result_ptr + result_size)
-        result_json = result_bytes.decode('utf-8')
-
-        deallocate(store, input_ptr, len(ast_bytes))
-        deallocate(store, result_ptr, result_size)
-
-        result = json.loads(result_json)
-        if result.get("error"):
-            raise ValueError(f"Wasm workflow compilation failed: {result['error']}")
-
-        return result["xml"]
-
+    def to_json(self) -> str:
+        return json.dumps(self.to_ast())
 
 class Expression(str):
     pass
-
 
 class Variable:
     def __init__(self, name: str):
@@ -487,10 +376,8 @@ class Variable:
     def lte(self, value: Any) -> Expression:
         return Expression(f"{self.name} <= {value}")
 
-
 def V(name: str) -> Variable:
     return Variable(name)
-
 
 def v(name: str) -> Variable:
     return Variable(name)

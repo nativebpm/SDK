@@ -1,11 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Reflection;
-using System.Text;
 using System.Text.Json;
-using Wasmtime;
 
 namespace NativeBPM.Client.Builder
 {
@@ -18,99 +13,21 @@ namespace NativeBPM.Client.Builder
         private string currentNodeID = "";
         internal List<string> PendingMerges { get; } = new();
 
-        private Exception? err;
-        private Engine? engine;
-        private Wasmtime.Module? compiledModule;
-
         public Workflow(string id, string name, object? wasmInput = null)
         {
             this.id = id;
             this.name = name;
-            if (wasmInput != null)
-            {
-                try
-                {
-                    byte[] decompressedBytes;
-                    if (wasmInput is byte[] bytes)
-                    {
-                        decompressedBytes = DecompressWasmIfNeeded(bytes);
-                    }
-                    else if (wasmInput is string path)
-                    {
-                        byte[] data = File.ReadAllBytes(path);
-                        decompressedBytes = DecompressWasmIfNeeded(data);
-                    }
-                    else
-                    {
-                        throw new ArgumentException($"Unsupported wasm input type: {wasmInput.GetType().FullName}");
-                    }
-
-                    this.engine = new Engine();
-                    this.compiledModule = Wasmtime.Module.FromBytes(this.engine, "core", decompressedBytes);
-                }
-                catch (Exception ex)
-                {
-                    this.err = ex;
-                }
-            }
-        }
-
-        public static byte[] DecompressWasmIfNeeded(byte[] data)
-        {
-            if (data.Length >= 4 && data[0] == 0x00 && data[1] == 0x61 && data[2] == 0x73 && data[3] == 0x6d)
-            {
-                return data;
-            }
-            // Gzip
-            if (data.Length >= 2 && data[0] == 0x1f && data[1] == 0x8b)
-            {
-                using var ms = new MemoryStream(data);
-                using var gzip = new GZipStream(ms, CompressionMode.Decompress);
-                using var outMs = new MemoryStream();
-                gzip.CopyTo(outMs);
-                return outMs.ToArray();
-            }
-            // Zip
-            if (data.Length >= 4 && data[0] == 0x50 && data[1] == 0x4b && data[2] == 0x03 && data[3] == 0x04)
-            {
-                using var ms = new MemoryStream(data);
-                using var archive = new ZipArchive(ms, ZipArchiveMode.Read);
-                foreach (var entry in archive.Entries)
-                {
-                    if (entry.FullName.EndsWith(".wasm", StringComparison.OrdinalIgnoreCase))
-                    {
-                        using var entryStream = entry.Open();
-                        using var outMs = new MemoryStream();
-                        entryStream.CopyTo(outMs);
-                        return outMs.ToArray();
-                    }
-                }
-                throw new InvalidOperationException("No .wasm file found inside zip archive");
-            }
-            // Brotli
-            try
-            {
-                using var ms = new MemoryStream(data);
-                using var brotli = new BrotliStream(ms, CompressionMode.Decompress);
-                using var outMs = new MemoryStream();
-                brotli.CopyTo(outMs);
-                var decompressed = outMs.ToArray();
-                if (decompressed.Length >= 4 && decompressed[0] == 0x00 && decompressed[1] == 0x61 && decompressed[2] == 0x73 && decompressed[3] == 0x6d)
-                {
-                    return decompressed;
-                }
-            }
-            catch
-            {
-                // ignore and fall through
-            }
-            throw new ArgumentException("Unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)");
         }
 
         public Workflow Builder() => this;
 
         public Workflow StartEvent(string nodeId)
         {
+            if (FindNode(nodeId) != null)
+            {
+                this.currentNodeID = nodeId;
+                return this;
+            }
             nodes.Add(new Dictionary<string, object>
             {
                 { "type", "startEvent" },
@@ -123,6 +40,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow EndEvent(string nodeId, string nodeName)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             nodes.Add(new Dictionary<string, object>
             {
                 { "type", "endEvent" },
@@ -166,6 +87,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow ServiceTask(string nodeId, string nodeName, string topic, Dictionary<string, object>? options = null)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             var node = new Dictionary<string, object>
             {
                 { "type", "serviceTask" },
@@ -180,6 +105,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow AITask(string nodeId, string nodeName, Dictionary<string, object>? options = null)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             var node = new Dictionary<string, object>
             {
                 { "type", "aiServiceTask" },
@@ -193,6 +122,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow UserTask(string nodeId, string nodeName, Dictionary<string, object>? options = null)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             var node = new Dictionary<string, object>
             {
                 { "type", "userTask" },
@@ -206,6 +139,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow ExclusiveGateway(string nodeId, string nodeName)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             nodes.Add(new Dictionary<string, object>
             {
                 { "type", "exclusiveGateway" },
@@ -217,6 +154,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow ParallelGateway(string nodeId, string nodeName)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             nodes.Add(new Dictionary<string, object>
             {
                 { "type", "parallelGateway" },
@@ -228,6 +169,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow EventBasedGateway(string nodeId, string nodeName)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             nodes.Add(new Dictionary<string, object>
             {
                 { "type", "eventBasedGateway" },
@@ -239,6 +184,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow CallActivity(string nodeId, string nodeName, string calledElement, Dictionary<string, object>? options = null)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             var node = new Dictionary<string, object>
             {
                 { "type", "callActivity" },
@@ -253,6 +202,10 @@ namespace NativeBPM.Client.Builder
 
         public Workflow BusinessRuleTask(string nodeId, string nodeName, string decisionRef, Dictionary<string, object>? options = null)
         {
+            if (FindNode(nodeId) != null)
+            {
+                return this;
+            }
             var node = new Dictionary<string, object>
             {
                 { "type", "businessRuleTask" },
@@ -349,127 +302,6 @@ namespace NativeBPM.Client.Builder
                 { "nodes", nodesCopy },
                 { "flows", flowsCopy }
             };
-        }
-
-        public string BuildXml(object? wasmInput = null)
-        {
-            if (this.err != null)
-            {
-                throw this.err;
-            }
-
-            if (this.compiledModule == null)
-            {
-                byte[] decompressedBytes;
-                if (wasmInput != null)
-                {
-                    if (wasmInput is byte[] bytes)
-                    {
-                        decompressedBytes = DecompressWasmIfNeeded(bytes);
-                    }
-                    else if (wasmInput is string path)
-                    {
-                        byte[] data = File.ReadAllBytes(path);
-                        decompressedBytes = DecompressWasmIfNeeded(data);
-                    }
-                    else
-                    {
-                        throw new ArgumentException($"Unsupported wasm input type: {wasmInput.GetType().FullName}");
-                    }
-                }
-                else
-                {
-                    // Embedded fallback
-                    var assembly = Assembly.GetExecutingAssembly();
-                    string? foundResource = null;
-                    foreach (var name in assembly.GetManifestResourceNames())
-                    {
-                        if (name.EndsWith("core.wasm"))
-                        {
-                            foundResource = name;
-                            break;
-                        }
-                    }
-
-                    if (foundResource == null)
-                    {
-                        throw new InvalidOperationException("Embedded core.wasm resource not found. Please specify wasmInput.");
-                    }
-
-                    using var resStream = assembly.GetManifestResourceStream(foundResource);
-                    if (resStream == null)
-                    {
-                        throw new InvalidOperationException("Failed to load embedded core.wasm resource stream.");
-                    }
-                    using var ms = new MemoryStream();
-                    resStream.CopyTo(ms);
-                    decompressedBytes = DecompressWasmIfNeeded(ms.ToArray());
-                }
-
-                this.engine = new Engine();
-                this.compiledModule = Wasmtime.Module.FromBytes(this.engine, "core", decompressedBytes);
-            }
-
-            using var store = new Store(this.engine);
-            var wasiConfig = new WasiConfiguration();
-            store.SetWasiConfiguration(wasiConfig);
-
-            using var linker = new Linker(this.engine);
-            linker.DefineWasi();
-
-            var instance = linker.Instantiate(store, this.compiledModule);
-
-            var start = instance.GetFunction("_start");
-            if (start != null)
-            {
-                try
-                {
-                    start.Invoke();
-                }
-                catch (Exception ex) when (ex.Message.Contains("exit status 0") || ex.Message.Contains("status 0"))
-                {
-                    // Ignore successful normal exit from Go WASI command module
-                }
-            }
-
-            var memory = instance.GetMemory("memory");
-            var allocate = instance.GetFunction("allocate");
-            var deallocate = instance.GetFunction("deallocate");
-            var compileWorkflow = instance.GetFunction("compileWorkflow");
-
-            if (memory == null || allocate == null || deallocate == null || compileWorkflow == null)
-            {
-                throw new InvalidOperationException("Failed to locate required WebAssembly exports.");
-            }
-
-            string astJson = JsonSerializer.Serialize(ToAST());
-            byte[] astBytes = Encoding.UTF8.GetBytes(astJson);
-
-            int inputPtr = (int)allocate.Invoke(astBytes.Length);
-            memory.WriteString(inputPtr, astJson, Encoding.UTF8);
-
-            long resultPacked = (long)compileWorkflow.Invoke(inputPtr, astBytes.Length);
-
-            int resultPtr = (int)(resultPacked >> 32);
-            int resultSize = (int)(resultPacked & 0xFFFFFFFF);
-
-            string resultJson = memory.ReadString(resultPtr, resultSize, Encoding.UTF8);
-
-            deallocate.Invoke(inputPtr, astBytes.Length);
-            deallocate.Invoke(resultPtr, resultSize);
-
-            using var doc = JsonDocument.Parse(resultJson);
-            var root = doc.RootElement;
-            if (root.TryGetProperty("error", out var errProp) && errProp.ValueKind == JsonValueKind.String)
-            {
-                string errMsg = errProp.GetString()!;
-                if (!string.IsNullOrEmpty(errMsg))
-                {
-                    throw new InvalidOperationException($"Wasm workflow compilation failed: {errMsg}");
-                }
-            }
-
-            return root.GetProperty("xml").GetString()!;
         }
 
         private void ConnectNode(string nodeId)
@@ -576,8 +408,6 @@ namespace NativeBPM.Client.Builder
 
         public void Dispose()
         {
-            compiledModule?.Dispose();
-            engine?.Dispose();
         }
     }
 

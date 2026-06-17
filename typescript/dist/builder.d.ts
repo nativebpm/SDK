@@ -104,15 +104,13 @@ export declare class ThenBranchBuilder {
     otherwise(elseFn: (flow: Branch) => void): Branch;
 }
 export declare class Workflow {
-    private id;
-    private name;
-    private nodes;
-    private flows;
-    private compiledModulePromise;
+    id: string;
+    name: string;
+    nodes: NodeAST[];
+    flows: FlowAST[];
     private currentNodeID;
     private pendingMerges;
-    constructor(id: string, name: string, wasmInput?: string | Uint8Array);
-    private initCompiler;
+    constructor(id: string, name: string);
     private connectNode;
     start(id?: string): Workflow;
     end(id: string, name: string): Workflow;
@@ -138,7 +136,7 @@ export declare class Workflow {
     sequenceFlowWithCondition(source: string, target: string, condition: string): Workflow;
     findNode(id: string): NodeAST | undefined;
     toAST(): WorkflowAST;
-    buildXML(wasmInput?: string | Uint8Array): Promise<string>;
+    toJSON(): string;
 }
 export declare class Expression extends String {
 }

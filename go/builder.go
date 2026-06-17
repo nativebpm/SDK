@@ -1,25 +1,10 @@
 package nativebpm
 
 import (
-	"archive/zip"
-	"bytes"
-	"compress/gzip"
-	"context"
-	_ "embed"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
-
-	"github.com/andybalholm/brotli"
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
-
-//go:embed core.wasm
-var coreWasm []byte
 
 type M map[string]interface{}
 
@@ -29,8 +14,6 @@ type Workflow struct {
 	Nodes          []map[string]interface{} `json:"nodes"`
 	Flows          []map[string]interface{} `json:"flows"`
 	err            error
-	runtime        wazero.Runtime
-	compiledModule wazero.CompiledModule
 	currentNodeID  string
 	pendingMerges  []string
 }
@@ -83,60 +66,12 @@ func (w *Workflow) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func NewWorkflow(id, name string, wasmInput ...interface{}) *Workflow {
+func NewWorkflow(id, name string) *Workflow {
 	w := &Workflow{
 		ID:    id,
 		Name:  name,
 		Nodes: make([]map[string]interface{}, 0),
 		Flows: make([]map[string]interface{}, 0),
-	}
-	if len(wasmInput) > 0 {
-		ctx := context.Background()
-		var decompressedBytes []byte
-		var err error
-
-		switch v := wasmInput[0].(type) {
-		case []byte:
-			decompressedBytes, err = decompressWasmIfNeeded(v)
-		case string:
-			var data []byte
-			data, err = os.ReadFile(v)
-			if err == nil {
-				decompressedBytes, err = decompressWasmIfNeeded(data)
-			}
-		default:
-			w.err = fmt.Errorf("unsupported wasm input type: %T", wasmInput[0])
-			return w
-		}
-
-		if err != nil {
-			w.err = err
-			return w
-		}
-
-		r := wazero.NewRuntime(ctx)
-		wasiBuilder := r.NewHostModuleBuilder("wasi_snapshot_preview1")
-		wasi_snapshot_preview1.NewFunctionExporter().ExportFunctions(wasiBuilder)
-		wasiBuilder.NewFunctionBuilder().
-			WithFunc(func(exitCode uint32) {
-				panic(fmt.Sprintf("exit_%d", exitCode))
-			}).
-			Export("proc_exit")
-
-		if _, err := wasiBuilder.Instantiate(ctx); err != nil {
-			_ = r.Close(ctx)
-			w.err = fmt.Errorf("failed to instantiate WASI: %w", err)
-			return w
-		}
-
-		compiled, err := r.CompileModule(ctx, decompressedBytes)
-		if err != nil {
-			_ = r.Close(ctx)
-			w.err = err
-			return w
-		}
-		w.runtime = r
-		w.compiledModule = compiled
 	}
 	return w
 }
@@ -632,53 +567,7 @@ func (tbb *ThenBranchBuilder) Otherwise(elseFn func(sub *Branch)) *Branch {
 	return tbb.Else(elseFn)
 }
 
-func decompressWasmIfNeeded(data []byte) ([]byte, error) {
-	if len(data) >= 4 && string(data[:4]) == "\x00asm" {
-		return data, nil
-	}
-	// Gzip check: 0x1f 0x8b
-	if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b {
-		zr, err := gzip.NewReader(bytes.NewReader(data))
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize gzip reader: %w", err)
-		}
-		defer zr.Close()
-		decompressed, err := io.ReadAll(zr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read gzip content: %w", err)
-		}
-		return decompressed, nil
-	}
-	// Zip check: 0x50 0x4b 0x03 0x04 ("PK\x03\x04")
-	if len(data) >= 4 && data[0] == 0x50 && data[1] == 0x4b && data[2] == 0x03 && data[3] == 0x04 {
-		zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize zip reader: %w", err)
-		}
-		for _, f := range zr.File {
-			if strings.HasSuffix(f.Name, ".wasm") {
-				rc, err := f.Open()
-				if err != nil {
-					return nil, fmt.Errorf("failed to open zip file entry %s: %w", f.Name, err)
-				}
-				defer rc.Close()
-				decompressed, err := io.ReadAll(rc)
-				if err != nil {
-					return nil, fmt.Errorf("failed to read zip file entry %s: %w", f.Name, err)
-				}
-				return decompressed, nil
-			}
-		}
-		return nil, errors.New("no .wasm file found inside zip archive")
-	}
-	// Fallback/Brotli check
-	br := brotli.NewReader(bytes.NewReader(data))
-	decompressed, err := io.ReadAll(br)
-	if err == nil && len(decompressed) >= 4 && string(decompressed[:4]) == "\x00asm" {
-		return decompressed, nil
-	}
-	return nil, errors.New("unsupported or invalid WebAssembly binary format (failed to decompress or identify magic header)")
-}
+
 
 type Expression struct {
 	expr string
@@ -740,175 +629,7 @@ func (v Variable) Lte(val interface{}) Expression {
 	return Expression{expr: fmt.Sprintf("%s <= %v", v.name, val)}
 }
 
-func (w *Workflow) Close(ctx context.Context) error {
-	if w.runtime != nil {
-		return w.runtime.Close(ctx)
-	}
-	return nil
+func (w *Workflow) ToJSON() ([]byte, error) {
+	return json.Marshal(w)
 }
 
-func (w *Workflow) WithCompilerBytes(ctx context.Context, wasmBytes []byte) (*Workflow, error) {
-	decompressedBytes, err := decompressWasmIfNeeded(wasmBytes)
-	if err != nil {
-		return nil, err
-	}
-	r := wazero.NewRuntime(ctx)
-	wasiBuilder := r.NewHostModuleBuilder("wasi_snapshot_preview1")
-	wasi_snapshot_preview1.NewFunctionExporter().ExportFunctions(wasiBuilder)
-	wasiBuilder.NewFunctionBuilder().
-		WithFunc(func(exitCode uint32) {
-			panic(fmt.Sprintf("exit_%d", exitCode))
-		}).
-		Export("proc_exit")
-
-	if _, err := wasiBuilder.Instantiate(ctx); err != nil {
-		_ = r.Close(ctx)
-		return nil, fmt.Errorf("failed to instantiate WASI: %w", err)
-	}
-
-	compiled, err := r.CompileModule(ctx, decompressedBytes)
-	if err != nil {
-		_ = r.Close(ctx)
-		return nil, err
-	}
-	w.runtime = r
-	w.compiledModule = compiled
-	return w, nil
-}
-
-func (w *Workflow) WithCompilerPath(ctx context.Context, path string) (*Workflow, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return w.WithCompilerBytes(ctx, data)
-}
-
-func (w *Workflow) BuildXML(ctx context.Context) (string, error) {
-	var r wazero.Runtime
-	var compiled wazero.CompiledModule
-
-	if w.runtime != nil && w.compiledModule != nil {
-		r = w.runtime
-		compiled = w.compiledModule
-	} else {
-		// Lazy compile default embedded compiler
-		decompressedBytes, err := decompressWasmIfNeeded(coreWasm)
-		if err != nil {
-			return "", err
-		}
-		r = wazero.NewRuntime(ctx)
-		defer r.Close(ctx)
-
-		wasiBuilder := r.NewHostModuleBuilder("wasi_snapshot_preview1")
-		wasi_snapshot_preview1.NewFunctionExporter().ExportFunctions(wasiBuilder)
-		wasiBuilder.NewFunctionBuilder().
-			WithFunc(func(exitCode uint32) {
-				panic(fmt.Sprintf("exit_%d", exitCode))
-			}).
-			Export("proc_exit")
-
-		if _, err := wasiBuilder.Instantiate(ctx); err != nil {
-			return "", fmt.Errorf("failed to instantiate WASI: %w", err)
-		}
-
-		comp, err := r.CompileModule(ctx, decompressedBytes)
-		if err != nil {
-			return "", err
-		}
-		compiled = comp
-	}
-
-	config := wazero.NewModuleConfig().WithName("core").WithStartFunctions()
-	mod, err := r.InstantiateModule(ctx, compiled, config)
-	if err != nil {
-		return "", err
-	}
-	defer mod.Close(ctx)
-
-	_start := mod.ExportedFunction("_start")
-	if _start != nil {
-		_, startErr := _start.Call(ctx)
-		if startErr != nil && !strings.Contains(startErr.Error(), "exit_0") {
-			return "", startErr
-		}
-	}
-
-	allocate := mod.ExportedFunction("allocate")
-	deallocate := mod.ExportedFunction("deallocate")
-	compileWorkflow := mod.ExportedFunction("compileWorkflow")
-	memory := mod.Memory()
-
-	if allocate == nil || deallocate == nil || compileWorkflow == nil || memory == nil {
-		return "", errors.New("missing expected wasm exports")
-	}
-
-	astBytes, err := json.Marshal(w)
-	if err != nil {
-		return "", err
-	}
-
-	results, err := allocate.Call(ctx, uint64(len(astBytes)))
-	if err != nil {
-		return "", err
-	}
-	inputPtr := results[0]
-
-	if !memory.Write(uint32(inputPtr), astBytes) {
-		return "", errors.New("failed to write AST to wasm memory")
-	}
-
-	res, err := compileWorkflow.Call(ctx, inputPtr, uint64(len(astBytes)))
-	if err != nil {
-		return "", err
-	}
-	packedResult := res[0]
-
-	resultPtr := uint32(packedResult >> 32)
-	resultSize := uint32(packedResult & 0xffffffff)
-
-	resultBytes, ok := memory.Read(resultPtr, resultSize)
-	if !ok {
-		return "", errors.New("failed to read compile result from wasm memory")
-	}
-
-	_, _ = deallocate.Call(ctx, inputPtr, uint64(len(astBytes)))
-	_, _ = deallocate.Call(ctx, uint64(resultPtr), uint64(resultSize))
-
-	var output struct {
-		XML   string `json:"xml"`
-		Error string `json:"error"`
-	}
-	if err := json.Unmarshal(resultBytes, &output); err != nil {
-		return "", err
-	}
-
-	if output.Error != "" {
-		return "", fmt.Errorf("wasm compilation error: %s", output.Error)
-	}
-
-	return output.XML, nil
-}
-
-func (w *Workflow) BuildXMLWithBytes(ctx context.Context, wasmBytes []byte) (string, error) {
-	tempWf := &Workflow{
-		ID:    w.ID,
-		Name:  w.Name,
-		Nodes: w.Nodes,
-		Flows: w.Flows,
-	}
-	_, err := tempWf.WithCompilerBytes(ctx, wasmBytes)
-	if err != nil {
-		return "", err
-	}
-	defer tempWf.Close(ctx)
-	return tempWf.BuildXML(ctx)
-}
-
-func (w *Workflow) BuildXMLWithPath(ctx context.Context, path string) (string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return w.BuildXMLWithBytes(ctx, data)
-}

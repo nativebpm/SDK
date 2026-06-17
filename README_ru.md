@@ -18,7 +18,6 @@
 * **Спецификация OpenAPI (JSON)**: Динамически отдается движком по адресу `http://localhost:8080/api/openapi.json`.
 * **Центральные ресурсы репозитория**:
   - [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/openapi.yaml): Файл спецификации OpenAPI 3.0 платформы.
-  - [core.wasm](file:///Users/user/github.com/nativebpm/sdk/core.wasm): Прекомпилированное WebAssembly-ядро конструктора Workflow-as-Code.
 
 ---
 
@@ -40,38 +39,38 @@
 
 ---
 
-## 🛠️ Компилятор Workflow-as-Code на WebAssembly
+## 🛠️ Серверная компиляция Workflow-as-Code
 
 NativeBPM предоставляет передовой конструктор **Workflow-as-Code**. Вместо ручного написания громоздких XML-файлов BPMN 2.0 или использования сторонних визуальных редакторов, разработчики могут писать типизированный и лаконичный код на основном языке приложения.
 
-Для обеспечения строгой идентичности, одинаковой валидации и мгновенной локальной генерации схем на всех 7 языках, NativeBPM использует единое решение — **встроенный компилятор WebAssembly (WASM)** (`core.wasm`).
+Чтобы сделать клиентские SDK максимально легкими, надежными и освободить их от тяжелых рантайм-зависимостей (таких как WASM-интерпретаторы или файлы скомпилированных модулей), логика компиляции была полностью перенесена на сторону сервера NativeBPM.
 
 ### Схема работы
 
 ```mermaid
 flowchart TD
-    subgraph "Хост-приложение (Go, Python, JS, Rust и др.)"
-        API[Fluent Workflow API Builder] -->|Формирует AST| AST[Workflow AST Struct]
+    subgraph "Хост-приложение (Go, Python, JS, Rust, Swift и др.)"
+        API[Fluent Workflow API Builder] -->|Формирует AST| AST[Workflow AST JSON]
+        AST -->|Прямой HTTP POST| REST[Клиент REST API]
     end
 
-    subgraph "Изолированная среда (Sandbox)"
-        WASM_RUN[WASM Runtime: Wazero / Wasmtime] -->|Инициализирует| CORE[Компилятор core.wasm]
+    subgraph "Сервер движка NativeBPM"
+        POST_DEPLOY[POST /api/deploy] -->|Принимает JSON AST| COMPILER[Встроенный компилятор Go-in-WASM]
+        COMPILER -->|Компилирует и валидирует| BPMN[BPMN 2.0 XML]
+        BPMN -->|Регистрирует и запускает| ENGINE[Движок исполнения]
     end
 
-    AST -->|Передает схему| WASM_RUN
-    CORE -->|Компилирует и валидирует| BPMN[BPMN 2.0 XML]
-    BPMN -->|Возвращает в хост| REST[Клиент REST API]
-    REST -->|Деплоит на| ENGINE[Сервер движка NativeBPM]
+    REST -->|Отправляет JSON AST| POST_DEPLOY
 
-    style CORE fill:#4F46E5,stroke:#fff,stroke-width:2px,color:#fff
+    style COMPILER fill:#4F46E5,stroke:#fff,stroke-width:2px,color:#fff
     style BPMN fill:#10B981,stroke:#fff,stroke-width:2px,color:#fff
     style ENGINE fill:#06B6D4,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
-Используя легковесные виртуальные машины, такие как `wazero` в Go или `wasmtime` в Python, TypeScript и Rust, SDK загружает и выполняет скомпилированный бинарный файл `core.wasm` прямо в памяти процесса. Это гарантирует:
-* **Отсутствие внешних зависимостей**: Не требуются установленные локально CLI-утилиты или сетевые сервисы компиляции.
-* **Идеальную идентичность**: Одна и та же логика валидации и компиляции BPMN работает абсолютно одинаково на любой платформе.
-* **Высочайшую скорость**: Компиляция и валидация выполняются in-process за миллисекунды.
+Благодаря переносу компиляции на бэкенд движка, клиентские SDK NativeBPM получили следующие преимущества:
+* **Нулевые зависимости на клиенте**: В SDK больше не встраиваются интерпретаторы WebAssembly (такие как Wazero или Wasmtime) или локальные файлы `.wasm`.
+* **Абсолютная стабильность**: Обновления платформы и валидации схем происходят на сервере, поэтому клиентские SDK не требуют обновления при изменении компилятора.
+* **Соответствие правилам App Store**: Идеально подходит для мобильных платформ (iOS/macOS через Swift, Android через Kotlin), которые строго ограничивают JIT-компиляцию и выполнение сторонних бинарных файлов.
 
 ---
 

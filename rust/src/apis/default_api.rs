@@ -454,6 +454,42 @@ pub async fn deploy_definition(configuration: &configuration::Configuration, fil
     }
 }
 
+/// Deploy a Workflow directly as JSON AST.
+pub async fn deploy_workflow(configuration: &configuration::Configuration, workflow: &crate::builder::Workflow) -> Result<models::ProcessDefinition, Error<DeployDefinitionError>> {
+    let uri_str = format!("{}/api/deploy", configuration.base_path);
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+
+    req_builder = req_builder.json(workflow);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::ProcessDefinition`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::ProcessDefinition`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<DeployDefinitionError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
 /// Fetch a single process instance state by instance ID.
 pub async fn get_instance(configuration: &configuration::Configuration, id: &str) -> Result<models::ProcessInstance, Error<GetInstanceError>> {
     // add a prefix to parameters to efficiently prevent name collisions
