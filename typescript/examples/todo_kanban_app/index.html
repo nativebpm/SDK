@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NativeBPM • Todo & Kanban Workflow Manager</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Premium Navigation Bar -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-icon">⚡</div>
+        <div class="brand-text">
+          <h1>NativeBPM</h1>
+          <span class="sub-text">Workflow-as-Code Simulator</span>
+        </div>
+      </div>
+      
+      <!-- Interactive View Switcher -->
+      <div class="view-switcher">
+        <button id="btn-kanban" class="view-btn active">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 5h4v14H4zm6 0h4v14h-4zm6 0h4v14h-4z"/></svg>
+          Kanban Board
+        </button>
+        <button id="btn-todolist" class="view-btn">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zm0-8v2h14V7z"/></svg>
+          Todo List
+        </button>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-new-task" class="btn btn-primary">
+          <span class="plus-icon">+</span> New Task
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="app-workspace">
+      
+      <!-- Left Area: Kanban columns or Todo list -->
+      <section class="workspace-left">
+        
+        <!-- Kanban Board View -->
+        <div id="view-kanban-container" class="board-view active">
+          <div class="kanban-column" data-status="todo">
+            <div class="column-header">
+              <span class="status-dot status-todo"></span>
+              <h2>To Do</h2>
+              <span class="count-badge" id="count-todo">0</span>
+            </div>
+            <div class="task-list" id="list-todo"></div>
+          </div>
+          
+          <div class="kanban-column" data-status="inProgress">
+            <div class="column-header">
+              <span class="status-dot status-progress"></span>
+              <h2>In Progress</h2>
+              <span class="count-badge" id="count-progress">0</span>
+            </div>
+            <div class="task-list" id="list-progress"></div>
+          </div>
+          
+          <div class="kanban-column" data-status="review">
+            <div class="column-header">
+              <span class="status-dot status-review"></span>
+              <h2>Code Review</h2>
+              <span class="count-badge" id="count-review">0</span>
+            </div>
+            <div class="task-list" id="list-review"></div>
+          </div>
+          
+          <div class="kanban-column" data-status="done">
+            <div class="column-header">
+              <span class="status-dot status-done"></span>
+              <h2>Done</h2>
+              <span class="count-badge" id="count-done">0</span>
+            </div>
+            <div class="task-list" id="list-done"></div>
+          </div>
+        </div>
+
+        <!-- Todo List View (Initially hidden) -->
+        <div id="view-todolist-container" class="todo-view">
+          <div class="todo-card">
+            <div class="todo-header">
+              <h2>Active Assignments</h2>
+              <div class="todo-filters">
+                <span class="filter-chip active" data-filter="all">All</span>
+                <span class="filter-chip" data-filter="mine">My Tasks</span>
+              </div>
+            </div>
+            <div class="todo-list-table-wrapper">
+              <table class="todo-table">
+                <thead>
+                  <tr>
+                    <th>Task ID</th>
+                    <th>Title</th>
+                    <th>Stage</th>
+                    <th>Assignee</th>
+                    <th>Last Event</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="todo-table-body">
+                  <!-- Generated dynamically -->
+                </tbody>
+              </table>
+              <div id="todo-empty-state" class="empty-state">
+                <p>No tasks available. Create a new task to start!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Area: Process visualization, Code, Logs -->
+      <aside class="workspace-right">
+        
+        <!-- Live Process Flow Visualization (Interactive SVG) -->
+        <div class="card panel-bpmn">
+          <div class="panel-header">
+            <h3>Live Process Flow Tracker</h3>
+            <span class="live-indicator"><span class="pulse"></span>Live</span>
+          </div>
+          <div class="svg-container">
+            <svg id="bpmn-svg" viewBox="0 0 700 200" width="100%" height="100%">
+              <!-- Flow lines -->
+              <path id="line-start-todo" class="flow-line" d="M 50,100 L 120,100" />
+              <path id="line-todo-progress" class="flow-line" d="M 220,100 L 260,100" />
+              <path id="line-progress-review" class="flow-line" d="M 360,100 L 400,100" />
+              <path id="line-review-gateway" class="flow-line" d="M 500,100 L 530,100" />
+              <path id="line-gateway-done" class="flow-line" d="M 580,100 L 630,100" />
+              
+              <!-- Rejection loopback line (Bended sequence flow) -->
+              <path id="line-gateway-progress" class="flow-line loop-line" d="M 555,75 C 555,30 310,30 310,70" />
+              
+              <!-- Nodes -->
+              <!-- Start -->
+              <circle id="node-start" class="bpmn-node start-event" cx="50" cy="100" r="16" />
+              <text class="bpmn-label" x="50" y="130" text-anchor="middle">Start</text>
+              
+              <!-- Backlog / To Do -->
+              <rect id="node-todo" class="bpmn-node task-node" x="120" y="70" width="100" height="60" rx="8" />
+              <text class="bpmn-text" x="170" y="105" text-anchor="middle">To Do</text>
+              
+              <!-- In Progress -->
+              <rect id="node-inProgress" class="bpmn-node task-node" x="260" y="70" width="100" height="60" rx="8" />
+              <text class="bpmn-text" x="310" y="105" text-anchor="middle">In Progress</text>
+              
+              <!-- Code Review -->
+              <rect id="node-review" class="bpmn-node task-node" x="400" y="70" width="100" height="60" rx="8" />
+              <text class="bpmn-text" x="450" y="105" text-anchor="middle">Review</text>
+              
+              <!-- Gateway -->
+              <polygon id="node-gateway" class="bpmn-node gateway-node" points="555,75 580,100 555,125 530,100" />
+              <text class="gateway-symbol" x="555" y="105" text-anchor="middle" alignment-baseline="middle">?</text>
+              <text class="bpmn-label" x="555" y="145" text-anchor="middle">Approved?</text>
+              
+              <!-- End (Done) -->
+              <circle id="node-done" class="bpmn-node end-event" cx="646" cy="100" r="16" />
+              <text class="bpmn-label" x="646" y="130" text-anchor="middle">Done</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Workflow-as-Code DSL Tabs -->
+        <div class="card panel-dsl">
+          <div class="panel-tabs">
+            <button class="dsl-tab-btn active" data-lang="ts">TypeScript DSL</button>
+            <button class="dsl-tab-btn" data-lang="go">Go DSL</button>
+          </div>
+          <div class="code-container">
+            <pre id="code-ts" class="code-block active"><code><span class="keyword">const</span> workflow = <span class="keyword">new</span> <span class="type">Workflow</span>(<span class="string">'kanban-task-lifecycle'</span>, <span class="string">'Kanban Task Lifecycle'</span>);
+
+workflow
+  .<span class="method">user</span>(<span class="string">'todo'</span>, <span class="string">'Task in Backlog'</span>, ut => {
+    ut.<span class="method">candidateGroups</span>(<span class="string">'developers'</span>);
+  })
+  .<span class="method">user</span>(<span class="string">'inProgress'</span>, <span class="string">'Work on Task'</span>, ut => {
+    ut.<span class="method">assignee</span>(<span class="string">'${developer}'</span>);
+  })
+  .<span class="method">user</span>(<span class="string">'review'</span>, <span class="string">'Code Review'</span>, ut => {
+    ut.<span class="method">candidateGroups</span>(<span class="string">'reviewers'</span>);
+  })
+  .<span class="method">when</span>(<span class="method">v</span>(<span class="string">'approved'</span>).<span class="method">eq</span>(<span class="keyword">false</span>))
+  .<span class="method">then</span>(flow => {
+    flow.<span class="method">service</span>(<span class="string">'notifyRejection'</span>, <span class="string">'Notify Rejection'</span>, <span class="string">'alerts'</span>)
+        .<span class="method">user</span>(<span class="string">'inProgress'</span>, <span class="string">'Work on Task'</span>); <span class="comment">// Back-edge</span>
+  })
+  .<span class="method">else</span>(flow => {
+    flow.<span class="method">service</span>(<span class="string">'notifyApproval'</span>, <span class="string">'Notify Approval'</span>, <span class="string">'alerts'</span>)
+        .<span class="method">end</span>(<span class="string">'done'</span>, <span class="string">'Task Completed'</span>);
+  });</code></pre>
+            <pre id="code-go" class="code-block"><code>workflow := nativebpm.<span class="method">NewWorkflow</span>(<span class="string">"kanban-task-lifecycle"</span>, <span class="string">"Kanban Task Lifecycle"</span>)
+
+workflow.
+  <span class="method">User</span>(<span class="string">"todo"</span>, <span class="string">"Task in Backlog"</span>, nativebpm.M{<span class="string">"candidateGroups"</span>: <span class="string">"developers"</span>}).
+  <span class="method">User</span>(<span class="string">"inProgress"</span>, <span class="string">"Work on Task"</span>, nativebpm.M{<span class="string">"assignee"</span>: <span class="string">"${developer}"</span>}).
+  <span class="method">User</span>(<span class="string">"review"</span>, <span class="string">"Code Review"</span>, nativebpm.M{<span class="string">"candidateGroups"</span>: <span class="string">"reviewers"</span>}).
+  <span class="method">When</span>(nativebpm.<span class="method">V</span>(<span class="string">"approved"</span>).<span class="method">Eq</span>(<span class="keyword">false</span>)).
+  <span class="method">Then</span>(<span class="keyword">func</span>(flow *nativebpm.Branch) {
+    flow.<span class="method">Service</span>(<span class="string">"notifyRejection"</span>, <span class="string">"Notify Rejection"</span>, <span class="string">"alerts"</span>).
+         <span class="method">User</span>(<span class="string">"inProgress"</span>, <span class="string">"Work on Task"</span>, nativebpm.M{})
+  }).
+  <span class="method">Else</span>(<span class="keyword">func</span>(flow *nativebpm.Branch) {
+    flow.<span class="method">Service</span>(<span class="string">"notifyApproval"</span>, <span class="string">"Notify Approval"</span>, <span class="string">"alerts"</span>).
+         <span class="method">End</span>(<span class="string">"done"</span>, <span class="string">"Task Completed"</span>)
+  })</code></pre>
+          </div>
+        </div>
+
+        <!-- Simulated Engine Logs Terminal -->
+        <div class="card panel-terminal">
+          <div class="panel-header">
+            <h3>Engine Console Output</h3>
+            <button id="btn-clear-logs" class="btn-clear">Clear</button>
+          </div>
+          <div class="terminal-body" id="terminal-logs">
+            <!-- Dynamic logs -->
+          </div>
+        </div>
+
+      </aside>
+
+    </main>
+
+    <!-- Modal Form: New Task Dialog -->
+    <div id="modal-task" class="modal">
+      <div class="modal-content card">
+        <div class="modal-header">
+          <h3>Create Kanban/Todo Task</h3>
+          <button id="btn-close-modal" class="modal-close">&times;</button>
+        </div>
+        <form id="form-task">
+          <div class="form-group">
+            <label for="task-title">Task Title</label>
+            <input type="text" id="task-title" required placeholder="e.g. Implement user login flow">
+          </div>
+          <div class="form-group">
+            <label for="task-desc">Description</label>
+            <textarea id="task-desc" rows="3" placeholder="Describe the task criteria..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="task-developer">Developer (Assignee)</label>
+              <select id="task-developer">
+                <option value="john_doe">john_doe</option>
+                <option value="alice_smith">alice_smith</option>
+                <option value="bob_jones">bob_jones</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="task-priority">Priority</label>
+              <select id="task-priority">
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="btn-cancel-task" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Start Workflow</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Review Decision Dialog Modal -->
+    <div id="modal-review" class="modal">
+      <div class="modal-content card review-modal-content">
+        <div class="modal-header">
+          <h3>Code Review Action Required</h3>
+        </div>
+        <div class="review-details">
+          <p>Reviewing Task: <strong id="review-task-title">Task Title</strong></p>
+          <p>Assignee: <span id="review-task-assignee" class="badge">john_doe</span></p>
+        </div>
+        <div class="review-actions">
+          <button id="btn-review-reject" class="btn btn-danger">
+            ✕ Reject (Loop back to In Progress)
+          </button>
+          <button id="btn-review-approve" class="btn btn-success">
+            ✓ Approve (Complete Process)
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
