@@ -1,58 +1,76 @@
-// Simulated NativeBPM Engine state & task database
-let tasks = [
-  {
-    id: "NB-TASK-101",
-    title: "Design process engine auth bindings",
-    desc: "Implement JWT validation middleware and API keys support for microservices communication.",
-    assignee: "alice_smith",
-    priority: "High",
-    status: "done",
-    approved: true,
-    history: ["todo", "inProgress", "review", "done"]
-  },
-  {
-    id: "NB-TASK-102",
-    title: "Optimize hot warmup JIT latency",
-    desc: "Verify memory leaks and speed up initial preheating times for WASM sandboxed executors.",
-    assignee: "john_doe",
-    priority: "Urgent",
-    status: "review",
-    approved: null,
-    history: ["todo", "inProgress", "review"]
-  },
-  {
-    id: "NB-TASK-103",
-    title: "Support flat configs in client models",
-    desc: "Refactor nested properties parsing inside Go and TypeScript SDK workflow builders.",
-    assignee: "bob_jones",
-    priority: "Normal",
-    status: "inProgress",
-    approved: null,
-    history: ["todo", "inProgress"]
-  }
+// Mock database for users and tenants
+let usersDb = [
+  { username: "admin", password: "admin-password-2026", tenantId: "acme_corp", mfa: false },
+  { username: "user", password: "user-password-2026", tenantId: "acme_corp", mfa: false }
 ];
 
+// Seed tasks partitioned by tenant ID
+let tenantWorkspaces = {
+  acme_corp: [
+    {
+      id: "NB-TASK-101",
+      title: "Design process engine auth bindings",
+      desc: "Implement JWT validation middleware and API keys support for microservices communication.",
+      assignee: "alice_smith",
+      priority: "High",
+      status: "done",
+      approved: true,
+      history: ["todo", "inProgress", "review", "done"]
+    },
+    {
+      id: "NB-TASK-102",
+      title: "Optimize hot warmup JIT latency",
+      desc: "Verify memory leaks and speed up initial preheating times for WASM sandboxed executors.",
+      assignee: "john_doe",
+      priority: "Urgent",
+      status: "review",
+      approved: null,
+      history: ["todo", "inProgress", "review"]
+    },
+    {
+      id: "NB-TASK-103",
+      title: "Support flat configs in client models",
+      desc: "Refactor nested properties parsing inside Go and TypeScript SDK workflow builders.",
+      assignee: "bob_jones",
+      priority: "Normal",
+      status: "inProgress",
+      approved: null,
+      history: ["todo", "inProgress"]
+    }
+  ]
+};
+
+let currentSession = null;
 let selectedTaskId = null;
+let mfaStepUser = null; // Temporary state for multi-step sign in
 
 // Initialize app elements
 document.addEventListener("DOMContentLoaded", () => {
-  logEngine("SYSTEM", "Engine preheated. Deploying process definitions...");
-  logEngine("POST", "/definitions/deploy (schema: 'kanban-task-lifecycle')");
-  logEngine("OK", "Workflow deployed successfully (hash: 8f9b2c3a5e1d7f6c)");
-
-  renderTasks();
-  initViewSwitcher();
-  initDslSwitcher();
-  initModals();
-  updateSvgHighlights();
+  initAuthSwitcher();
+  initAuthForms();
+  checkSession();
 
   // Clear logs button
   document.getElementById("btn-clear-logs").addEventListener("click", () => {
     document.getElementById("terminal-logs").innerHTML = "";
   });
+
+  // Logout button
+  document.getElementById("btn-logout").addEventListener("click", handleLogout);
 });
 
-// Helper: Format & output logs to simulated terminal
+// Check if a session already exists
+function checkSession() {
+  const sessionData = sessionStorage.getItem("nativebpm_session");
+  if (sessionData) {
+    currentSession = JSON.parse(sessionData);
+    enterDashboard();
+  } else {
+    document.getElementById("app-container").classList.add("auth-mode");
+  }
+}
+
+// Custom log print inside simulated terminal
 function logEngine(type, message) {
   const terminal = document.getElementById("terminal-logs");
   const time = new Date().toLocaleTimeString();
@@ -70,8 +88,192 @@ function logEngine(type, message) {
   terminal.scrollTop = terminal.scrollHeight;
 }
 
+// Sign In / Sign Up Tabs switcher
+function initAuthSwitcher() {
+  const tabSignIn = document.getElementById("tab-signin");
+  const tabSignUp = document.getElementById("tab-signup");
+  const formSignIn = document.getElementById("form-signin");
+  const formSignUp = document.getElementById("form-signup");
+
+  tabSignIn.addEventListener("click", () => {
+    tabSignIn.classList.add("active");
+    tabSignUp.classList.remove("active");
+    formSignIn.classList.add("active");
+    formSignUp.classList.remove("active");
+  });
+
+  tabSignUp.addEventListener("click", () => {
+    tabSignUp.classList.add("active");
+    tabSignIn.classList.remove("active");
+    formSignUp.classList.add("active");
+    formSignIn.classList.remove("active");
+  });
+}
+
+// Sign In and Sign Up Form submits
+function initAuthForms() {
+  const formSignIn = document.getElementById("form-signin");
+  const formSignUp = document.getElementById("form-signup");
+  const signinError = document.getElementById("signin-error");
+  const signupError = document.getElementById("signup-error");
+
+  // Sign In submit
+  formSignIn.addEventListener("submit", (e) => {
+    e.preventDefault();
+    signinError.style.display = "none";
+
+    const username = document.getElementById("signin-username").value.trim();
+    const password = document.getElementById("signin-password").value;
+    const otpInput = document.getElementById("signin-otp").value.trim();
+
+    // Check user credentials
+    const user = usersDb.find(u => u.username === username);
+    if (!user || user.password !== password) {
+      signinError.innerText = "Invalid username or password.";
+      signinError.style.display = "block";
+      logEngine("ERROR", `Auth failed: Invalid credentials for user '${username}'`);
+      return;
+    }
+
+    // Handle MFA OTP step
+    if (user.mfa && !mfaStepUser) {
+      // Prompt for OTP code
+      mfaStepUser = user;
+      document.getElementById("signin-otp-group").style.display = "block";
+      document.getElementById("signin-otp").required = true;
+      logEngine("POST", `/login (username: '${username}', client: 'GoTrue')`);
+      logEngine("SYSTEM", `Multi-Factor Authentication (MFA) required. Awaiting TOTP code.`);
+      return;
+    }
+
+    if (user.mfa && mfaStepUser) {
+      // Validate OTP code (mocking 6 digits)
+      if (otpInput.length !== 6 || isNaN(otpInput)) {
+        signinError.innerText = "Invalid TOTP code. Must be 6 digits.";
+        signinError.style.display = "block";
+        logEngine("ERROR", `MFA failed: Invalid TOTP verification code`);
+        return;
+      }
+      logEngine("SYSTEM", `Validating TOTP code '${otpInput}' against GoTrue directory...`);
+    } else {
+      logEngine("POST", `/login (username: '${username}', client: 'GoTrue')`);
+    }
+
+    // Successful authentication
+    currentSession = {
+      username: user.username,
+      tenantId: user.tenantId,
+      mfa: user.mfa
+    };
+    
+    sessionStorage.setItem("nativebpm_session", JSON.stringify(currentSession));
+    
+    logEngine("OK", `Session created successfully for user '${username}'`);
+    logEngine("SYSTEM", `Scaffolding runtime workspace for tenant '${user.tenantId}' ...`);
+    
+    // Simulating age encryption key derivation
+    logEngine("SYSTEM", `Deriving tenant secret symmetric key using passphrase PBKDF2...`);
+    logEngine("OK", `Decrypted tenant snapshot database using Age ChaCha20-Poly1305.`);
+
+    enterDashboard();
+    
+    // Reset inputs
+    formSignIn.reset();
+    mfaStepUser = null;
+    document.getElementById("signin-otp-group").style.display = "none";
+  });
+
+  // Sign Up submit
+  formSignUp.addEventListener("submit", (e) => {
+    e.preventDefault();
+    signupError.style.display = "none";
+
+    const username = document.getElementById("signup-username").value.trim();
+    const tenantId = document.getElementById("signup-tenant").value.trim().toLowerCase();
+    const password = document.getElementById("signup-password").value;
+    const mfa = document.getElementById("signup-mfa").checked;
+
+    // Check if username already exists
+    if (usersDb.some(u => u.username === username)) {
+      signupError.innerText = "Username already exists.";
+      signupError.style.display = "block";
+      logEngine("ERROR", `Registration failed: Username '${username}' is already taken`);
+      return;
+    }
+
+    // Register user
+    const newUser = { username, password, tenantId, mfa };
+    usersDb.push(newUser);
+
+    logEngine("POST", `/register (username: '${username}', tenant: '${tenantId}')`);
+    logEngine("SYSTEM", `Registering user credentials in GoTrue DB...`);
+    
+    // Simulating Age key-pair generation
+    logEngine("SYSTEM", `Generating new Age X25519 key-pair for tenant '${tenantId}'...`);
+    const mockPublicKey = "age1" + Math.random().toString(36).substring(2, 12) + "qazwsx";
+    logEngine("OK", `Workspace key-pair generated. Public: '${mockPublicKey}'`);
+
+    // Scaffold new workspace if tenant doesn't exist
+    if (!tenantWorkspaces[tenantId]) {
+      tenantWorkspaces[tenantId] = [
+        {
+          id: `NB-TASK-${tenantId.toUpperCase()}-1`,
+          title: `Initialize ${tenantId} workspace`,
+          desc: "First default workspace task representing initial setup.",
+          assignee: username,
+          priority: "Normal",
+          status: "todo",
+          approved: null,
+          history: ["todo"]
+        }
+      ];
+      logEngine("SYSTEM", `Scaffolding empty dataset for new tenant '${tenantId}'`);
+    }
+
+    logEngine("OK", `Tenant workspace '${tenantId}' registered successfully.`);
+
+    // Switch to Sign In tab
+    document.getElementById("tab-signin").click();
+    document.getElementById("signin-username").value = username;
+    document.getElementById("signin-password").value = password;
+    
+    logEngine("SYSTEM", `Please authenticate to access the '${tenantId}' workspace.`);
+  });
+}
+
+// Redirect view to dashboard
+function enterDashboard() {
+  document.getElementById("app-container").classList.remove("auth-mode");
+  document.getElementById("header-user-badge").innerText = `👤 ${currentSession.username} (${currentSession.tenantId})`;
+
+  logEngine("SYSTEM", `Switched to active workspace: tenant='${currentSession.tenantId}'`);
+
+  renderTasks();
+  initViewSwitcher();
+  initDslSwitcher();
+  initModals();
+  updateSvgHighlights();
+}
+
+// Handle Logout
+function handleLogout() {
+  logEngine("SYSTEM", `Destroying session cookies for user '${currentSession.username}'`);
+  sessionStorage.removeItem("nativebpm_session");
+  currentSession = null;
+  selectedTaskId = null;
+  mfaStepUser = null;
+  
+  document.getElementById("app-container").classList.add("auth-mode");
+  logEngine("OK", "Logged out. Session destroyed.");
+}
+
 // Render Kanban board columns & Todo list table
 function renderTasks() {
+  if (!currentSession) return;
+
+  const tenantId = currentSession.tenantId;
+  const activeTasks = tenantWorkspaces[tenantId] || [];
+
   // Clear lists
   const lists = {
     todo: document.getElementById("list-todo"),
@@ -86,7 +288,7 @@ function renderTasks() {
   const counts = { todo: 0, inProgress: 0, review: 0, done: 0 };
 
   // Render cards
-  tasks.forEach(task => {
+  activeTasks.forEach(task => {
     counts[task.status]++;
     const listEl = lists[task.status];
     
@@ -155,12 +357,12 @@ function renderTasks() {
   const emptyState = document.getElementById("todo-empty-state");
   tableBody.innerHTML = "";
 
-  if (tasks.length === 0) {
+  if (activeTasks.length === 0) {
     emptyState.style.display = "block";
   } else {
     emptyState.style.display = "none";
     
-    tasks.forEach(task => {
+    activeTasks.forEach(task => {
       const tr = document.createElement("tr");
       let stageLabel = task.status;
       if (task.status === "inProgress") stageLabel = "In Progress";
@@ -205,7 +407,11 @@ function updateActiveCardHighlight(activeId) {
 
 // Move task state in workflow & log simulate calls
 window.moveTask = function(taskId, nextStatus) {
-  const task = tasks.find(t => t.id === taskId);
+  if (!currentSession) return;
+
+  const tenantId = currentSession.tenantId;
+  const activeTasks = tenantWorkspaces[tenantId] || [];
+  const task = activeTasks.find(t => t.id === taskId);
   if (!task) return;
 
   const previousStatus = task.status;
@@ -222,7 +428,11 @@ window.moveTask = function(taskId, nextStatus) {
 
 // Open Code Review Decision dialog
 window.openReviewModal = function(taskId) {
-  const task = tasks.find(t => t.id === taskId);
+  if (!currentSession) return;
+
+  const tenantId = currentSession.tenantId;
+  const activeTasks = tenantWorkspaces[tenantId] || [];
+  const task = activeTasks.find(t => t.id === taskId);
   if (!task) return;
 
   selectedTaskId = taskId;
@@ -249,8 +459,13 @@ function updateSvgHighlights() {
     if (el) el.setAttribute("class", el.getAttribute("class").replace(/\b(active|completed)\b/g, "").trim());
   });
 
+  if (!currentSession) return;
+
+  const tenantId = currentSession.tenantId;
+  const activeTasks = tenantWorkspaces[tenantId] || [];
+
   // Get selected task
-  const task = tasks.find(t => t.id === selectedTaskId) || tasks[tasks.length - 1];
+  const task = activeTasks.find(t => t.id === selectedTaskId) || activeTasks[activeTasks.length - 1];
   if (!task) return;
 
   // Render nodes status
@@ -358,13 +573,18 @@ function initModals() {
   // Submit task form
   formTask.addEventListener("submit", (e) => {
     e.preventDefault();
+    if (!currentSession) return;
+
     const title = document.getElementById("task-title").value;
     const desc = document.getElementById("task-desc").value;
     const developer = document.getElementById("task-developer").value;
     const priority = document.getElementById("task-priority").value;
     
+    const tenantId = currentSession.tenantId;
+    const activeTasks = tenantWorkspaces[tenantId] || [];
+
     const newTask = {
-      id: `NB-TASK-${100 + tasks.length + 1}`,
+      id: `NB-TASK-${tenantId.toUpperCase()}-${activeTasks.length + 1}`,
       title,
       desc,
       assignee: developer,
@@ -374,7 +594,7 @@ function initModals() {
       history: ["todo"]
     };
 
-    tasks.push(newTask);
+    activeTasks.push(newTask);
     selectedTaskId = newTask.id;
 
     logEngine("POST", `/instances/start (process: 'kanban-task-lifecycle', businessKey: '${newTask.id}')`);
@@ -394,7 +614,11 @@ function initModals() {
   const closeReviewModal = () => modalReview.classList.remove("active");
 
   btnApprove.addEventListener("click", () => {
-    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!currentSession) return;
+
+    const tenantId = currentSession.tenantId;
+    const activeTasks = tenantWorkspaces[tenantId] || [];
+    const task = activeTasks.find(t => t.id === selectedTaskId);
     if (task) {
       task.approved = true;
       task.status = "done";
@@ -410,7 +634,11 @@ function initModals() {
   });
 
   btnReject.addEventListener("click", () => {
-    const task = tasks.find(t => t.id === selectedTaskId);
+    if (!currentSession) return;
+
+    const tenantId = currentSession.tenantId;
+    const activeTasks = tenantWorkspaces[tenantId] || [];
+    const task = activeTasks.find(t => t.id === selectedTaskId);
     if (task) {
       task.approved = false;
       task.status = "inProgress";
@@ -449,10 +677,15 @@ document.querySelectorAll(".kanban-column").forEach(column => {
   column.addEventListener("drop", (e) => {
     e.preventDefault();
     column.style.background = "rgba(255, 255, 255, 0.01)";
+    if (!currentSession) return;
+
     const taskId = e.dataTransfer.getData("text/plain");
     const targetStatus = column.dataset.status;
 
-    const task = tasks.find(t => t.id === taskId);
+    const tenantId = currentSession.tenantId;
+    const activeTasks = tenantWorkspaces[tenantId] || [];
+    const task = activeTasks.find(t => t.id === taskId);
+    
     if (task && task.status !== targetStatus) {
       if (targetStatus === "review" && task.status !== "inProgress") {
         logEngine("ERROR", `Transition failed: must complete 'inProgress' developer coding before submitting to review.`);

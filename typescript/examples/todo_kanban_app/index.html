@@ -11,7 +11,63 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-container">
+  <div class="app-container auth-mode" id="app-container">
+
+    <!-- Premium Full-Screen Auth Gateway -->
+    <div id="auth-container" class="auth-wrapper">
+      <div class="auth-card card">
+        <div class="auth-logo">
+          <div class="logo-icon">⚡</div>
+          <h2>NativeBPM Portal</h2>
+          <span class="auth-sub">Secure GoTrue Authentication Engine</span>
+        </div>
+        
+        <div class="auth-tabs">
+          <button id="tab-signin" class="auth-tab active">Sign In</button>
+          <button id="tab-signup" class="auth-tab">Sign Up</button>
+        </div>
+        
+        <!-- Sign In Form -->
+        <form id="form-signin" class="auth-form active">
+          <div class="form-group">
+            <label for="signin-username">Username</label>
+            <input type="text" id="signin-username" required placeholder="e.g. john_doe">
+          </div>
+          <div class="form-group">
+            <label for="signin-password">Password</label>
+            <input type="password" id="signin-password" required placeholder="••••••••">
+          </div>
+          <div class="form-group" id="signin-otp-group" style="display: none;">
+            <label for="signin-otp">TOTP MFA Verification Code</label>
+            <input type="text" id="signin-otp" placeholder="Enter 6-digit code">
+          </div>
+          <div class="form-error" id="signin-error" style="display: none;"></div>
+          <button type="submit" class="btn btn-primary btn-block">Authenticate Session</button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="form-signup" class="auth-form">
+          <div class="form-group">
+            <label for="signup-username">Username</label>
+            <input type="text" id="signup-username" required placeholder="e.g. alice">
+          </div>
+          <div class="form-group">
+            <label for="signup-tenant">Tenant Organization ID (Multi-Tenant)</label>
+            <input type="text" id="signup-tenant" required placeholder="e.g. acme_corp">
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" required placeholder="••••••••">
+          </div>
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="signup-mfa">
+            <label for="signup-mfa">Enable TOTP Multi-Factor Authentication (MFA)</label>
+          </div>
+          <div class="form-error" id="signup-error" style="display: none;"></div>
+          <button type="submit" class="btn btn-primary btn-block">Register Tenant Workspace</button>
+        </form>
+      </div>
+    </div>
     
     <!-- Top Premium Navigation Bar -->
     <header class="app-header">
@@ -36,6 +92,10 @@
       </div>
 
       <div class="header-actions">
+        <div class="profile-section">
+          <span class="user-badge" id="header-user-badge">👤 john_doe (acme_corp)</span>
+          <button id="btn-logout" class="btn-logout-link">Logout</button>
+        </div>
         <button id="btn-new-task" class="btn btn-primary">
           <span class="plus-icon">+</span> New Task
         </button>
