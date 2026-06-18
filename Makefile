@@ -1,7 +1,8 @@
-.PHONY: generate generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift
+.PHONY: generate generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift generate-dart
 
 # Unified code generator target for all polyglot SDKs using local openapi.yaml
-generate: generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift
+generate: generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift generate-dart
+
 
 generate-go:
 	docker run --rm -v "$$(pwd)/..:/local" openapitools/openapi-generator-cli generate \
@@ -65,5 +66,13 @@ generate-swift:
 		-g swift5 \
 		-o /local/sdk/swift \
 		--additional-properties=projectName=NativeBPMClient,responseAs=AsyncAwait
+
+generate-dart:
+	docker run --rm -v "$$(pwd)/..:/local" openapitools/openapi-generator-cli generate \
+		-i /local/sdk/openapi.yaml \
+		-g dart \
+		-o /local/sdk/dart \
+		--additional-properties=pubName=nativebpm_client,pubVersion=1.0.0,pubDescription="NativeBPM Client SDK for Dart and Flutter"
+
 
 
