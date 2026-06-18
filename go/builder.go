@@ -434,12 +434,17 @@ func (b *Branch) connectNode(id string) {
 	if b.hasEnded {
 		return
 	}
+	isBackEdge := b.workflow.findNode(id) != nil
+
 	if len(b.workflow.pendingMerges) > 0 {
 		for _, sourceID := range b.workflow.pendingMerges {
 			b.workflow.SequenceFlow(sourceID, id)
 		}
 		b.workflow.pendingMerges = nil
 		b.currentNodeID = id
+		if isBackEdge {
+			b.hasEnded = true
+		}
 		return
 	}
 	if b.currentNodeID == b.gatewayID {
@@ -453,6 +458,9 @@ func (b *Branch) connectNode(id string) {
 		b.workflow.SequenceFlow(b.currentNodeID, id)
 	}
 	b.currentNodeID = id
+	if isBackEdge {
+		b.hasEnded = true
+	}
 }
 
 // User appends a user task inside a branch.
