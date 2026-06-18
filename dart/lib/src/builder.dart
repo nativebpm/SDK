@@ -1,4 +1,3 @@
-
 class Expression {
   final String expr;
   Expression(this.expr);
@@ -46,10 +45,8 @@ class Branch {
     required this.condition,
   });
 
-  void _connectNode(String id) {
+  void _connectNode(String id, bool isBackEdge) {
     if (hasEnded) return;
-
-    final isBackEdge = workflow._hasNode(id);
 
     if (workflow.pendingMerges.isNotEmpty) {
       for (final sourceID in workflow.pendingMerges) {
@@ -79,51 +76,63 @@ class Branch {
   }
 
   Branch user(String id, String name, [Map<String, dynamic>? options]) {
-    final node = <String, dynamic>{
-      'type': 'userTask',
-      'id': id,
-      'name': name,
-    };
-    if (options != null) {
-      node.addAll(options);
+    final isBackEdge = workflow._hasNode(id);
+    if (!isBackEdge) {
+      final node = <String, dynamic>{
+        'type': 'userTask',
+        'id': id,
+        'name': name,
+      };
+      if (options != null) {
+        node.addAll(options);
+      }
+      workflow.nodes.add(node);
     }
-    workflow.nodes.add(node);
-    _connectNode(id);
+    _connectNode(id, isBackEdge);
     return this;
   }
 
   Branch service(String id, String name, String topic, [Map<String, dynamic>? options]) {
-    final node = <String, dynamic>{
-      'type': 'serviceTask',
-      'id': id,
-      'name': name,
-      'topic': topic,
-    };
-    if (options != null) {
-      node.addAll(options);
+    final isBackEdge = workflow._hasNode(id);
+    if (!isBackEdge) {
+      final node = <String, dynamic>{
+        'type': 'serviceTask',
+        'id': id,
+        'name': name,
+        'topic': topic,
+      };
+      if (options != null) {
+        node.addAll(options);
+      }
+      workflow.nodes.add(node);
     }
-    workflow.nodes.add(node);
-    _connectNode(id);
+    _connectNode(id, isBackEdge);
     return this;
   }
 
   Branch ai(String id, String name, [Map<String, dynamic>? options]) {
-    final node = <String, dynamic>{
-      'type': 'aiServiceTask',
-      'id': id,
-      'name': name,
-    };
-    if (options != null) {
-      node.addAll(options);
+    final isBackEdge = workflow._hasNode(id);
+    if (!isBackEdge) {
+      final node = <String, dynamic>{
+        'type': 'aiServiceTask',
+        'id': id,
+        'name': name,
+      };
+      if (options != null) {
+        node.addAll(options);
+      }
+      workflow.nodes.add(node);
     }
-    workflow.nodes.add(node);
-    _connectNode(id);
+    _connectNode(id, isBackEdge);
     return this;
   }
 
   Branch end(String id, String name) {
-    workflow._endEvent(id, name);
-    _connectNode(id);
+    final isBackEdge = workflow._hasNode(id);
+    if (!isBackEdge) {
+      workflow._endEvent(id, name);
+    }
+    _connectNode(id, isBackEdge);
     hasEnded = true;
     return this;
   }
@@ -267,50 +276,62 @@ class Workflow {
   }
 
   Workflow user(String id, String name, [Map<String, dynamic>? options]) {
-    final node = <String, dynamic>{
-      'type': 'userTask',
-      'id': id,
-      'name': name,
-    };
-    if (options != null) {
-      node.addAll(options);
+    final exists = _hasNode(id);
+    if (!exists) {
+      final node = <String, dynamic>{
+        'type': 'userTask',
+        'id': id,
+        'name': name,
+      };
+      if (options != null) {
+        node.addAll(options);
+      }
+      nodes.add(node);
     }
-    nodes.add(node);
     _connectNode(id);
     return this;
   }
 
   Workflow service(String id, String name, String topic, [Map<String, dynamic>? options]) {
-    final node = <String, dynamic>{
-      'type': 'serviceTask',
-      'id': id,
-      'name': name,
-      'topic': topic,
-    };
-    if (options != null) {
-      node.addAll(options);
+    final exists = _hasNode(id);
+    if (!exists) {
+      final node = <String, dynamic>{
+        'type': 'serviceTask',
+        'id': id,
+        'name': name,
+        'topic': topic,
+      };
+      if (options != null) {
+        node.addAll(options);
+      }
+      nodes.add(node);
     }
-    nodes.add(node);
     _connectNode(id);
     return this;
   }
 
   Workflow ai(String id, String name, [Map<String, dynamic>? options]) {
-    final node = <String, dynamic>{
-      'type': 'aiServiceTask',
-      'id': id,
-      'name': name,
-    };
-    if (options != null) {
-      node.addAll(options);
+    final exists = _hasNode(id);
+    if (!exists) {
+      final node = <String, dynamic>{
+        'type': 'aiServiceTask',
+        'id': id,
+        'name': name,
+      };
+      if (options != null) {
+        node.addAll(options);
+      }
+      nodes.add(node);
     }
-    nodes.add(node);
     _connectNode(id);
     return this;
   }
 
   Workflow end(String id, String name) {
-    _endEvent(id, name);
+    final exists = _hasNode(id);
+    if (!exists) {
+      _endEvent(id, name);
+    }
     _connectNode(id);
     currentNodeID = '';
     return this;
