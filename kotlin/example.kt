@@ -27,7 +27,7 @@ fun main() {
         println("✓ Deployed process definition (hash: ${definition.hash})")
 
         println("Starting process instance...")
-        val instance = client.instances().start("native-demo")
+        val instance = client.instances().start(definition.id)
             .withBusinessKey("order-5541")
             .withVariable("isUrgent", true)
             .send()

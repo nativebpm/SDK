@@ -24,7 +24,7 @@ func runExample() async {
         print("✓ Deployed process definition (hash: \(definition.hash))")
         
         print("Starting process instance...")
-        let instance = try await client.instances().start("native-demo")
+        let instance = try await client.instances().start(definition.id)
             .withBusinessKey("order-5541")
             .withVariable("isUrgent", AnyCodable(true))
             .send()

@@ -24,7 +24,7 @@ def main():
         print(f"✓ Deployed process definition (hash: {definition.hash})")
         
         # Start a process instance with input variables
-        instance = client.instances().start("native-demo")\
+        instance = client.instances().start(definition.id)\
             .with_business_key("order-5541")\
             .with_variable("customerEmail", "customer@example.com")\
             .with_variable("isUrgent", True)\

@@ -26,7 +26,7 @@ export async function run() {
     console.log(`✓ Deployed process definition (hash: ${definition.hash})`);
     
     // Start a process instance with input variables
-    const instance = await client.instances().start("native-demo")
+    const instance = await client.instances().start(definition.id)
       .withBusinessKey("order-5541")
       .withVariable("customerEmail", "customer@example.com")
       .withVariable("isUrgent", true)
