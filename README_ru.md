@@ -36,6 +36,7 @@
 | **Rust** | ![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white) | [Клиент и конструктор Rust](./rust) |
 | **Kotlin** | ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | [Клиент Kotlin](./kotlin) |
 | **Swift** | ![Swift](https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white) | [Клиент Swift](./swift) |
+| **Dart / Flutter** | ![Dart](https://img.shields.io/badge/Dart-0175C2?style=flat-square&logo=dart&logoColor=white) | [Клиент и конструктор Dart & Flutter](./dart) |
 
 ---
 
@@ -122,6 +123,11 @@ flowchart TD
 * **Нативная интеграция Apple**: Реализация на чистом Swift с использованием URLSession и современного механизма async/await для бесшовной интеграции в приложения для iOS, macOS или watchOS.
 * **Строгая типизация**: Полная совместимость со схемами Swift Codable и типом AnyCodable для безопасной работы с переменными без проблем с сериализацией JSON.
 * **Легковесный размер**: Исключительно REST-клиент без оверхеда на WebAssembly, что сохраняет размер бинарного файла вашего мобильного приложения минимальным.
+
+### 🎯 Dart / Flutter
+* **Готов к мобильной и кроссплатформенной разработке**: Статически типизированный клиент Dart, оптимизированный для приложений Flutter под iOS, Android, Web или Desktop.
+* **Декларативный конструктор**: Полная поддержка Fluent API, включая условные переходы через `.when().then().Else()` и автоопределение циклов выполнения.
+* **Совместимость с AOT**: Отсутствие внешних зависимостей и оверхеда на WASM-среду выполнения для полного соответствия строгим политикам AOT-компиляции и модерации в App Store и Google Play.
 
 ---
 
