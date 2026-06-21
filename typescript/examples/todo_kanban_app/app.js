@@ -668,7 +668,22 @@ function setView(view) {
   // Toggle active text in DSL tabs header
   const activeDslTitle = document.getElementById("active-dsl-title");
   if (activeDslTitle) {
-    activeDslTitle.innerText = (view === "servicedesk") ? "Process: ITIL Incident SLA" : "Process: Kanban Task Lifecycle";
+    if (view === "servicedesk") {
+      activeDslTitle.innerText = "Product: NativeBPM ServiceDesk";
+    } else if (view === "kanban") {
+      activeDslTitle.innerText = "Product: NativeBPM AgileBoard";
+    } else {
+      activeDslTitle.innerText = "Product: NativeBPM TaskManager";
+    }
+  }
+  
+  // Log engine loading for specific branded modules
+  if (view === "todolist") {
+    logEngine("SYSTEM", "Module loaded: NativeBPM TaskManager (Personal & Team Tasks)");
+  } else if (view === "kanban") {
+    logEngine("SYSTEM", "Module loaded: NativeBPM AgileBoard (Agile Workflows & PR Gateways)");
+  } else if (view === "servicedesk") {
+    logEngine("SYSTEM", "Module loaded: NativeBPM ServiceDesk (ITIL Incident Management & SLA Tracking)");
   }
   
   // Fetch currently active tab lang (ts or go) and refresh editor visibility

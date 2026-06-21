@@ -90,17 +90,17 @@
       
       <!-- Interactive View Switcher -->
       <div class="view-switcher">
-        <button id="btn-kanban" class="view-btn active">
-          <svg class="icon" viewBox="0 0 24 24"><path d="M4 5h4v14H4zm6 0h4v14h-4zm6 0h4v14h-4z"/></svg>
-          Kanban Board
-        </button>
         <button id="btn-todolist" class="view-btn">
           <svg class="icon" viewBox="0 0 24 24"><path d="M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zm0-8v2h14V7z"/></svg>
-          Todo List
+          NativeBPM TaskManager
+        </button>
+        <button id="btn-kanban" class="view-btn active">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 5h4v14H4zm6 0h4v14h-4zm6 0h4v14h-4z"/></svg>
+          NativeBPM AgileBoard
         </button>
         <button id="btn-servicedesk" class="view-btn">
           <svg class="icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
-          ITIL ServiceDesk
+          NativeBPM ServiceDesk
         </button>
       </div>
 
@@ -164,7 +164,7 @@
         <div id="view-todolist-container" class="todo-view">
           <div class="todo-card">
             <div class="todo-header">
-              <h2>Active Assignments</h2>
+              <h2>NativeBPM TaskManager • Active Assignments</h2>
               <div class="todo-filters">
                 <span class="filter-chip active" data-filter="all">All</span>
                 <span class="filter-chip" data-filter="mine">My Tasks</span>
@@ -220,7 +220,7 @@
             <!-- Left panel: Incidents Queue -->
             <div class="incidents-queue card" style="display: flex; flex-direction: column; height: 500px;">
               <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border-color);">
-                <h2>Incidents Queue</h2>
+                <h2>NativeBPM ServiceDesk • Incidents Queue</h2>
                 <div class="queue-filters" style="display: flex; gap: 8px;">
                   <span class="filter-chip active" data-queue-filter="all">All</span>
                   <span class="filter-chip" data-queue-filter="new">New</span>
