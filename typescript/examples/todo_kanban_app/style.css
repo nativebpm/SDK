@@ -1059,3 +1059,138 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+
+/* ==========================================
+   ITIL ServiceDesk View Styling & Animations
+   ========================================== */
+
+.servicedesk-view {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+}
+
+.servicedesk-view.active {
+  display: flex;
+}
+
+.metric-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary), #0ea5e9);
+  opacity: 0.8;
+}
+
+.metric-value.text-danger {
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.metric-value.text-success {
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+}
+
+.metric-value.text-info {
+  text-shadow: 0 0 10px rgba(14, 165, 233, 0.3);
+}
+
+/* Incident Ticket Card */
+.incident-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-smooth);
+}
+
+.incident-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.incident-card.active {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.incident-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.incident-card .ticket-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.incident-card.escalated {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.03);
+  animation: borderBlink 2s infinite ease-in-out;
+}
+
+@keyframes borderBlink {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.4); box-shadow: none; }
+  50% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+}
+
+.sla-badge-ticker {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.sla-badge-ticker.warning {
+  color: var(--status-review);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.sla-badge-ticker.breached {
+  color: var(--status-danger);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  animation: textFlash 1.5s infinite;
+}
+
+@keyframes textFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Boundary Timer Event in SVG */
+.boundary-timer-event {
+  fill: #1E1B4B;
+  stroke: var(--status-review);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.4));
+}
+
+.boundary-timer-event.active {
+  stroke: var(--status-danger);
+  fill: #450A0A;
+  animation: timerPulse 1s infinite alternate;
+}
+
+@keyframes timerPulse {
+  from { filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.4)); }
+  to { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8)); }
+}

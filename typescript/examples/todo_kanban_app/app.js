@@ -1,7 +1,11 @@
 // Mock database for users and tenants
 let usersDb = [
-  { username: "admin", password: "admin-password-2026", tenantId: "acme_corp", mfa: false },
-  { username: "user", password: "user-password-2026", tenantId: "acme_corp", mfa: false }
+  { username: "admin", password: "admin-password-2026", tenantId: "acme_corp", mfa: false, role: "admin" },
+  { username: "user", password: "user-password-2026", tenantId: "acme_corp", mfa: false, role: "user" },
+  { username: "customer", password: "customer-2026", tenantId: "acme_corp", mfa: false, role: "customer" },
+  { username: "l1_agent", password: "l1-agent-2026", tenantId: "acme_corp", mfa: false, role: "l1_support" },
+  { username: "l2_engineer", password: "l2-engineer-2026", tenantId: "acme_corp", mfa: false, role: "l2_support" },
+  { username: "manager", password: "manager-2026", tenantId: "acme_corp", mfa: false, role: "manager" }
 ];
 
 // Seed tasks partitioned by tenant ID
@@ -40,8 +44,55 @@ let tenantWorkspaces = {
   ]
 };
 
+// Seed ITIL Incidents partitioned by tenant ID
+let tenantIncidents = {
+  acme_corp: [
+    {
+      id: "INC-101",
+      title: "VPN gateway connection timeout failures",
+      desc: "Remote developers report continuous 504 Gateway Timeouts when attempting to authenticate on the corporate VPN endpoint.",
+      priority: "Urgent",
+      status: "New",
+      assignee: null,
+      reporter: "customer",
+      reactionSLA: 30,
+      reactionSLAMax: 30,
+      resolutionSLA: 90,
+      resolutionSLAMax: 90,
+      reactionSlaBreached: false,
+      resolutionSlaBreached: false,
+      history: ["New"],
+      reactionTimeSpent: null,
+      resolutionTimeSpent: null,
+      createdTime: Date.now() - 5000
+    },
+    {
+      id: "INC-102",
+      title: "Production database replica replication latency",
+      desc: "PostgreSQL read-only replica shows replication delay growing past 600 seconds, affecting read query caches on the analytics console.",
+      priority: "High",
+      status: "Assigned",
+      assignee: "l1_agent",
+      reporter: "customer",
+      reactionSLA: 0,
+      reactionSLAMax: 60,
+      resolutionSLA: 150,
+      resolutionSLAMax: 180,
+      reactionSlaBreached: false,
+      resolutionSlaBreached: false,
+      history: ["New", "Assigned"],
+      reactionTimeSpent: 15,
+      resolutionTimeSpent: null,
+      createdTime: Date.now() - 30000
+    }
+  ]
+};
+
 let currentSession = null;
 let selectedTaskId = null;
+let selectedIncidentId = null;
+let currentView = "kanban"; // kanban, todolist, servicedesk
+let queueFilter = "all";
 let mfaStepUser = null; // Temporary state for multi-step sign in
 
 // Initialize app elements
@@ -57,6 +108,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Logout button
   document.getElementById("btn-logout").addEventListener("click", handleLogout);
+
+  // SLA background ticking loop (1s resolution)
+  setInterval(tickSLATimers, 1000);
 });
 
 // Check if a session already exists
@@ -248,11 +302,18 @@ function enterDashboard() {
 
   logEngine("SYSTEM", `Switched to active workspace: tenant='${currentSession.tenantId}'`);
 
-  renderTasks();
+  // Ensure incident templates database exists for the tenant
+  if (!tenantIncidents[currentSession.tenantId]) {
+    tenantIncidents[currentSession.tenantId] = [];
+  }
+
   initViewSwitcher();
   initDslSwitcher();
   initModals();
-  updateSvgHighlights();
+  initQueueFilters();
+
+  // Set default view on login
+  setView("kanban");
 }
 
 // Handle Logout
@@ -445,68 +506,133 @@ window.openReviewModal = function(taskId) {
 
 // BPMN SVG Process flow highlights based on selected/active task status
 function updateSvgHighlights() {
-  // Clear all active/completed classes from SVG nodes & lines
-  const nodes = ["node-start", "node-todo", "node-inProgress", "node-review", "node-gateway", "node-done"];
-  const lines = ["line-start-todo", "line-todo-progress", "line-progress-review", "line-review-gateway", "line-gateway-done", "line-gateway-progress"];
+  // 1. Kanban elements
+  const kbNodes = ["node-start", "node-todo", "node-inProgress", "node-review", "node-gateway", "node-done"];
+  const kbLines = ["line-start-todo", "line-todo-progress", "line-progress-review", "line-review-gateway", "line-gateway-done", "line-gateway-progress"];
 
-  nodes.forEach(id => {
+  // 2. ServiceDesk elements
+  const sdNodes = ["node-sd-start", "node-sd-triage", "node-sd-timer-reaction", "node-sd-l2", "node-sd-investigate", "node-sd-review", "node-sd-gateway", "node-sd-done"];
+  const sdLines = ["line-sd-start-triage", "line-sd-triage-investigate", "line-sd-investigate-review", "line-sd-review-gateway", "line-sd-gateway-done", "line-sd-boundary-timer-l2", "line-sd-l2-review", "line-sd-gateway-reopen"];
+
+  // Clear all classes
+  kbNodes.concat(sdNodes).forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.setAttribute("class", el.getAttribute("class").replace(/\b(active|completed)\b/g, "").trim());
+    if (el) {
+      el.setAttribute("class", el.getAttribute("class").replace(/\b(active|completed)\b/g, "").trim());
+    }
   });
 
-  lines.forEach(id => {
+  kbLines.concat(sdLines).forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.setAttribute("class", el.getAttribute("class").replace(/\b(active|completed)\b/g, "").trim());
+    if (el) {
+      el.setAttribute("class", el.getAttribute("class").replace(/\b(active|completed)\b/g, "").trim());
+    }
   });
 
   if (!currentSession) return;
 
-  const tenantId = currentSession.tenantId;
-  const activeTasks = tenantWorkspaces[tenantId] || [];
+  if (currentView === "servicedesk") {
+    const tenantId = currentSession.tenantId;
+    const incidents = tenantIncidents[tenantId] || [];
+    const ticket = incidents.find(i => i.id === selectedIncidentId) || incidents[incidents.length - 1];
+    if (!ticket) return;
 
-  // Get selected task
-  const task = activeTasks.find(t => t.id === selectedTaskId) || activeTasks[activeTasks.length - 1];
-  if (!task) return;
+    const history = ticket.history;
+    const current = ticket.status;
 
-  // Render nodes status
-  const current = task.status;
+    // Start is completed
+    document.getElementById("node-sd-start").classList.add("completed");
+    document.getElementById("line-sd-start-triage").classList.add("completed");
 
-  // Set completed statuses up to current step
-  const history = task.history;
-  
-  if (history.includes("todo")) {
-    document.getElementById("node-start").classList.add("completed");
-    document.getElementById("line-start-todo").classList.add("completed");
-    document.getElementById("node-todo").classList.add("completed");
-  }
-  if (history.includes("inProgress")) {
-    document.getElementById("line-todo-progress").classList.add("completed");
-    document.getElementById("node-inProgress").classList.add("completed");
-  }
-  if (history.includes("review")) {
-    document.getElementById("line-progress-review").classList.add("completed");
-    document.getElementById("node-review").classList.add("completed");
-  }
-  if (history.includes("done")) {
-    document.getElementById("line-review-gateway").classList.add("completed");
-    document.getElementById("node-gateway").classList.add("completed");
-    document.getElementById("line-gateway-done").classList.add("completed");
-    document.getElementById("node-done").classList.add("completed");
-  }
+    if (history.includes("New")) {
+      document.getElementById("node-sd-triage").classList.add("completed");
+    }
+    if (history.includes("Assigned")) {
+      document.getElementById("line-sd-triage-investigate").classList.add("completed");
+      document.getElementById("node-sd-investigate").classList.add("completed");
+    }
+    if (history.includes("Resolved")) {
+      document.getElementById("line-sd-investigate-review").classList.add("completed");
+      document.getElementById("node-sd-review").classList.add("completed");
+    }
+    if (history.includes("Closed")) {
+      document.getElementById("line-sd-review-gateway").classList.add("completed");
+      document.getElementById("node-sd-gateway").classList.add("completed");
+      document.getElementById("line-sd-gateway-done").classList.add("completed");
+      document.getElementById("node-sd-done").classList.add("completed");
+    }
+    if (history.includes("Escalated")) {
+      document.getElementById("node-sd-timer-reaction").classList.add("completed");
+      document.getElementById("line-sd-boundary-timer-l2").classList.add("completed");
+      document.getElementById("node-sd-l2").classList.add("completed");
+      document.getElementById("line-sd-l2-review").classList.add("completed");
+    }
 
-  // Set active element classes
-  if (current === "todo") {
-    document.getElementById("node-todo").classList.add("active");
-    document.getElementById("line-start-todo").classList.add("active");
-  } else if (current === "inProgress") {
-    document.getElementById("node-inProgress").classList.add("active");
-    document.getElementById("line-todo-progress").classList.add("active");
-  } else if (current === "review") {
-    document.getElementById("node-review").classList.add("active");
-    document.getElementById("line-progress-review").classList.add("active");
-  } else if (current === "done") {
-    document.getElementById("node-done").classList.add("active");
-    document.getElementById("line-gateway-done").classList.add("active");
+    // Active highlights
+    if (current === "New") {
+      document.getElementById("node-sd-triage").classList.add("active");
+      document.getElementById("line-sd-start-triage").classList.add("active");
+    } 
+    else if (current === "Escalated") {
+      document.getElementById("node-sd-timer-reaction").classList.add("active");
+      document.getElementById("line-sd-boundary-timer-l2").classList.add("active");
+      document.getElementById("node-sd-l2").classList.add("active");
+    }
+    else if (current === "Assigned") {
+      document.getElementById("node-sd-investigate").classList.add("active");
+      document.getElementById("line-sd-triage-investigate").classList.add("active");
+    }
+    else if (current === "Resolved") {
+      document.getElementById("node-sd-review").classList.add("active");
+      document.getElementById("line-sd-investigate-review").classList.add("active");
+    }
+    else if (current === "Closed") {
+      document.getElementById("node-sd-done").classList.add("active");
+      document.getElementById("line-sd-gateway-done").classList.add("active");
+    }
+  } else {
+    const tenantId = currentSession.tenantId;
+    const activeTasks = tenantWorkspaces[tenantId] || [];
+    const task = activeTasks.find(t => t.id === selectedTaskId) || activeTasks[activeTasks.length - 1];
+    if (!task) return;
+
+    const current = task.status;
+    const history = task.history;
+    
+    if (history.includes("todo")) {
+      document.getElementById("node-start").classList.add("completed");
+      document.getElementById("line-start-todo").classList.add("completed");
+      document.getElementById("node-todo").classList.add("completed");
+    }
+    if (history.includes("inProgress")) {
+      document.getElementById("line-todo-progress").classList.add("completed");
+      document.getElementById("node-inProgress").classList.add("completed");
+    }
+    if (history.includes("review")) {
+      document.getElementById("line-progress-review").classList.add("completed");
+      document.getElementById("node-review").classList.add("completed");
+    }
+    if (history.includes("done")) {
+      document.getElementById("line-review-gateway").classList.add("completed");
+      document.getElementById("node-gateway").classList.add("completed");
+      document.getElementById("line-gateway-done").classList.add("completed");
+      document.getElementById("node-done").classList.add("completed");
+    }
+
+    // Set active element classes
+    if (current === "todo") {
+      document.getElementById("node-todo").classList.add("active");
+      document.getElementById("line-start-todo").classList.add("active");
+    } else if (current === "inProgress") {
+      document.getElementById("node-inProgress").classList.add("active");
+      document.getElementById("line-todo-progress").classList.add("active");
+    } else if (current === "review") {
+      document.getElementById("node-review").classList.add("active");
+      document.getElementById("line-progress-review").classList.add("active");
+    } else if (current === "done") {
+      document.getElementById("node-done").classList.add("active");
+      document.getElementById("line-gateway-done").classList.add("active");
+    }
   }
 }
 
@@ -514,40 +640,81 @@ function updateSvgHighlights() {
 function initViewSwitcher() {
   const btnKanban = document.getElementById("btn-kanban");
   const btnTodoList = document.getElementById("btn-todolist");
-  const viewKanban = document.getElementById("view-kanban-container");
-  const viewTodo = document.getElementById("view-todolist-container");
+  const btnServiceDesk = document.getElementById("btn-servicedesk");
 
-  btnKanban.addEventListener("click", () => {
-    btnKanban.classList.add("active");
-    btnTodoList.classList.remove("active");
-    viewKanban.classList.add("active");
-    viewTodo.classList.remove("active");
-  });
+  btnKanban.addEventListener("click", () => setView("kanban"));
+  btnTodoList.addEventListener("click", () => setView("todolist"));
+  btnServiceDesk.addEventListener("click", () => setView("servicedesk"));
+}
 
-  btnTodoList.addEventListener("click", () => {
-    btnTodoList.classList.add("active");
-    btnKanban.classList.remove("active");
-    viewTodo.classList.add("active");
-    viewKanban.classList.remove("active");
-  });
+// Unified view switching configuration router
+function setView(view) {
+  currentView = view;
+  
+  // Toggle switcher buttons styling
+  document.getElementById("btn-kanban").classList.toggle("active", view === "kanban");
+  document.getElementById("btn-todolist").classList.toggle("active", view === "todolist");
+  document.getElementById("btn-servicedesk").classList.toggle("active", view === "servicedesk");
+  
+  // Toggle visibility of layout views
+  document.getElementById("view-kanban-container").style.display = (view === "kanban") ? "flex" : "none";
+  document.getElementById("view-todolist-container").style.display = (view === "todolist") ? "block" : "none";
+  document.getElementById("view-servicedesk-container").style.display = (view === "servicedesk") ? "block" : "none";
+  
+  // Swap active BPMN SVGs on visual tracker panel
+  document.getElementById("bpmn-svg").style.display = (view === "servicedesk") ? "none" : "block";
+  document.getElementById("bpmn-svg-servicedesk").style.display = (view === "servicedesk") ? "block" : "none";
+  
+  // Toggle active text in DSL tabs header
+  const activeDslTitle = document.getElementById("active-dsl-title");
+  if (activeDslTitle) {
+    activeDslTitle.innerText = (view === "servicedesk") ? "Process: ITIL Incident SLA" : "Process: Kanban Task Lifecycle";
+  }
+  
+  // Fetch currently active tab lang (ts or go) and refresh editor visibility
+  const activeTab = document.querySelector(".dsl-tab-btn.active");
+  if (activeTab) {
+    updateDslCodeVisibility(activeTab.dataset.lang);
+  }
+
+  // Refresh lists
+  if (view === "servicedesk") {
+    renderIncidents();
+  } else {
+    renderTasks();
+  }
+  updateSvgHighlights();
+}
+
+// Router helping toggle visibility of DSL code segments
+function updateDslCodeVisibility(lang) {
+  const codeTs = document.getElementById("code-ts");
+  const codeGo = document.getElementById("code-go");
+  const codeSdTs = document.getElementById("code-sd-ts");
+  const codeSdGo = document.getElementById("code-sd-go");
+  
+  codeTs.style.display = "none";
+  codeGo.style.display = "none";
+  codeSdTs.style.display = "none";
+  codeSdGo.style.display = "none";
+  
+  if (currentView === "servicedesk") {
+    if (lang === "ts") codeSdTs.style.display = "block";
+    if (lang === "go") codeSdGo.style.display = "block";
+  } else {
+    if (lang === "ts") codeTs.style.display = "block";
+    if (lang === "go") codeGo.style.display = "block";
+  }
 }
 
 // Initialize DSL Tabs
 function initDslSwitcher() {
   const tabs = document.querySelectorAll(".dsl-tab-btn");
-  const codeBlocks = {
-    ts: document.getElementById("code-ts"),
-    go: document.getElementById("code-go")
-  };
-
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
       tabs.forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
-
-      const lang = tab.dataset.lang;
-      Object.values(codeBlocks).forEach(block => block.classList.remove("active"));
-      codeBlocks[lang].classList.add("active");
+      updateDslCodeVisibility(tab.dataset.lang);
     });
   });
 }
@@ -562,6 +729,22 @@ function initModals() {
 
   // Open task modal
   btnNewTask.addEventListener("click", () => {
+    const heading = document.getElementById("modal-task-heading");
+    const labelTitle = document.getElementById("label-task-title");
+    const rowTaskFields = document.getElementById("form-row-task-fields");
+    const rowSdFields = document.getElementById("form-row-sd-fields");
+
+    if (currentView === "servicedesk") {
+      heading.innerText = "Report ITIL Incident";
+      labelTitle.innerText = "Incident Short Description";
+      rowTaskFields.style.display = "none";
+      rowSdFields.style.display = "block";
+    } else {
+      heading.innerText = "Create Kanban/Todo Task";
+      labelTitle.innerText = "Task Title";
+      rowTaskFields.style.display = "flex";
+      rowSdFields.style.display = "none";
+    }
     modalNewTask.classList.add("active");
   });
 
@@ -575,35 +758,84 @@ function initModals() {
     e.preventDefault();
     if (!currentSession) return;
 
-    const title = document.getElementById("task-title").value;
-    const desc = document.getElementById("task-desc").value;
-    const developer = document.getElementById("task-developer").value;
-    const priority = document.getElementById("task-priority").value;
-    
     const tenantId = currentSession.tenantId;
-    const activeTasks = tenantWorkspaces[tenantId] || [];
+    const title = document.getElementById("task-title").value.trim();
+    const desc = document.getElementById("task-desc").value.trim();
 
-    const newTask = {
-      id: `NB-TASK-${tenantId.toUpperCase()}-${activeTasks.length + 1}`,
-      title,
-      desc,
-      assignee: developer,
-      priority,
-      status: "todo",
-      approved: null,
-      history: ["todo"]
-    };
+    if (currentView === "servicedesk") {
+      const priority = document.getElementById("incident-priority").value;
+      const activeIncidents = tenantIncidents[tenantId] || [];
+      
+      let reactionMax = 120;
+      let resolutionMax = 360;
+      if (priority === "Urgent") {
+        reactionMax = 30;
+        resolutionMax = 90;
+      } else if (priority === "High") {
+        reactionMax = 60;
+        resolutionMax = 180;
+      }
 
-    activeTasks.push(newTask);
-    selectedTaskId = newTask.id;
+      const newIncident = {
+        id: `INC-${100 + activeIncidents.length + 1}`,
+        title,
+        desc,
+        priority,
+        status: "New",
+        assignee: null,
+        reporter: currentSession.username,
+        reactionSLA: reactionMax,
+        reactionSLAMax: reactionMax,
+        resolutionSLA: resolutionMax,
+        resolutionSLAMax: resolutionMax,
+        reactionSlaBreached: false,
+        resolutionSlaBreached: false,
+        history: ["New"],
+        reactionTimeSpent: null,
+        resolutionTimeSpent: null,
+        createdTime: Date.now()
+      };
 
-    logEngine("POST", `/instances/start (process: 'kanban-task-lifecycle', businessKey: '${newTask.id}')`);
-    logEngine("OK", `Process started successfully. Active task token: 'todo'`);
+      if (!tenantIncidents[tenantId]) {
+        tenantIncidents[tenantId] = [];
+      }
+      tenantIncidents[tenantId].push(newIncident);
+      selectedIncidentId = newIncident.id;
 
-    renderTasks();
-    updateSvgHighlights();
-    closeModal();
-    formTask.reset();
+      logEngine("POST", `/instances/start (process: 'itil-incident-management', businessKey: '${newIncident.id}')`);
+      logEngine("OK", `ITIL Workflow started. Awaiting L1 Triage claim. SLA Reaction: ${reactionMax}s`);
+
+      renderIncidents();
+      updateSvgHighlights();
+      closeModal();
+      formTask.reset();
+    } else {
+      const developer = document.getElementById("task-developer").value;
+      const priority = document.getElementById("task-priority").value;
+      const activeTasks = tenantWorkspaces[tenantId] || [];
+
+      const newTask = {
+        id: `NB-TASK-${tenantId.toUpperCase()}-${activeTasks.length + 1}`,
+        title,
+        desc,
+        assignee: developer,
+        priority,
+        status: "todo",
+        approved: null,
+        history: ["todo"]
+      };
+
+      activeTasks.push(newTask);
+      selectedTaskId = newTask.id;
+
+      logEngine("POST", `/instances/start (process: 'kanban-task-lifecycle', businessKey: '${newTask.id}')`);
+      logEngine("OK", `Process started successfully. Active task token: 'todo'`);
+
+      renderTasks();
+      updateSvgHighlights();
+      closeModal();
+      formTask.reset();
+    }
   });
 
   // Review modal actions
@@ -704,3 +936,493 @@ document.querySelectorAll(".kanban-column").forEach(column => {
     }
   });
 });
+
+/* ==========================================
+   ITIL ServiceDesk Simulation Logic & Functions
+   ========================================== */
+
+function initQueueFilters() {
+  const chips = document.querySelectorAll("#queue-filters-container .filter-chip");
+  chips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      chips.forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      queueFilter = chip.dataset.queueFilter;
+      renderIncidents();
+    });
+  });
+}
+
+window.claimIncident = function(id) {
+  if (!currentSession) return;
+  const role = currentSession.role || "user";
+  const tenantId = currentSession.tenantId;
+  const activeIncidents = tenantIncidents[tenantId] || [];
+  const ticket = activeIncidents.find(inc => inc.id === id);
+  if (!ticket) return;
+
+  if (ticket.status === "New") {
+    if (role !== "l1_support" && role !== "admin") {
+      alert(`Unauthorized: Claiming new tickets requires 'l1_support' role. Your current role is '${role}'.`);
+      logEngine("ERROR", `Auth failed: User '${currentSession.username}' (role: '${role}') unauthorized to claim ticket ${id}`);
+      return;
+    }
+    
+    // Stop Reaction SLA (Reaction met)
+    const elapsedReaction = Math.round((Date.now() - ticket.createdTime) / 1000);
+    ticket.reactionTimeSpent = elapsedReaction;
+    ticket.reactionSLA = 0; // stop countdown
+    
+    ticket.status = "Assigned";
+    ticket.assignee = currentSession.username;
+    ticket.history.push("Assigned");
+    
+    logEngine("POST", `/instances/${id}/tasks/triage/complete (assignee: '${currentSession.username}')`);
+    logEngine("OK", `Ticket claimed by L1 agent. Reaction time: ${elapsedReaction}s. Resolution SLA started.`);
+  } else if (ticket.status === "Escalated") {
+    if (role !== "l2_support" && role !== "admin") {
+      alert(`Unauthorized: Handling escalated tickets requires 'l2_support' role. Your current role is '${role}'.`);
+      logEngine("ERROR", `Auth failed: User '${currentSession.username}' (role: '${role}') unauthorized to claim L2 ticket ${id}`);
+      return;
+    }
+    
+    ticket.status = "Assigned";
+    ticket.assignee = currentSession.username;
+    ticket.history.push("Assigned");
+    
+    logEngine("POST", `/instances/${id}/tasks/l2_support/claim (assignee: '${currentSession.username}')`);
+    logEngine("OK", `Escalated ticket claimed by L2 engineer.`);
+  }
+
+  renderIncidents();
+  updateSvgHighlights();
+};
+
+window.resolveIncident = function(id) {
+  if (!currentSession) return;
+  const tenantId = currentSession.tenantId;
+  const activeIncidents = tenantIncidents[tenantId] || [];
+  const ticket = activeIncidents.find(inc => inc.id === id);
+  if (!ticket) return;
+
+  // Authorization Gate check: Only assignee can resolve
+  if (ticket.assignee !== currentSession.username && currentSession.role !== "admin") {
+    alert(`Unauthorized: Only the assigned engineer (${ticket.assignee}) can resolve this ticket.`);
+    return;
+  }
+
+  const note = prompt("Enter resolution notes:", "Rebooted VPN gateway node and verified routing tables.");
+  if (note === null) return; // cancelled
+
+  const elapsedTotal = Math.round((Date.now() - ticket.createdTime) / 1000);
+  ticket.resolutionTimeSpent = elapsedTotal;
+  ticket.resolutionSLA = 0; // stop countdown
+  
+  ticket.status = "Resolved";
+  ticket.history.push("Resolved");
+  
+  logEngine("POST", `/instances/${id}/tasks/investigate/complete (resolution: '${note}')`);
+  logEngine("OK", `Incident resolved in ${elapsedTotal}s. Sent to Customer Verification.`);
+
+  renderIncidents();
+  updateSvgHighlights();
+};
+
+window.verifyIncident = function(id, approve) {
+  if (!currentSession) return;
+  const tenantId = currentSession.tenantId;
+  const activeIncidents = tenantIncidents[tenantId] || [];
+  const ticket = activeIncidents.find(inc => inc.id === id);
+  if (!ticket) return;
+
+  // Authorization Gate check: Only customer or reporter can verify
+  const role = currentSession.role || "user";
+  if (role !== "customer" && role !== "admin" && currentSession.username !== ticket.reporter) {
+    alert(`Unauthorized: Only the incident reporter/customer can verify the resolution.`);
+    return;
+  }
+
+  if (approve) {
+    ticket.status = "Closed";
+    ticket.history.push("Closed");
+    
+    logEngine("POST", `/instances/${id}/tasks/review/complete (decision: 'approved')`);
+    logEngine("OK", `Customer approved resolution. Ticket ${id} closed.`);
+  } else {
+    // Loopback path! Reopen & escalate
+    ticket.status = "Escalated";
+    ticket.assignee = null; // Escalate back to queue
+    ticket.history.push("Escalated");
+    
+    // Reset Resolution SLA for L2 work
+    ticket.resolutionSLA = ticket.resolutionSLAMax;
+    ticket.resolutionSlaBreached = false;
+    
+    logEngine("POST", `/instances/${id}/tasks/review/complete (decision: 'reopened')`);
+    logEngine("ERROR", `Customer rejected resolution. Reopen & loopback to L2 escalation triggered!`);
+
+    // Run dynamic visual pulse animation on loopback path line
+    const loopLine = document.getElementById("line-sd-gateway-reopen");
+    if (loopLine) {
+      loopLine.classList.add("active");
+      setTimeout(() => {
+        loopLine.classList.remove("active");
+      }, 3000);
+    }
+  }
+
+  renderIncidents();
+  updateSvgHighlights();
+};
+
+function renderIncidents() {
+  if (!currentSession) return;
+
+  const tenantId = currentSession.tenantId;
+  const activeIncidents = tenantIncidents[tenantId] || [];
+
+  // Metrics calculations
+  const openIncidents = activeIncidents.filter(inc => inc.status !== "Closed");
+  const slaBreaches = activeIncidents.filter(inc => inc.reactionSlaBreached || inc.resolutionSlaBreached).length;
+  
+  const reactionTimes = activeIncidents
+    .filter(inc => inc.reactionTimeSpent !== null)
+    .map(inc => inc.reactionTimeSpent);
+  const avgReaction = reactionTimes.length > 0 
+    ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length) + "s"
+    : "0s";
+    
+  const resolvedCount = activeIncidents.filter(inc => inc.status === "Resolved" || inc.status === "Closed").length;
+  const resolutionRate = activeIncidents.length > 0
+    ? Math.round((resolvedCount / activeIncidents.length) * 100) + "%"
+    : "0%";
+
+  document.getElementById("metric-active-incidents").innerText = openIncidents.length;
+  document.getElementById("metric-sla-breaches").innerText = slaBreaches;
+  document.getElementById("metric-avg-reaction").innerText = avgReaction;
+  document.getElementById("metric-resolution-rate").innerText = resolutionRate;
+
+  // Render incidents list
+  const listContainer = document.getElementById("incidents-list-container");
+  listContainer.innerHTML = "";
+
+  const filteredIncidents = activeIncidents.filter(inc => {
+    if (queueFilter === "all") return true;
+    if (queueFilter === "new") return inc.status === "New";
+    if (queueFilter === "inProgress") return inc.status === "Assigned";
+    if (queueFilter === "escalated") return inc.status === "Escalated";
+    if (queueFilter === "resolved") return inc.status === "Resolved";
+    return true;
+  });
+
+  if (filteredIncidents.length === 0) {
+    listContainer.innerHTML = `<div class="empty-state">No incidents match the filter.</div>`;
+  } else {
+    filteredIncidents.forEach(inc => {
+      const card = document.createElement("div");
+      
+      let priorityClass = "";
+      if (inc.priority === "Urgent") priorityClass = "badge-urgent";
+      if (inc.priority === "High") priorityClass = "badge-high";
+
+      let stateClass = "status-todo";
+      if (inc.status === "Assigned") stateClass = "status-progress";
+      if (inc.status === "Escalated") stateClass = "status-review";
+      if (inc.status === "Resolved") stateClass = "status-done";
+      if (inc.status === "Closed") stateClass = "status-done";
+
+      // SLA ticker display inside card
+      let slaText = "";
+      if (inc.status === "New") {
+        if (inc.reactionSlaBreached) {
+          slaText = `<span class="sla-badge-ticker breached">Reaction SLA Breached</span>`;
+        } else {
+          slaText = `<span class="sla-badge-ticker warning">React in ${inc.reactionSLA}s</span>`;
+        }
+      } else if (inc.status === "Assigned") {
+        if (inc.resolutionSlaBreached) {
+          slaText = `<span class="sla-badge-ticker breached">Resolution SLA Breached</span>`;
+        } else {
+          slaText = `<span class="sla-badge-ticker warning">Resolve in ${inc.resolutionSLA}s</span>`;
+        }
+      } else if (inc.status === "Escalated") {
+        slaText = `<span class="sla-badge-ticker breached">Reaction SLA Breached</span>`;
+      } else {
+        slaText = `<span class="badge">SLA Met</span>`;
+      }
+
+      card.className = `incident-card ${inc.status === "Escalated" ? "escalated" : ""} ${selectedIncidentId === inc.id ? "active" : ""}`;
+      card.dataset.id = inc.id;
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
+          <h3 style="margin: 0; font-size: 0.9rem;">${inc.title}</h3>
+          <span class="badge ${priorityClass}">${inc.priority}</span>
+        </div>
+        <p style="font-size: 0.75rem; opacity: 0.7; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${inc.desc}</p>
+        <div class="ticket-meta">
+          <span class="task-id">${inc.id}</span>
+          <span class="badge" style="display: inline-flex; align-items: center; gap: 4px;">
+            <span class="status-dot ${stateClass}"></span> ${inc.status}
+          </span>
+          ${slaText}
+        </div>
+      `;
+
+      card.addEventListener("click", () => {
+        selectedIncidentId = inc.id;
+        renderIncidents();
+        updateIncidentDetails(inc.id);
+        updateSvgHighlights();
+      });
+
+      listContainer.appendChild(card);
+    });
+  }
+
+  // Refresh details panel if selected incident is updated
+  if (selectedIncidentId) {
+    updateIncidentDetails(selectedIncidentId);
+  } else {
+    document.getElementById("incident-details-empty").style.display = "flex";
+    document.getElementById("incident-details-content").style.display = "none";
+  }
+}
+
+function updateIncidentDetails(id) {
+  const tenantId = currentSession.tenantId;
+  const activeIncidents = tenantIncidents[tenantId] || [];
+  const inc = activeIncidents.find(i => i.id === id);
+  
+  const emptyPanel = document.getElementById("incident-details-empty");
+  const contentPanel = document.getElementById("incident-details-content");
+
+  if (!inc) {
+    emptyPanel.style.display = "flex";
+    contentPanel.style.display = "none";
+    return;
+  }
+
+  emptyPanel.style.display = "none";
+  contentPanel.style.display = "flex";
+
+  // Set texts
+  document.getElementById("details-id").innerText = inc.id;
+  document.getElementById("details-title").innerText = inc.title;
+  document.getElementById("details-desc").innerText = inc.desc;
+  
+  // Priority badge
+  const priorityBadge = document.getElementById("details-priority");
+  priorityBadge.className = "badge";
+  if (inc.priority === "Urgent") priorityBadge.classList.add("badge-urgent");
+  else if (inc.priority === "High") priorityBadge.classList.add("badge-high");
+  priorityBadge.innerText = inc.priority;
+
+  // Status and Assignee badges
+  document.getElementById("details-status").innerText = inc.status;
+  document.getElementById("details-assignee").innerText = inc.assignee ? inc.assignee : "Unassigned";
+
+  // SLA timers progress bars
+  const reactionTimer = document.getElementById("sla-reaction-timer");
+  const reactionBar = document.getElementById("sla-reaction-bar");
+  const resolutionTimer = document.getElementById("sla-resolution-timer");
+  const resolutionBar = document.getElementById("sla-resolution-bar");
+
+  // Reaction SLA bar
+  if (inc.reactionSlaBreached) {
+    reactionTimer.innerText = "BREACHED";
+    reactionTimer.className = "sla-timer-countdown text-danger";
+    reactionBar.style.width = "100%";
+    reactionBar.style.backgroundColor = "var(--status-danger)";
+  } else if (inc.status === "New") {
+    reactionTimer.innerText = inc.reactionSLA + "s";
+    reactionTimer.className = "sla-timer-countdown text-warning";
+    const pct = Math.max(0, Math.min(100, (inc.reactionSLA / inc.reactionSLAMax) * 100));
+    reactionBar.style.width = pct + "%";
+    reactionBar.style.backgroundColor = "var(--color-primary)";
+  } else {
+    // Met or skipped
+    reactionTimer.innerText = inc.reactionTimeSpent ? `Met (${inc.reactionTimeSpent}s)` : "Met";
+    reactionTimer.className = "sla-timer-countdown text-success";
+    reactionBar.style.width = "100%";
+    reactionBar.style.backgroundColor = "var(--status-done)";
+  }
+
+  // Resolution SLA bar
+  if (inc.resolutionSlaBreached) {
+    resolutionTimer.innerText = "BREACHED";
+    resolutionTimer.className = "sla-timer-countdown text-danger";
+    resolutionBar.style.width = "100%";
+    resolutionBar.style.backgroundColor = "var(--status-danger)";
+  } else if (inc.status === "Assigned") {
+    resolutionTimer.innerText = inc.resolutionSLA + "s";
+    resolutionTimer.className = "sla-timer-countdown text-info";
+    const pct = Math.max(0, Math.min(100, (inc.resolutionSLA / inc.resolutionSLAMax) * 100));
+    resolutionBar.style.width = pct + "%";
+    resolutionBar.style.backgroundColor = "#0ea5e9";
+  } else if (inc.status === "New" || inc.status === "Escalated") {
+    resolutionTimer.innerText = "--";
+    resolutionTimer.className = "sla-timer-countdown";
+    resolutionBar.style.width = "0%";
+  } else {
+    // Closed or Resolved
+    resolutionTimer.innerText = inc.resolutionTimeSpent ? `Resolved (${inc.resolutionTimeSpent}s)` : "Resolved";
+    resolutionTimer.className = "sla-timer-countdown text-success";
+    resolutionBar.style.width = "100%";
+    resolutionBar.style.backgroundColor = "var(--status-done)";
+  }
+
+  // Action Buttons Generation with Role Authorization
+  const actionContainer = document.getElementById("incident-action-buttons");
+  actionContainer.innerHTML = "";
+
+  const role = currentSession ? currentSession.role : "user";
+
+  if (inc.status === "New") {
+    const claimBtn = document.createElement("button");
+    claimBtn.className = "btn btn-primary";
+    claimBtn.innerText = "Claim Incident (L1)";
+    if (role !== "l1_support" && role !== "admin") {
+      claimBtn.disabled = true;
+      claimBtn.style.opacity = "0.5";
+      claimBtn.style.cursor = "not-allowed";
+      claimBtn.title = "Requires L1 Support Role";
+      claimBtn.innerText += " 🔒";
+    }
+    claimBtn.addEventListener("click", () => claimIncident(inc.id));
+    actionContainer.appendChild(claimBtn);
+  } 
+  else if (inc.status === "Escalated") {
+    const claimBtn = document.createElement("button");
+    claimBtn.className = "btn btn-primary";
+    claimBtn.innerText = "Claim Escalated Incident (L2)";
+    if (role !== "l2_support" && role !== "admin") {
+      claimBtn.disabled = true;
+      claimBtn.style.opacity = "0.5";
+      claimBtn.style.cursor = "not-allowed";
+      claimBtn.title = "Requires L2 Support Role";
+      claimBtn.innerText += " 🔒";
+    }
+    claimBtn.addEventListener("click", () => claimIncident(inc.id));
+    actionContainer.appendChild(claimBtn);
+  }
+  else if (inc.status === "Assigned") {
+    const resolveBtn = document.createElement("button");
+    resolveBtn.className = "btn btn-primary";
+    resolveBtn.innerText = "Resolve Incident";
+    if (inc.assignee !== currentSession.username && role !== "admin") {
+      resolveBtn.disabled = true;
+      resolveBtn.style.opacity = "0.5";
+      resolveBtn.style.cursor = "not-allowed";
+      resolveBtn.title = `Assigned to ${inc.assignee}`;
+      resolveBtn.innerText += " 🔒";
+    }
+    resolveBtn.addEventListener("click", () => resolveIncident(inc.id));
+    actionContainer.appendChild(resolveBtn);
+  }
+  else if (inc.status === "Resolved") {
+    const approveBtn = document.createElement("button");
+    approveBtn.className = "btn btn-success";
+    approveBtn.innerText = "Approve & Close";
+    if (role !== "customer" && role !== "admin") {
+      approveBtn.disabled = true;
+      approveBtn.style.opacity = "0.5";
+      approveBtn.style.cursor = "not-allowed";
+      approveBtn.title = "Only Customer can verify";
+      approveBtn.innerText += " 🔒";
+    }
+    approveBtn.addEventListener("click", () => verifyIncident(inc.id, true));
+
+    const rejectBtn = document.createElement("button");
+    rejectBtn.className = "btn btn-danger";
+    rejectBtn.innerText = "Reopen & Escalate";
+    if (role !== "customer" && role !== "admin") {
+      rejectBtn.disabled = true;
+      rejectBtn.style.opacity = "0.5";
+      rejectBtn.style.cursor = "not-allowed";
+      rejectBtn.title = "Only Customer can verify";
+      rejectBtn.innerText += " 🔒";
+    }
+    rejectBtn.addEventListener("click", () => verifyIncident(inc.id, false));
+
+    actionContainer.appendChild(approveBtn);
+    actionContainer.appendChild(rejectBtn);
+  }
+  else if (inc.status === "Closed") {
+    actionContainer.innerHTML = `<span style="color: var(--status-done); font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">✓ Ticket Closed & Finalized</span>`;
+  }
+}
+
+function tickSLATimers() {
+  if (!currentSession) return;
+  const tenantId = currentSession.tenantId;
+  const activeIncidents = tenantIncidents[tenantId] || [];
+
+  activeIncidents.forEach(inc => {
+    if (inc.status === "New") {
+      if (inc.reactionSLA > 0) {
+        inc.reactionSLA--;
+        if (inc.reactionSLA === 0) {
+          inc.reactionSlaBreached = true;
+          inc.status = "Escalated";
+          inc.history.push("Escalated");
+          
+          logEngine("BPMN EVENT", `Boundary Timer 'reactionSLA' fired for incident ${inc.id}.`);
+          logEngine("ERROR", `SLA Breach! Escalated ticket ${inc.id} to L2 Support.`);
+          
+          if (inc.id === selectedIncidentId) {
+            updateIncidentDetails(inc.id);
+            updateSvgHighlights();
+          }
+        }
+      }
+    } else if (inc.status === "Assigned") {
+      if (inc.resolutionSLA > 0) {
+        inc.resolutionSLA--;
+        if (inc.resolutionSLA === 0) {
+          inc.resolutionSlaBreached = true;
+          
+          logEngine("BPMN EVENT", `Boundary Timer 'resolutionSLA' fired for incident ${inc.id}.`);
+          logEngine("ERROR", `SLA Breach Alert! Escalated resolution failure of ticket ${inc.id} to Manager.`);
+          
+          if (inc.id === selectedIncidentId) {
+            updateIncidentDetails(inc.id);
+            updateSvgHighlights();
+          }
+        }
+      }
+    }
+  });
+
+  if (currentView === "servicedesk") {
+    // Refresh SLA lists displays in real-time
+    activeIncidents.forEach(inc => {
+      const cardEl = document.querySelector(`.incident-card[data-id="${inc.id}"]`);
+      if (cardEl) {
+        const timerBadge = cardEl.querySelector(`.sla-badge-ticker`);
+        if (timerBadge) {
+          if (inc.status === "New") {
+            if (inc.reactionSlaBreached) {
+              timerBadge.className = "sla-badge-ticker breached";
+              timerBadge.innerText = "Reaction SLA Breached";
+            } else {
+              timerBadge.className = "sla-badge-ticker warning";
+              timerBadge.innerText = `React in ${inc.reactionSLA}s`;
+            }
+          } else if (inc.status === "Assigned") {
+            if (inc.resolutionSlaBreached) {
+              timerBadge.className = "sla-badge-ticker breached";
+              timerBadge.innerText = "Resolution SLA Breached";
+            } else {
+              timerBadge.className = "sla-badge-ticker warning";
+              timerBadge.innerText = `Resolve in ${inc.resolutionSLA}s`;
+            }
+          }
+        }
+      }
+    });
+
+    if (selectedIncidentId) {
+      updateIncidentDetails(selectedIncidentId);
+    }
+  }
+}
