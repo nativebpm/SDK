@@ -24,3 +24,4 @@
 NativeBPM.Client.sln
 src/NativeBPM.Client/NativeBPM.Client.csproj
 src/NativeBPM.Client.Test/NativeBPM.Client.Test.csproj
+src/NativeBPM.Client/README.md

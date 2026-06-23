@@ -64,7 +64,7 @@ generate-dotnet:
 		-i /local/openapi.yaml \
 		-g csharp \
 		-o /local/dotnet \
-		--additional-properties=packageName=NativeBPM.Client,targetFramework=net9.0,hideGenerationTimestamp=true
+		--additional-properties=packageName=NativeBPM.Client,targetFramework=net9.0,hideGenerationTimestamp=true,packageGuid={5C27DC0F-7267-4E8A-8D82-A50B20450F28}
 
 generate-rust:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
