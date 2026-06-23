@@ -178,6 +178,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: title
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional custom title for the visualization widget. If empty, the title header is hidden.
       responses:
         '200':
           description: Successful response
