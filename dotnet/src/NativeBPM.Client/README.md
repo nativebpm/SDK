@@ -6,7 +6,7 @@ Create a config.yaml file similar to what is below, then run the following power
 
 ```yaml
 generatorName: csharp
-inputSpec: /local/openapi.yaml
+inputSpec: /local/api/openapi.yaml
 outputDir: out
 
 # https://openapi-generator.tech/docs/generators/csharp

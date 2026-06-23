@@ -18,7 +18,7 @@ This repository houses the client libraries and Fluent Workflow builders for all
 * **Interactive Swagger UI**: Accessible at `http://localhost:8080/ui/docs` (choose topic *6. REST API Reference* inside your local NativeBPM Console).
 * **Raw OpenAPI Specification**: Exposed dynamically by the engine at `http://localhost:8080/api/openapi.json`.
 * **Central Repo Resources**:
-  - [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/openapi.yaml): The platform OpenAPI 3.0 specification file.
+  - [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/api/openapi.yaml): The platform OpenAPI 3.0 specification file.
 
 ---
 
@@ -188,7 +188,7 @@ For package installation instructions and language-specific quickstarts, check t
 When you need to introduce new endpoints or modify existing data schemas (e.g., adding a new endpoint or extending data models):
 
 1. **Update the OpenAPI Contract**:
-   * Open the central API definition: [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/openapi.yaml).
+   * Open the central API definition: [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/api/openapi.yaml).
    * Define your new HTTP routes, methods (GET/POST/etc.), request bodies, path/query parameters, and response schemas.
    * Make sure to follow OpenAPI 3.0 rules and add appropriate `operationId` definitions.
 2. **Regenerate Base Clients**:

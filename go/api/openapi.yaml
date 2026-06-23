@@ -1,709 +1,897 @@
 openapi: 3.0.3
 info:
-  title: NativeBPM Engine REST API
   description: |
     REST API for managing, executing, and monitoring workflows, human tasks, incidents, and outgoing webhooks inside the NativeBPM Cloud-Native engine.
-    
+
     ### Authentication
     Requests must include a session cookie or a Bearer API token:
     `Authorization: Bearer <API_TOKEN>`
+  title: NativeBPM Engine REST API
   version: 1.0.1
 servers:
-  - url: /
+- url: /
 paths:
   /api/definitions:
     get:
-      summary: List process definitions
       description: Retrieve a list of all deployed process definitions.
       operationId: listDefinitions
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                type: array
                 items:
-                  $ref: '#/components/schemas/ProcessDefinition'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+                  $ref: "#/components/schemas/ProcessDefinition"
+                type: array
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: List process definitions
   /api/deploy:
     post:
-      summary: Deploy process definition
       description: Deploy a new BPMN 2.0 XML process definition.
       operationId: deployDefinition
       requestBody:
-        required: true
         content:
           multipart/form-data:
             schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: BPMN 2.0 XML file content to deploy
+              $ref: "#/components/schemas/deployDefinition_request"
           application/json:
             schema:
               type: object
+        required: true
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessDefinition'
-        '400':
+                $ref: "#/components/schemas/ProcessDefinition"
+          description: Successful response
+        "400":
           description: Invalid request body or malformed BPMN XML
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Deploy process definition
   /api/definitions/{id}/start:
     post:
-      summary: Start process instance
       description: Start a new workflow process instance by process definition ID.
       operationId: startInstance
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: The process definition ID (e.g., matching the BPMN process element ID)
-          schema:
-            type: string
+      - description: "The process definition ID (e.g., matching the BPMN process element\
+          \ ID)"
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StartInstanceRequest'
+              $ref: "#/components/schemas/StartInstanceRequest"
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessInstance'
-        '400':
+                $ref: "#/components/schemas/ProcessInstance"
+          description: Successful response
+        "400":
           description: Invalid variables or configuration
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Start process instance
   /api/instances:
     get:
-      summary: List process instances
       description: Retrieve a list of active and completed process instances.
       operationId: listInstances
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                type: array
                 items:
-                  $ref: '#/components/schemas/ProcessInstance'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+                  $ref: "#/components/schemas/ProcessInstance"
+                type: array
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: List process instances
   /api/instances/{id}:
     get:
-      summary: Get process instance
       description: Fetch a single process instance state by instance ID.
       operationId: getInstance
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessInstance'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '404':
+                $ref: "#/components/schemas/ProcessInstance"
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "404":
           description: Process instance not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get process instance
   /api/instances/{id}/visualization:
     get:
-      summary: Get process instance visualization data
-      description: Retrieve diagram XML, execution node status, and history events for visualization.
+      description: "Retrieve diagram XML, execution node status, and history events\
+        \ for visualization."
       operationId: getInstanceVisualization
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VisualizationData'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '404':
+                $ref: "#/components/schemas/VisualizationData"
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "404":
           description: Process instance not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get process instance visualization data
   /api/instances/{id}/visualization/widget:
     get:
-      summary: Get process instance visualization widget HTML
       description: Retrieve the ready-to-embed HTML process visualization widget.
       operationId: getInstanceVisualizationWidget
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             text/html:
               schema:
                 type: string
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '404':
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "404":
           description: Process instance not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get process instance visualization widget HTML
   /api/instances/{id}/history:
     get:
-      summary: Get process instance execution history
       description: Fetch the audit trail / execution history log for a process instance.
       operationId: getInstanceHistory
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                type: array
                 items:
-                  $ref: '#/components/schemas/HistoryRecord'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+                  $ref: "#/components/schemas/HistoryRecord"
+                type: array
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get process instance execution history
   /api/instances/{id}/incidents:
     get:
-      summary: List incidents for process instance
-      description: Get active execution incidents (failures) for a specific process instance.
+      description: Get active execution incidents (failures) for a specific process
+        instance.
       operationId: listIncidents
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                type: array
                 items:
-                  $ref: '#/components/schemas/IncidentRecord'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '404':
+                  $ref: "#/components/schemas/IncidentRecord"
+                type: array
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "404":
           description: Process instance not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: List incidents for process instance
   /api/instances/{id}/complete:
     post:
-      summary: Complete a wait state / task activity in process instance
       description: Complete a specific active node/wait state within a process instance.
       operationId: completeInstanceTask
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
+      - explode: false
+        in: path
+        name: id
         required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompleteInstanceTaskRequest'
+              $ref: "#/components/schemas/CompleteInstanceTaskRequest"
+        required: true
       responses:
-        '200':
-          description: Process instance state after completion
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessInstance'
-        '400':
+                $ref: "#/components/schemas/ProcessInstance"
+          description: Process instance state after completion
+        "400":
           description: Missing parameter node_id or invalid payload
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Complete a wait state / task activity in process instance
   /api/instances/{id}/resume:
     post:
-      summary: Resume process instance
       description: Manually trigger execution resumption of a process instance.
       operationId: resumeInstance
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Process instance state after resuming
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessInstance'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+                $ref: "#/components/schemas/ProcessInstance"
+          description: Process instance state after resuming
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Resume process instance
   /api/instances/{id}/incidents/{incidentId}/resolve:
     post:
-      summary: Resolve process incident
-      description: Resolve a process execution failure incident, triggering retry/resume.
+      description: "Resolve a process execution failure incident, triggering retry/resume."
       operationId: resolveIncident
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: incidentId
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: incidentId
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Incident resolved successfully
+        "200":
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: resolved
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+                $ref: "#/components/schemas/resolveIncident_200_response"
+          description: Incident resolved successfully
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Resolve process incident
   /api/tasks:
     get:
-      summary: List human/user tasks
-      description: Query tasks matching criteria (assignee, candidateGroup, status).
+      description: "Query tasks matching criteria (assignee, candidateGroup, status)."
       operationId: listTasks
       parameters:
-        - name: assignee
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: candidateGroup
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [CREATED, CLAIMED, COMPLETED]
+      - explode: true
+        in: query
+        name: assignee
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: candidateGroup
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: status
+        required: false
+        schema:
+          enum:
+          - CREATED
+          - CLAIMED
+          - COMPLETED
+          type: string
+        style: form
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                type: array
                 items:
-                  $ref: '#/components/schemas/TaskRecord'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+                  $ref: "#/components/schemas/TaskRecord"
+                type: array
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: List human/user tasks
   /api/tasks/{id}/claim:
     post:
-      summary: Claim human task
       description: Claim a task for a specific user assignee.
       operationId: claimTask
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
+      - explode: false
+        in: path
+        name: id
         required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - assignee
-              properties:
-                assignee:
-                  type: string
+              $ref: "#/components/schemas/claimTask_request"
+        required: true
       responses:
-        '200':
-          description: Task claimed successfully
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TaskRecord'
-        '400':
+                $ref: "#/components/schemas/TaskRecord"
+          description: Task claimed successfully
+        "400":
           description: Task cannot be claimed
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '404':
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "404":
           description: Task not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Claim human task
   /api/tasks/{id}/complete:
     post:
-      summary: Complete human task
-      description: Complete a claimed human task, providing results variables.
+      description: "Complete a claimed human task, providing results variables."
       operationId: completeTask
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                variables:
-                  type: object
-                  additionalProperties: true
+              $ref: "#/components/schemas/completeTask_request"
       responses:
-        '200':
-          description: Task completed successfully
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessInstance'
-        '400':
+                $ref: "#/components/schemas/ProcessInstance"
+          description: Task completed successfully
+        "400":
           description: Task is not claimed
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '404':
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "404":
           description: Task not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Complete human task
   /api/webhooks:
     get:
-      summary: List configured outgoing webhooks
       description: List all registered webhook targets.
       operationId: listWebhooks
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                type: array
                 items:
-                  $ref: '#/components/schemas/WebhookRecord'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '500':
-          $ref: '#/components/responses/500InternalError'
+                  $ref: "#/components/schemas/WebhookRecord"
+                type: array
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: List configured outgoing webhooks
     post:
-      summary: Create webhook target
       description: Register a new webhook target.
       operationId: createWebhook
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateWebhookRequest'
+              $ref: "#/components/schemas/CreateWebhookRequest"
+        required: true
       responses:
-        '200':
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookRecord"
           description: Webhook created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebhookRecord'
-        '400':
+        "400":
           description: Invalid URL or events list
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
-  /api/webhooks/{id}:
-    put:
-      summary: Update webhook target
-      description: Modify the configuration of an existing webhook.
-      operationId: updateWebhook
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateWebhookRequest'
-      responses:
-        '200':
-          description: Webhook updated successfully
+        "401":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookRecord'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '404':
-          description: Webhook not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Create webhook target
+  /api/webhooks/{id}:
     delete:
-      summary: Delete webhook target
       description: Delete a webhook configuration.
       operationId: deleteWebhook
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Webhook deleted successfully
+        "200":
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: deleted
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '404':
+                $ref: "#/components/schemas/resolveIncident_200_response"
+          description: Webhook deleted successfully
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "404":
           description: Webhook not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Delete webhook target
+    put:
+      description: Modify the configuration of an existing webhook.
+      operationId: updateWebhook
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWebhookRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookRecord"
+          description: Webhook updated successfully
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "404":
+          description: Webhook not found
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Update webhook target
   /api/webhooks/{id}/test:
     post:
-      summary: Test webhook target
       description: Send a test ping event delivery to verification URL.
       operationId: testWebhook
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Test ping sent successfully
+        "200":
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '404':
+                $ref: "#/components/schemas/resolveIncident_200_response"
+          description: Test ping sent successfully
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "404":
           description: Webhook not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Test webhook target
   /api/webhooks/{id}/deliveries:
     get:
-      summary: List deliveries for webhook
-      description: Get delivery audit logs and history queue for a specific webhook target.
+      description: Get delivery audit logs and history queue for a specific webhook
+        target.
       operationId: listWebhookDeliveries
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                type: array
                 items:
-                  $ref: '#/components/schemas/WebhookDeliveryRecord'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '404':
+                  $ref: "#/components/schemas/WebhookDeliveryRecord"
+                type: array
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "404":
           description: Webhook not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: List deliveries for webhook
   /api/users/{username}/groups:
     get:
-      summary: Get user groups
       description: Retrieve the list of groups (chats) the user is a member of.
       operationId: getUserGroups
       parameters:
-        - name: username
-          in: path
-          required: true
-          description: The username to retrieve groups for
-          schema:
-            type: string
+      - description: The username to retrieve groups for
+        explode: false
+        in: path
+        name: username
+        required: true
+        schema:
+          type: string
+        style: simple
       responses:
-        '200':
-          description: Successful response
+        "200":
           content:
             application/json:
               schema:
-                type: array
                 items:
                   type: string
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
-  /api/smtp-config:
-    get:
-      summary: Get SMTP configuration
-      description: Retrieve the current SMTP mailer configuration (admin/developer only).
-      operationId: getSMTPConfig
-      responses:
-        '200':
+                type: array
           description: Successful response
+        "401":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SMTPConfig'
-        '401':
-          $ref: '#/components/responses/401Unauthorized'
-        '403':
-          $ref: '#/components/responses/403Forbidden'
-        '404':
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get user groups
+  /api/smtp-config:
+    get:
+      description: Retrieve the current SMTP mailer configuration (admin/developer
+        only).
+      operationId: getSMTPConfig
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SMTPConfig"
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "404":
           description: SMTP config not found
-        '500':
-          $ref: '#/components/responses/500InternalError'
-
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get SMTP configuration
 components:
   responses:
-    401Unauthorized:
+    "401Unauthorized":
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/listDefinitions_401_response"
       description: Unauthorized - missing or invalid session cookie / API Bearer Token
+    "403Forbidden":
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: Unauthorized
-    403Forbidden:
+            $ref: "#/components/schemas/listDefinitions_401_response"
       description: Forbidden - insufficient operator permissions or role level
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: Forbidden - Insufficient permissions
-    500InternalError:
+    "500InternalError":
       description: Internal Server Error - database failure or execution crash
-
   schemas:
     VisualizationData:
-      type: object
-      required:
-        - instance_id
-        - definition_id
-        - xml
+      example:
+        instance_id: instance_id
+        definition_id: definition_id
+        xml: xml
+        active_nodes:
         - active_nodes
+        - active_nodes
+        waiting_nodes:
         - waiting_nodes
+        - waiting_nodes
+        completed_nodes:
         - completed_nodes
-        - history
-        - completed
+        - completed_nodes
+        history:
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          node_id: node_id
+          node_name: node_name
+          node_type: node_type
+          action: start
+          variables: "{}"
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          node_id: node_id
+          node_name: node_name
+          node_type: node_type
+          action: start
+          variables: "{}"
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        completed: true
       properties:
         instance_id:
           type: string
@@ -712,66 +900,79 @@ components:
         xml:
           type: string
         active_nodes:
-          type: array
           items:
             type: string
+          type: array
         waiting_nodes:
-          type: array
           items:
             type: string
+          type: array
         completed_nodes:
-          type: array
           items:
             type: string
-        history:
           type: array
+        history:
           items:
-            $ref: '#/components/schemas/HistoryRecord'
+            $ref: "#/components/schemas/HistoryRecord"
+          type: array
         completed:
           type: boolean
-
-    ProcessDefinition:
-      type: object
       required:
-        - hash
-        - id
-        - name
-        - xml_data
-        - deployed_at
+      - active_nodes
+      - completed
+      - completed_nodes
+      - definition_id
+      - history
+      - instance_id
+      - waiting_nodes
+      - xml
+      type: object
+    ProcessDefinition:
+      example:
+        hash: hash
+        id: id
+        name: name
+        xml_data: xml_data
+        deployed_at: 2000-01-23T04:56:07.000+00:00
       properties:
         hash:
-          type: string
           description: MD5/SHA256 content hash of the process XML schema definition
+          type: string
         id:
-          type: string
           description: Unique process definition identifier
+          type: string
         name:
-          type: string
           description: Friendly name of the process
+          type: string
         xml_data:
-          type: string
-          format: byte
           description: Base64-encoded raw BPMN 2.0 XML schema data
-        deployed_at:
+          format: byte
           type: string
+        deployed_at:
           format: date-time
-
-    ProcessInstance:
-      type: object
+          type: string
       required:
-        - id
-        - process_id
-        - definition_hash
-        - business_key
-        - state
-        - version
-        - completed
-        - updated_at
-        - tenant_id
+      - deployed_at
+      - hash
+      - id
+      - name
+      - xml_data
+      type: object
+    ProcessInstance:
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        process_id: process_id
+        definition_hash: definition_hash
+        business_key: business_key
+        state: "{}"
+        version: 0
+        completed: true
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        tenant_id: tenant_id
       properties:
         id:
-          type: string
           format: uuid
+          type: string
         process_id:
           type: string
         definition_hash:
@@ -779,35 +980,46 @@ components:
         business_key:
           type: string
         state:
+          description: Raw JSON object representing internal Wazero process engine
+            state representation
           type: object
-          description: Raw JSON object representing internal Wazero process engine state representation
         version:
           type: integer
         completed:
           type: boolean
         updated_at:
-          type: string
           format: date-time
+          type: string
         tenant_id:
           type: string
-
-    HistoryRecord:
-      type: object
       required:
-        - id
-        - instance_id
-        - node_id
-        - node_name
-        - node_type
-        - action
-        - timestamp
+      - business_key
+      - completed
+      - definition_hash
+      - id
+      - process_id
+      - state
+      - tenant_id
+      - updated_at
+      - version
+      type: object
+    HistoryRecord:
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        node_id: node_id
+        node_name: node_name
+        node_type: node_type
+        action: start
+        variables: "{}"
+        timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
         id:
-          type: string
           format: uuid
+          type: string
         instance_id:
-          type: string
           format: uuid
+          type: string
         node_id:
           type: string
         node_name:
@@ -815,32 +1027,41 @@ components:
         node_type:
           type: string
         action:
-          type: string
           example: start
-        variables:
-          type: object
-          description: JSON encoded payload variables associated with this transition
-        timestamp:
           type: string
+        variables:
+          description: JSON encoded payload variables associated with this transition
+          type: object
+        timestamp:
           format: date-time
-
-    IncidentRecord:
-      type: object
+          type: string
       required:
-        - id
-        - instance_id
-        - activity_id
-        - error_message
-        - attempts_made
-        - resolved
-        - created_at
+      - action
+      - id
+      - instance_id
+      - node_id
+      - node_name
+      - node_type
+      - timestamp
+      type: object
+    IncidentRecord:
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        activity_id: activity_id
+        error_message: error_message
+        stack_trace: stack_trace
+        attempts_made: 0
+        resolved: true
+        created_at: 2000-01-23T04:56:07.000+00:00
+        resolved_at: 2000-01-23T04:56:07.000+00:00
       properties:
         id:
-          type: string
           format: uuid
+          type: string
         instance_id:
-          type: string
           format: uuid
+          type: string
         activity_id:
           type: string
         error_message:
@@ -852,30 +1073,44 @@ components:
         resolved:
           type: boolean
         created_at:
-          type: string
           format: date-time
+          type: string
         resolved_at:
-          type: string
           format: date-time
-
-    TaskRecord:
-      type: object
+          type: string
       required:
-        - id
-        - instance_id
-        - activity_id
-        - name
-        - assignee
-        - candidate_groups
-        - status
-        - created_at
+      - activity_id
+      - attempts_made
+      - created_at
+      - error_message
+      - id
+      - instance_id
+      - resolved
+      type: object
+    TaskRecord:
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        activity_id: activity_id
+        name: name
+        assignee: assignee
+        candidate_groups: candidate_groups
+        status: CREATED
+        due_date: 2000-01-23T04:56:07.000+00:00
+        input_schema: input_schema
+        created_at: 2000-01-23T04:56:07.000+00:00
+        claimed_at: 2000-01-23T04:56:07.000+00:00
+        completed_at: 2000-01-23T04:56:07.000+00:00
+        current_step: 0
+        draft_variables:
+          key: ""
       properties:
         id:
-          type: string
           format: uuid
+          type: string
         instance_id:
-          type: string
           format: uuid
+          type: string
         activity_id:
           type: string
         name:
@@ -885,44 +1120,56 @@ components:
         candidate_groups:
           type: string
         status:
-          type: string
           example: CREATED
+          type: string
         due_date:
-          type: string
           format: date-time
+          type: string
         input_schema:
-          type: string
           description: JSON schema definition of form widgets
+          type: string
         created_at:
-          type: string
           format: date-time
+          type: string
         claimed_at:
-          type: string
           format: date-time
+          type: string
         completed_at:
-          type: string
           format: date-time
+          type: string
         current_step:
           type: integer
         draft_variables:
-          type: object
           additionalProperties: true
-
-    WebhookRecord:
-      type: object
+          type: object
       required:
-        - id
-        - tenant_id
-        - url
+      - activity_id
+      - assignee
+      - candidate_groups
+      - created_at
+      - id
+      - instance_id
+      - name
+      - status
+      type: object
+    WebhookRecord:
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        tenant_id: tenant_id
+        url: url
+        secret: secret
+        events:
         - events
-        - is_active
-        - enable_audit
-        - status
-        - created_at
+        - events
+        process_id: process_id
+        is_active: true
+        enable_audit: true
+        status: status
+        created_at: 2000-01-23T04:56:07.000+00:00
       properties:
         id:
-          type: string
           format: uuid
+          type: string
         tenant_id:
           type: string
         url:
@@ -930,9 +1177,9 @@ components:
         secret:
           type: string
         events:
-          type: array
           items:
             type: string
+          type: array
         process_id:
           type: string
         is_active:
@@ -942,37 +1189,49 @@ components:
         status:
           type: string
         created_at:
-          type: string
           format: date-time
-
-    WebhookDeliveryRecord:
-      type: object
+          type: string
       required:
-        - id
-        - webhook_id
-        - tenant_id
-        - event_type
-        - payload
-        - status
-        - attempts
-        - created_at
+      - created_at
+      - enable_audit
+      - events
+      - id
+      - is_active
+      - status
+      - tenant_id
+      - url
+      type: object
+    WebhookDeliveryRecord:
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        webhook_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        tenant_id: tenant_id
+        event_type: event_type
+        payload: payload
+        status: PENDING
+        response_code: 0
+        response_body: response_body
+        attempts: 6
+        next_retry: 2000-01-23T04:56:07.000+00:00
+        created_at: 2000-01-23T04:56:07.000+00:00
+        processed_at: 2000-01-23T04:56:07.000+00:00
       properties:
         id:
-          type: string
           format: uuid
+          type: string
         webhook_id:
-          type: string
           format: uuid
+          type: string
         tenant_id:
           type: string
         event_type:
           type: string
         payload:
-          type: string
           format: byte
-        status:
           type: string
+        status:
           example: PENDING
+          type: string
         response_code:
           type: integer
         response_body:
@@ -980,64 +1239,98 @@ components:
         attempts:
           type: integer
         next_retry:
-          type: string
           format: date-time
+          type: string
         created_at:
-          type: string
           format: date-time
+          type: string
         processed_at:
-          type: string
           format: date-time
-
-    StartInstanceRequest:
+          type: string
+      required:
+      - attempts
+      - created_at
+      - event_type
+      - id
+      - payload
+      - status
+      - tenant_id
+      - webhook_id
       type: object
+    StartInstanceRequest:
+      example:
+        instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        business_key: business_key
+        variables:
+          key: ""
       properties:
         instance_id:
-          type: string
-          format: uuid
           description: Optional user-generated UUID to enforce idempotency
-        business_key:
+          format: uuid
           type: string
+        business_key:
           description: Business tracking keyword
+          type: string
         variables:
-          type: object
           additionalProperties: true
-
-    CompleteInstanceTaskRequest:
+          type: object
       type: object
-      required:
-        - node_id
+    CompleteInstanceTaskRequest:
+      example:
+        node_id: node_id
+        variables:
+          key: ""
       properties:
         node_id:
-          type: string
           description: BPMN task element identifier
+          type: string
         variables:
-          type: object
           additionalProperties: true
-
-    CreateWebhookRequest:
-      type: object
+          type: object
       required:
-        - url
+      - node_id
+      type: object
+    CreateWebhookRequest:
+      example:
+        url: url
+        secret: secret
+        events:
         - events
+        - events
+        process_id: process_id
+        is_active: true
+        enable_audit: true
       properties:
         url:
           type: string
         secret:
           type: string
         events:
-          type: array
           items:
             type: string
+          type: array
         process_id:
           type: string
         is_active:
           type: boolean
         enable_audit:
           type: boolean
-
-    SMTPConfig:
+      required:
+      - events
+      - url
       type: object
+    SMTPConfig:
+      example:
+        host: host
+        port: 0
+        username: username
+        password: password
+        from: from
+        from_name: from_name
+        use_ssl: true
+        max_html_size: 6
+        max_attachment_size: 1
+        max_total_attachments_size: 5
       properties:
         host:
           type: string
@@ -1054,11 +1347,48 @@ components:
         use_ssl:
           type: boolean
         max_html_size:
-          type: integer
           format: int64
+          type: integer
         max_attachment_size:
-          type: integer
           format: int64
+          type: integer
         max_total_attachments_size:
-          type: integer
           format: int64
+          type: integer
+      type: object
+    listDefinitions_401_response:
+      example:
+        error: Unauthorized
+      properties:
+        error:
+          example: Unauthorized
+          type: string
+      type: object
+    deployDefinition_request:
+      properties:
+        file:
+          description: BPMN 2.0 XML file content to deploy
+          format: binary
+          type: string
+      type: object
+    resolveIncident_200_response:
+      example:
+        status: resolved
+      properties:
+        status:
+          example: resolved
+          type: string
+      type: object
+    claimTask_request:
+      properties:
+        assignee:
+          type: string
+      required:
+      - assignee
+      type: object
+    completeTask_request:
+      properties:
+        variables:
+          additionalProperties: true
+          type: object
+      type: object

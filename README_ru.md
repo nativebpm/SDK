@@ -17,7 +17,7 @@
 * **Интерактивный Swagger UI**: Доступен по адресу `http://localhost:8080/ui/docs` (выберите тему *6. REST API Reference* во встроенной панели управления NativeBPM).
 * **Спецификация OpenAPI (JSON)**: Динамически отдается движком по адресу `http://localhost:8080/api/openapi.json`.
 * **Центральные ресурсы репозитория**:
-  - [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/openapi.yaml): Файл спецификации OpenAPI 3.0 платформы.
+  - [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/api/openapi.yaml): Файл спецификации OpenAPI 3.0 платформы.
 
 ---
 
@@ -187,7 +187,7 @@ err := client.Deploy(workflow)
 Если вам необходимо добавить новые эндпоинты или обновить существующие схемы данных (например, добавить новый эндпоинт или расширить существующую модель данных):
 
 1. **Обновите контракт OpenAPI**:
-   * Откройте файл [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/openapi.yaml) в корне репозитория.
+   * Откройте файл [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/api/openapi.yaml) в корне репозитория.
    * Добавьте новые пути запросов (paths), HTTP-методы (GET/POST/etc.), тела запросов, параметры и схемы ответов.
    * Убедитесь, что вы соблюдаете правила OpenAPI 3.0 и корректно прописали параметр `operationId`.
 2. **Сгенерируйте базовые клиенты**:

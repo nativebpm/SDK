@@ -29,7 +29,7 @@ type HistoryRecord struct {
 	NodeType string `json:"node_type"`
 	Action string `json:"action"`
 	// JSON encoded payload variables associated with this transition
-	Variables *string `json:"variables,omitempty"`
+	Variables map[string]interface{} `json:"variables,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -204,19 +204,19 @@ func (o *HistoryRecord) SetAction(v string) {
 }
 
 // GetVariables returns the Variables field value if set, zero value otherwise.
-func (o *HistoryRecord) GetVariables() string {
+func (o *HistoryRecord) GetVariables() map[string]interface{} {
 	if o == nil || IsNil(o.Variables) {
-		var ret string
+		var ret map[string]interface{}
 		return ret
 	}
-	return *o.Variables
+	return o.Variables
 }
 
 // GetVariablesOk returns a tuple with the Variables field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *HistoryRecord) GetVariablesOk() (*string, bool) {
+func (o *HistoryRecord) GetVariablesOk() (map[string]interface{}, bool) {
 	if o == nil || IsNil(o.Variables) {
-		return nil, false
+		return map[string]interface{}{}, false
 	}
 	return o.Variables, true
 }
@@ -230,9 +230,9 @@ func (o *HistoryRecord) HasVariables() bool {
 	return false
 }
 
-// SetVariables gets a reference to the given string and assigns it to the Variables field.
-func (o *HistoryRecord) SetVariables(v string) {
-	o.Variables = &v
+// SetVariables gets a reference to the given map[string]interface{} and assigns it to the Variables field.
+func (o *HistoryRecord) SetVariables(v map[string]interface{}) {
+	o.Variables = v
 }
 
 // GetTimestamp returns the Timestamp field value

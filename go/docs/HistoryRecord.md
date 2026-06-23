@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **NodeName** | **string** |  | 
 **NodeType** | **string** |  | 
 **Action** | **string** |  | 
-**Variables** | Pointer to **string** | JSON encoded payload variables associated with this transition | [optional] 
+**Variables** | Pointer to **map[string]interface{}** | JSON encoded payload variables associated with this transition | [optional] 
 **Timestamp** | **time.Time** |  | 
 
 ## Methods
@@ -154,20 +154,20 @@ SetAction sets Action field to given value.
 
 ### GetVariables
 
-`func (o *HistoryRecord) GetVariables() string`
+`func (o *HistoryRecord) GetVariables() map[string]interface{}`
 
 GetVariables returns the Variables field if non-nil, zero value otherwise.
 
 ### GetVariablesOk
 
-`func (o *HistoryRecord) GetVariablesOk() (*string, bool)`
+`func (o *HistoryRecord) GetVariablesOk() (*map[string]interface{}, bool)`
 
 GetVariablesOk returns a tuple with the Variables field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetVariables
 
-`func (o *HistoryRecord) SetVariables(v string)`
+`func (o *HistoryRecord) SetVariables(v map[string]interface{})`
 
 SetVariables sets Variables field to given value.
 
