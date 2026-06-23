@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.apis.DefaultApiTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.148Z" hostname="6332c076f7ae" time="0.01">
+  <properties/>
+  <testcase name="should test claimTask" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.009"/>
+  <testcase name="should test completeInstanceTask" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.009"/>
+  <testcase name="should test completeTask" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.008"/>
+  <testcase name="should test createWebhook" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.007"/>
+  <testcase name="should test deleteWebhook" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.007"/>
+  <testcase name="should test deployDefinition" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.006"/>
+  <testcase name="should test getInstance" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.007"/>
+  <testcase name="should test getInstanceHistory" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.006"/>
+  <testcase name="should test listDefinitions" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.006"/>
+  <testcase name="should test listIncidents" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.005"/>
+  <testcase name="should test listInstances" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.004"/>
+  <testcase name="should test listTasks" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.004"/>
+  <testcase name="should test listWebhookDeliveries" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.004"/>
+  <testcase name="should test listWebhooks" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.003"/>
+  <testcase name="should test resolveIncident" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.003"/>
+  <testcase name="should test resumeInstance" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.003"/>
+  <testcase name="should test startInstance" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.002"/>
+  <testcase name="should test testWebhook" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.002"/>
+  <testcase name="should test updateWebhook" classname="com.nativebpm.client.apis.DefaultApiTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

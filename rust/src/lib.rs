@@ -9,3 +9,6 @@ extern crate reqwest;
 
 pub mod apis;
 pub mod models;
+pub mod builder;
+pub use builder::{Workflow, v};
+

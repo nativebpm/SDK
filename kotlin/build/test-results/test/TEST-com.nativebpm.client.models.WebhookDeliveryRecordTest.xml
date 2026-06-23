@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.WebhookDeliveryRecordTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.256Z" hostname="6332c076f7ae" time="0.008">
+  <properties/>
+  <testcase name="should test id" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.008"/>
+  <testcase name="should test webhookId" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.007"/>
+  <testcase name="should test tenantId" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.006"/>
+  <testcase name="should test eventType" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.005"/>
+  <testcase name="should test payload" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.005"/>
+  <testcase name="should test status" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.004"/>
+  <testcase name="should test attempts" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.004"/>
+  <testcase name="should test createdAt" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.003"/>
+  <testcase name="should test responseCode" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.002"/>
+  <testcase name="should test responseBody" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.001"/>
+  <testcase name="should test nextRetry" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.001"/>
+  <testcase name="should test processedAt" classname="com.nativebpm.client.models.WebhookDeliveryRecordTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

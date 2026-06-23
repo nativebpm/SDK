@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.VisualizationDataTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.248Z" hostname="6332c076f7ae" time="0.004">
+  <properties/>
+  <testcase name="should test instanceId" classname="com.nativebpm.client.models.VisualizationDataTest" time="0.003"/>
+  <testcase name="should test definitionId" classname="com.nativebpm.client.models.VisualizationDataTest" time="0.003"/>
+  <testcase name="should test xml" classname="com.nativebpm.client.models.VisualizationDataTest" time="0.003"/>
+  <testcase name="should test activeNodes" classname="com.nativebpm.client.models.VisualizationDataTest" time="0.002"/>
+  <testcase name="should test waitingNodes" classname="com.nativebpm.client.models.VisualizationDataTest" time="0.002"/>
+  <testcase name="should test completedNodes" classname="com.nativebpm.client.models.VisualizationDataTest" time="0.002"/>
+  <testcase name="should test history" classname="com.nativebpm.client.models.VisualizationDataTest" time="0.001"/>
+  <testcase name="should test completed" classname="com.nativebpm.client.models.VisualizationDataTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

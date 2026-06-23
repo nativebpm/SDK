@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.TaskRecordTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.230Z" hostname="6332c076f7ae" time="0.014">
+  <properties/>
+  <testcase name="should test id" classname="com.nativebpm.client.models.TaskRecordTest" time="0.009"/>
+  <testcase name="should test instanceId" classname="com.nativebpm.client.models.TaskRecordTest" time="0.008"/>
+  <testcase name="should test activityId" classname="com.nativebpm.client.models.TaskRecordTest" time="0.008"/>
+  <testcase name="should test name" classname="com.nativebpm.client.models.TaskRecordTest" time="0.007"/>
+  <testcase name="should test assignee" classname="com.nativebpm.client.models.TaskRecordTest" time="0.007"/>
+  <testcase name="should test candidateGroups" classname="com.nativebpm.client.models.TaskRecordTest" time="0.005"/>
+  <testcase name="should test status" classname="com.nativebpm.client.models.TaskRecordTest" time="0.004"/>
+  <testcase name="should test createdAt" classname="com.nativebpm.client.models.TaskRecordTest" time="0.004"/>
+  <testcase name="should test dueDate" classname="com.nativebpm.client.models.TaskRecordTest" time="0.008"/>
+  <testcase name="should test inputSchema" classname="com.nativebpm.client.models.TaskRecordTest" time="0.008"/>
+  <testcase name="should test claimedAt" classname="com.nativebpm.client.models.TaskRecordTest" time="0.008"/>
+  <testcase name="should test completedAt" classname="com.nativebpm.client.models.TaskRecordTest" time="0.007"/>
+  <testcase name="should test currentStep" classname="com.nativebpm.client.models.TaskRecordTest" time="0.007"/>
+  <testcase name="should test draftVariables" classname="com.nativebpm.client.models.TaskRecordTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

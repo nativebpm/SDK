@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using NativeBPM.Client.Builder;
 using NativeBPM.Client.Client;
 using NativeBPM.Client.Model;
+using Microsoft.Extensions.Logging;
 
 namespace NativeBPM.Client.Api
 {

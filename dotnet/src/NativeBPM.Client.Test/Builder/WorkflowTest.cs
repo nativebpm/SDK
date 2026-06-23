@@ -1,8 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Reflection;
-using System.Text;
 using Xunit;
 using NativeBPM.Client.Builder;
 
@@ -10,38 +8,10 @@ namespace NativeBPM.Client.Test.Builder
 {
     public class WorkflowTest
     {
-        private byte[] GetWasmBytes()
-        {
-            var assembly = typeof(Workflow).Assembly;
-            string? foundResource = null;
-            foreach (var name in assembly.GetManifestResourceNames())
-            {
-                if (name.EndsWith("core.wasm"))
-                {
-                    foundResource = name;
-                    break;
-                }
-            }
-
-            if (foundResource == null)
-            {
-                throw new InvalidOperationException("Embedded core.wasm not found");
-            }
-
-            using var stream = assembly.GetManifestResourceStream(foundResource);
-            if (stream == null)
-            {
-                throw new InvalidOperationException("Failed to open stream");
-            }
-            using var ms = new MemoryStream();
-            stream.CopyTo(ms);
-            return ms.ToArray();
-        }
-
         [Fact]
-        public void TestWorkflowXmlGeneration()
+        public void TestWorkflowGeneration()
         {
-            Console.WriteLine("Running .NET SDK workflow compilation test...");
+            Console.WriteLine("Running .NET SDK workflow AST test...");
             using var workflow = new Workflow("test-process", "Test Process Schema");
 
             workflow.StartEvent("start");
@@ -61,91 +31,26 @@ namespace NativeBPM.Client.Test.Builder
             workflow.SequenceFlowWithCondition("gateway", "end", "isApproved == false");
             workflow.SequenceFlow("userTask", "end");
 
-            string xml = workflow.BuildXml();
-            Assert.NotNull(xml);
-            Assert.Contains("id=\"test-process\"", xml);
-            Assert.Contains("name=\"Test Process Schema\"", xml);
-            Assert.Contains("<startEvent id=\"start\"", xml);
-            Assert.Contains("<serviceTask id=\"task1\" name=\"Service Task 1\"", xml);
-            Assert.Contains("topic=\"service-topic\"", xml);
-            Assert.Contains("wasmPath=\"./my_task.wasm\"", xml);
-            Assert.Contains("<userTask id=\"userTask\" name=\"User Task Approve\"", xml);
-            Assert.Contains("assignee=\"boss\"", xml);
-            Assert.Contains("<exclusiveGateway id=\"gateway\" name=\"Join/Split\"", xml);
-            Assert.Contains("isApproved == true", xml);
-            Assert.Contains("isApproved == false", xml);
-            Assert.Contains("<endEvent id=\"end\" name=\"Process Completed\"", xml);
+            var ast = workflow.ToAST();
+            Assert.NotNull(ast);
+            Assert.Equal("test-process", ast["id"]);
+            Assert.Equal("Test Process Schema", ast["name"]);
+
+            string json = workflow.toJSON();
+            Console.WriteLine("JSON OUTPUT: " + json);
+            Assert.Contains("\"id\":\"test-process\"", json);
+            Assert.Contains("\"name\":\"Test Process Schema\"", json);
+            Assert.Contains("\"type\":\"startEvent\"", json);
+            Assert.Contains("\"type\":\"serviceTask\"", json);
+            Assert.Contains("\"topic\":\"service-topic\"", json);
+            Assert.Contains("\"wasmPath\":\"./my_task.wasm\"", json);
+            Assert.Contains("\"type\":\"userTask\"", json);
+            Assert.Contains("\"assignee\":\"boss\"", json);
+            Assert.Contains("\"type\":\"exclusiveGateway\"", json);
+            Assert.Contains("\"condition\":\"isApproved == true\"", json);
+            Assert.Contains("\"condition\":\"isApproved == false\"", json);
+            Assert.Contains("\"type\":\"endEvent\"", json);
             Console.WriteLine("✓ .NET SDK assertions passed successfully!");
-        }
-
-        [Fact]
-        public void TestCompressedFormats()
-        {
-            Console.WriteLine("Running .NET SDK compressed formats test...");
-            byte[] rawBytes = GetWasmBytes();
-
-            // 1. Brotli
-            byte[] brBytes;
-            using (var outMs = new MemoryStream())
-            {
-                using (var brotli = new BrotliStream(outMs, CompressionLevel.Optimal))
-                {
-                    brotli.Write(rawBytes, 0, rawBytes.Length);
-                }
-                brBytes = outMs.ToArray();
-            }
-
-            // 2. Gzip
-            byte[] gzBytes;
-            using (var outMs = new MemoryStream())
-            {
-                using (var gzip = new GZipStream(outMs, CompressionLevel.Optimal))
-                {
-                    gzip.Write(rawBytes, 0, rawBytes.Length);
-                }
-                gzBytes = outMs.ToArray();
-            }
-
-            // 3. Zip
-            byte[] zipBytes;
-            using (var outMs = new MemoryStream())
-            {
-                using (var archive = new ZipArchive(outMs, ZipArchiveMode.Create, true))
-                {
-                    var entry = archive.CreateEntry("core.wasm");
-                    using var entryStream = entry.Open();
-                    entryStream.Write(rawBytes, 0, rawBytes.Length);
-                }
-                zipBytes = outMs.ToArray();
-            }
-
-            using var workflow = new Workflow("compressed-test", "Compressed Test");
-            workflow.Start().End("end", "End");
-
-            string xmlBr = workflow.BuildXml(brBytes);
-            Assert.Contains("id=\"compressed-test\"", xmlBr);
-            Console.WriteLine("✓ .NET SDK successfully compiled process using Brotli compressed bytes.");
-
-            string xmlGz = workflow.BuildXml(gzBytes);
-            Assert.Contains("id=\"compressed-test\"", xmlGz);
-            Console.WriteLine("✓ .NET SDK successfully compiled process using Gzip compressed bytes.");
-
-            string xmlZip = workflow.BuildXml(zipBytes);
-            Assert.Contains("id=\"compressed-test\"", xmlZip);
-            Console.WriteLine("✓ .NET SDK successfully compiled process using Zip compressed bytes.");
-        }
-
-        [Fact]
-        public void TestConstructorCompilation()
-        {
-            Console.WriteLine("Running .NET SDK constructor compilation test...");
-            byte[] rawBytes = GetWasmBytes();
-            using var workflow = new Workflow("init-test", "Init Test", rawBytes);
-            workflow.Start().End("end", "End");
-
-            string xml = workflow.BuildXml();
-            Assert.Contains("id=\"init-test\"", xml);
-            Console.WriteLine("✓ .NET SDK constructor compilation verified successfully.");
         }
 
         [Fact]
@@ -156,14 +61,12 @@ namespace NativeBPM.Client.Test.Builder
             long baseline = GC.GetTotalMemory(true);
             Console.WriteLine($"Baseline Memory: {baseline / (1024.0 * 1024.0):F2} MB");
 
-            byte[] rawBytes = GetWasmBytes();
-
             for (int i = 0; i < 200; i++)
             {
-                using var workflow = new Workflow($"load-test-{i}", $"Load Test {i}", rawBytes);
-                workflow.Start().End("end", "End");
-                string xml = workflow.BuildXml();
-                Assert.NotNull(xml);
+                using var workflow = new Workflow($"load-test-{i}", $"Load Test {i}");
+                workflow.EndEvent("end", "End");
+                string json = workflow.toJSON();
+                Assert.NotNull(json);
 
                 if ((i + 1) % 50 == 0)
                 {
@@ -183,10 +86,9 @@ namespace NativeBPM.Client.Test.Builder
         public void TestBusinessRuleTask()
         {
             Console.WriteLine("Running .NET SDK business rule task test...");
-            byte[] rawBytes = GetWasmBytes();
-            using var workflow = new Workflow("dmn-test", "DMN Test Process", rawBytes);
+            using var workflow = new Workflow("dmn-test", "DMN Test Process");
 
-            workflow.Start().BusinessRule("ruleTask", "Determine Discount", "determine_discount", new Dictionary<string, object>
+            workflow.BusinessRuleTask("ruleTask", "Determine Discount", "determine_discount", new Dictionary<string, object>
             {
                 { "hitPolicy", "UNIQUE" },
                 { "inputs", new List<Dictionary<string, object>>
@@ -216,14 +118,14 @@ namespace NativeBPM.Client.Test.Builder
                 },
                 { "resultVar", "discountVar" },
                 { "mapDecisionResult", "singleEntry" }
-            }).End("end", "End");
+            });
 
-            string xml = workflow.BuildXml();
-            Assert.NotNull(xml);
-            Assert.Contains("businessRuleTask id=\"ruleTask\"", xml);
-            Assert.Contains("decisionRef=\"determine_discount\"", xml);
-            Assert.Contains("resultVariable=\"discountVar\"", xml);
-            Assert.Contains("mapDecisionResult=\"singleEntry\"", xml);
+            string json = workflow.toJSON();
+            Assert.NotNull(json);
+            Assert.Contains("\"type\":\"businessRuleTask\"", json);
+            Assert.Contains("\"decisionRef\":\"determine_discount\"", json);
+            Assert.Contains("\"resultVar\":\"discountVar\"", json);
+            Assert.Contains("\"mapDecisionResult\":\"singleEntry\"", json);
             Console.WriteLine("✓ .NET SDK business rule task verified successfully!");
         }
 
@@ -231,8 +133,7 @@ namespace NativeBPM.Client.Test.Builder
         public void TestClosureDsl()
         {
             Console.WriteLine("Running .NET SDK closure block DSL test...");
-            byte[] rawBytes = GetWasmBytes();
-            using var workflow = new Workflow("closure-process", "Closure Process", rawBytes);
+            using var workflow = new Workflow("closure-process", "Closure Process");
 
             workflow.User("task1", "User Approval")
                 .When(Workflow.V("approved").Eq(true)).Then(b => {
@@ -242,13 +143,15 @@ namespace NativeBPM.Client.Test.Builder
                     b.Service("reject", "Notify Reject", "reject-topic");
                 });
 
-            string xml = workflow.BuildXml();
-            Assert.NotNull(xml);
-            Assert.Contains("id=\"closure-process\"", xml);
-            Assert.Contains("exclusiveGateway id=\"gw_task1_decision\"", xml);
-            Assert.Contains("serviceTask id=\"publish\"", xml);
-            Assert.Contains("wasmPath=\"./publish.wasm\"", xml);
-            Assert.Contains("serviceTask id=\"reject\"", xml);
+            string json = workflow.toJSON();
+            Assert.NotNull(json);
+            Assert.Contains("\"id\":\"closure-process\"", json);
+            Assert.Contains("\"type\":\"exclusiveGateway\"", json);
+            Assert.Contains("\"id\":\"gw_task1_decision\"", json);
+            Assert.Contains("\"type\":\"serviceTask\"", json);
+            Assert.Contains("\"id\":\"publish\"", json);
+            Assert.Contains("\"wasmPath\":\"./publish.wasm\"", json);
+            Assert.Contains("\"id\":\"reject\"", json);
             Console.WriteLine("✓ .NET SDK closure block DSL test passed!");
         }
     }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.ProcessInstanceTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.207Z" hostname="6332c076f7ae" time="0.006">
+  <properties/>
+  <testcase name="should test id" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.003"/>
+  <testcase name="should test processId" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.003"/>
+  <testcase name="should test definitionHash" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.005"/>
+  <testcase name="should test businessKey" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.005"/>
+  <testcase name="should test state" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.004"/>
+  <testcase name="should test version" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.004"/>
+  <testcase name="should test completed" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.004"/>
+  <testcase name="should test updatedAt" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.004"/>
+  <testcase name="should test tenantId" classname="com.nativebpm.client.models.ProcessInstanceTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

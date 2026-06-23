@@ -3,6 +3,7 @@ package com.nativebpm.client
 import com.nativebpm.client.apis.DefaultApi
 import com.nativebpm.client.infrastructure.Serializer
 import com.nativebpm.client.models.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -84,7 +85,7 @@ class DeployDefinitionBuilder(private val client: Client) {
         val workflowInstance = workflow
         if (workflowInstance != null) {
             val jsonAst = workflowInstance.toJSON()
-            val mediaType = okhttp3.MediaType.parse("application/json")
+            val mediaType = "application/json".toMediaTypeOrNull()
             val requestBody = jsonAst.toRequestBody(mediaType)
             val request = Request.Builder()
                 .url("${client.baseUrl.trimEnd('/')}/api/deploy")

@@ -6,12 +6,12 @@ Create a config.yaml file similar to what is below, then run the following power
 
 ```yaml
 generatorName: csharp
-inputSpec: /local/sdk/openapi.yaml
+inputSpec: /local/openapi.yaml
 outputDir: out
 
 # https://openapi-generator.tech/docs/generators/csharp
 additionalProperties:
-  packageGuid: '{0932D86F-6DDE-4084-BD5A-7C957C85A119}'
+  packageGuid: '{08679063-D7A9-4300-A1CC-316749BBDDA7}'
 
 # https://openapi-generator.tech/docs/integrations/#github-integration
 # gitHost:
@@ -100,7 +100,7 @@ namespace YourProject
 
 ## Api Information
 - appName: NativeBPM Engine REST API
-- appVersion: 1.0.0
+- appVersion: 1.0.3
 - appDescription: REST API for managing, executing, and monitoring workflows, human tasks, incidents, and outgoing webhooks inside the NativeBPM Cloud-Native engine.  ### Authentication Requests must include a session cookie or a Bearer API token: &#x60;Authorization: Bearer &lt;API_TOKEN&gt;&#x60; 
 
 ## Build

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.CreateWebhookRequestTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.130Z" hostname="6332c076f7ae" time="0.008">
+  <properties/>
+  <testcase name="should test url" classname="com.nativebpm.client.models.CreateWebhookRequestTest" time="0.007"/>
+  <testcase name="should test events" classname="com.nativebpm.client.models.CreateWebhookRequestTest" time="0.007"/>
+  <testcase name="should test secret" classname="com.nativebpm.client.models.CreateWebhookRequestTest" time="0.006"/>
+  <testcase name="should test processId" classname="com.nativebpm.client.models.CreateWebhookRequestTest" time="0.005"/>
+  <testcase name="should test isActive" classname="com.nativebpm.client.models.CreateWebhookRequestTest" time="0.002"/>
+  <testcase name="should test enableAudit" classname="com.nativebpm.client.models.CreateWebhookRequestTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

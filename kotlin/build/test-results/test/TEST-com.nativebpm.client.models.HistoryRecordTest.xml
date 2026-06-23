@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.HistoryRecordTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.163Z" hostname="6332c076f7ae" time="0.009">
+  <properties/>
+  <testcase name="should test id" classname="com.nativebpm.client.models.HistoryRecordTest" time="0.009"/>
+  <testcase name="should test instanceId" classname="com.nativebpm.client.models.HistoryRecordTest" time="0.008"/>
+  <testcase name="should test nodeId" classname="com.nativebpm.client.models.HistoryRecordTest" time="0.007"/>
+  <testcase name="should test nodeName" classname="com.nativebpm.client.models.HistoryRecordTest" time="0.006"/>
+  <testcase name="should test nodeType" classname="com.nativebpm.client.models.HistoryRecordTest" time="0.006"/>
+  <testcase name="should test action" classname="com.nativebpm.client.models.HistoryRecordTest" time="0.003"/>
+  <testcase name="should test timestamp" classname="com.nativebpm.client.models.HistoryRecordTest" time="0.002"/>
+  <testcase name="should test variables" classname="com.nativebpm.client.models.HistoryRecordTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

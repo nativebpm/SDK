@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.WebhookRecordTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.268Z" hostname="6332c076f7ae" time="0.008">
+  <properties/>
+  <testcase name="should test id" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.005"/>
+  <testcase name="should test tenantId" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.004"/>
+  <testcase name="should test url" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.006"/>
+  <testcase name="should test events" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.005"/>
+  <testcase name="should test isActive" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.004"/>
+  <testcase name="should test enableAudit" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.003"/>
+  <testcase name="should test status" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.003"/>
+  <testcase name="should test createdAt" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.003"/>
+  <testcase name="should test secret" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.003"/>
+  <testcase name="should test processId" classname="com.nativebpm.client.models.WebhookRecordTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

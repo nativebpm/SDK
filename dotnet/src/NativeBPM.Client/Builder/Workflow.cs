@@ -304,6 +304,11 @@ namespace NativeBPM.Client.Builder
             };
         }
 
+        public string toJSON()
+        {
+            return JsonSerializer.Serialize(ToAST());
+        }
+
         private void ConnectNode(string nodeId)
         {
             var node = FindNode(nodeId);

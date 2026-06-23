@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.ProcessDefinitionTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.197Z" hostname="6332c076f7ae" time="0.005">
+  <properties/>
+  <testcase name="should test hash" classname="com.nativebpm.client.models.ProcessDefinitionTest" time="0.005"/>
+  <testcase name="should test id" classname="com.nativebpm.client.models.ProcessDefinitionTest" time="0.005"/>
+  <testcase name="should test name" classname="com.nativebpm.client.models.ProcessDefinitionTest" time="0.004"/>
+  <testcase name="should test xmlData" classname="com.nativebpm.client.models.ProcessDefinitionTest" time="0.003"/>
+  <testcase name="should test deployedAt" classname="com.nativebpm.client.models.ProcessDefinitionTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

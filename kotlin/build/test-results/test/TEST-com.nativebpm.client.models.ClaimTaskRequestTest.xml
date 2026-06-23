@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.nativebpm.client.models.ClaimTaskRequestTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-06-23T05:34:15.115Z" hostname="6332c076f7ae" time="0.001">
+  <properties/>
+  <testcase name="should test assignee" classname="com.nativebpm.client.models.ClaimTaskRequestTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

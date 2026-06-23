@@ -14,6 +14,8 @@ All URIs are relative to *http://localhost*
 | [**GetInstanceHistory**](DefaultApi.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
 | [**GetInstanceVisualization**](DefaultApi.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
 | [**GetInstanceVisualizationWidget**](DefaultApi.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
+| [**GetSMTPConfig**](DefaultApi.md#getsmtpconfig) | **GET** /api/smtp-config | Get SMTP configuration |
+| [**GetUserGroups**](DefaultApi.md#getusergroups) | **GET** /api/users/{username}/groups | Get user groups |
 | [**ListDefinitions**](DefaultApi.md#listdefinitions) | **GET** /api/definitions | List process definitions |
 | [**ListIncidents**](DefaultApi.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**ListInstances**](DefaultApi.md#listinstances) | **GET** /api/instances | List process instances |
@@ -422,6 +424,81 @@ No authorization required
 | **200** | Successful response |  -  |
 | **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
 | **404** | Process instance not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)
+
+<a id="getsmtpconfig"></a>
+# **GetSMTPConfig**
+> SMTPConfig GetSMTPConfig ()
+
+Get SMTP configuration
+
+Retrieve the current SMTP mailer configuration (admin/developer only).
+
+
+### Parameters
+This endpoint does not need any parameter.
+### Return type
+
+[**SMTPConfig**](SMTPConfig.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **403** | Forbidden - insufficient operator permissions or role level |  -  |
+| **404** | SMTP config not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)
+
+<a id="getusergroups"></a>
+# **GetUserGroups**
+> List&lt;string&gt; GetUserGroups (string username)
+
+Get user groups
+
+Retrieve the list of groups (chats) the user is a member of.
+
+
+### Parameters
+
+| Name | Type | Description | Notes |
+|------|------|-------------|-------|
+| **username** | **string** | The username to retrieve groups for |  |
+
+### Return type
+
+**List<string>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **403** | Forbidden - insufficient operator permissions or role level |  -  |
 | **500** | Internal Server Error - database failure or execution crash |  -  |
 
 [[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)
