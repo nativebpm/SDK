@@ -16,6 +16,8 @@ All URIs are relative to http://localhost, except if the operation defines anoth
 | [**getInstanceHistory()**](DefaultApi.md#getInstanceHistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
 | [**getInstanceVisualization()**](DefaultApi.md#getInstanceVisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
 | [**getInstanceVisualizationWidget()**](DefaultApi.md#getInstanceVisualizationWidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
+| [**getSMTPConfig()**](DefaultApi.md#getSMTPConfig) | **GET** /api/smtp-config | Get SMTP configuration |
+| [**getUserGroups()**](DefaultApi.md#getUserGroups) | **GET** /api/users/{username}/groups | Get user groups |
 | [**listDefinitions()**](DefaultApi.md#listDefinitions) | **GET** /api/definitions | List process definitions |
 | [**listIncidents()**](DefaultApi.md#listIncidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**listInstances()**](DefaultApi.md#listInstances) | **GET** /api/instances | List process instances |
@@ -590,6 +592,115 @@ No authorization required
 
 - **Content-Type**: Not defined
 - **Accept**: `text/html`, `application/json`
+
+[[Back to top]](#) [[Back to API list]](../../README.md#endpoints)
+[[Back to Model list]](../../README.md#models)
+[[Back to README]](../../README.md)
+
+## `getSMTPConfig()`
+
+```php
+getSMTPConfig(): \NativeBPM\Client\Model\SMTPConfig
+```
+
+Get SMTP configuration
+
+Retrieve the current SMTP mailer configuration (admin/developer only).
+
+### Example
+
+```php
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+
+$apiInstance = new NativeBPM\Client\Api\DefaultApi(
+    // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+    // This is optional, `GuzzleHttp\Client` will be used as default.
+    new GuzzleHttp\Client()
+);
+
+try {
+    $result = $apiInstance->getSMTPConfig();
+    print_r($result);
+} catch (Exception $e) {
+    echo 'Exception when calling DefaultApi->getSMTPConfig: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**\NativeBPM\Client\Model\SMTPConfig**](../Model/SMTPConfig.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+[[Back to top]](#) [[Back to API list]](../../README.md#endpoints)
+[[Back to Model list]](../../README.md#models)
+[[Back to README]](../../README.md)
+
+## `getUserGroups()`
+
+```php
+getUserGroups($username): string[]
+```
+
+Get user groups
+
+Retrieve the list of groups (chats) the user is a member of.
+
+### Example
+
+```php
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+
+$apiInstance = new NativeBPM\Client\Api\DefaultApi(
+    // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+    // This is optional, `GuzzleHttp\Client` will be used as default.
+    new GuzzleHttp\Client()
+);
+$username = 'username_example'; // string | The username to retrieve groups for
+
+try {
+    $result = $apiInstance->getUserGroups($username);
+    print_r($result);
+} catch (Exception $e) {
+    echo 'Exception when calling DefaultApi->getUserGroups: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+### Parameters
+
+| Name | Type | Description  | Notes |
+| ------------- | ------------- | ------------- | ------------- |
+| **username** | **string**| The username to retrieve groups for | |
+
+### Return type
+
+**string[]**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
 
 [[Back to top]](#) [[Back to API list]](../../README.md#endpoints)
 [[Back to Model list]](../../README.md#models)

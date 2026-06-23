@@ -12,6 +12,7 @@ docs/ListDefinitions401Response.md
 docs/ProcessDefinition.md
 docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
+docs/SMTPConfig.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
 docs/VisualizationData.md
@@ -31,6 +32,7 @@ src/models/ListDefinitions401Response.ts
 src/models/ProcessDefinition.ts
 src/models/ProcessInstance.ts
 src/models/ResolveIncident200Response.ts
+src/models/SMTPConfig.ts
 src/models/StartInstanceRequest.ts
 src/models/TaskRecord.ts
 src/models/VisualizationData.ts

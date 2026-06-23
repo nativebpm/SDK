@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 VisualStudioVersion = 12.0.0.0
 MinimumVisualStudioVersion = 10.0.0.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NativeBPM.Client", "src\NativeBPM.Client\NativeBPM.Client.csproj", "{08679063-D7A9-4300-A1CC-316749BBDDA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NativeBPM.Client", "src\NativeBPM.Client\NativeBPM.Client.csproj", "{42B03691-766C-4175-8005-80DDF43EE9D9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NativeBPM.Client.Test", "src\NativeBPM.Client.Test\NativeBPM.Client.Test.csproj", "{19F1DEBC-DE5E-4517-8062-F000CD499087}"
 EndProject
@@ -12,10 +12,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{08679063-D7A9-4300-A1CC-316749BBDDA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08679063-D7A9-4300-A1CC-316749BBDDA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{08679063-D7A9-4300-A1CC-316749BBDDA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{08679063-D7A9-4300-A1CC-316749BBDDA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42B03691-766C-4175-8005-80DDF43EE9D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42B03691-766C-4175-8005-80DDF43EE9D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42B03691-766C-4175-8005-80DDF43EE9D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42B03691-766C-4175-8005-80DDF43EE9D9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{19F1DEBC-DE5E-4517-8062-F000CD499087}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{19F1DEBC-DE5E-4517-8062-F000CD499087}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19F1DEBC-DE5E-4517-8062-F000CD499087}.Release|Any CPU.ActiveCfg = Release|Any CPU

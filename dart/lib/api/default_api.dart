@@ -621,6 +621,118 @@ class DefaultApi {
     return null;
   }
 
+  /// Get SMTP configuration
+  ///
+  /// Retrieve the current SMTP mailer configuration (admin/developer only).
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> getSMTPConfigWithHttpInfo({ Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/smtp-config';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Get SMTP configuration
+  ///
+  /// Retrieve the current SMTP mailer configuration (admin/developer only).
+  Future<SMTPConfig?> getSMTPConfig({ Future<void>? abortTrigger, }) async {
+    final response = await getSMTPConfigWithHttpInfo(abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SMTPConfig',) as SMTPConfig;
+    
+    }
+    return null;
+  }
+
+  /// Get user groups
+  ///
+  /// Retrieve the list of groups (chats) the user is a member of.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] username (required):
+  ///   The username to retrieve groups for
+  Future<Response> getUserGroupsWithHttpInfo(String username, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/users/{username}/groups'
+      .replaceAll('{username}', username);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Get user groups
+  ///
+  /// Retrieve the list of groups (chats) the user is a member of.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] username (required):
+  ///   The username to retrieve groups for
+  Future<List<String>?> getUserGroups(String username, { Future<void>? abortTrigger, }) async {
+    final response = await getUserGroupsWithHttpInfo(username, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      final responseBody = await _decodeBodyBytes(response);
+      return (await apiClient.deserializeAsync(responseBody, 'List<String>') as List)
+        .cast<String>()
+        .toList(growable: false);
+
+    }
+    return null;
+  }
+
   /// List process definitions
   ///
   /// Retrieve a list of all deployed process definitions.

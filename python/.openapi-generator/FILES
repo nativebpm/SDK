@@ -14,6 +14,7 @@ docs/ListDefinitions401Response.md
 docs/ProcessDefinition.md
 docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
+docs/SMTPConfig.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
 docs/VisualizationData.md
@@ -38,6 +39,7 @@ nativebpm_client/models/list_definitions401_response.py
 nativebpm_client/models/process_definition.py
 nativebpm_client/models/process_instance.py
 nativebpm_client/models/resolve_incident200_response.py
+nativebpm_client/models/smtp_config.py
 nativebpm_client/models/start_instance_request.py
 nativebpm_client/models/task_record.py
 nativebpm_client/models/visualization_data.py
@@ -51,5 +53,5 @@ setup.cfg
 setup.py
 test-requirements.txt
 test/__init__.py
-test/test_visualization_data.py
+test/test_smtp_config.py
 tox.ini

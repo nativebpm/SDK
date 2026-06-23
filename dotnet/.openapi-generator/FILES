@@ -23,7 +23,6 @@ docs/models/WebhookRecord.md
 docs/scripts/git_push.ps1
 docs/scripts/git_push.sh
 src/NativeBPM.Client.Test/Api/DependencyInjectionTests.cs
-src/NativeBPM.Client.Test/Model/SMTPConfigTests.cs
 src/NativeBPM.Client.Test/NativeBPM.Client.Test.csproj
 src/NativeBPM.Client.Test/README.md
 src/NativeBPM.Client/Api/DefaultApi.cs

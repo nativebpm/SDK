@@ -7,7 +7,7 @@ info:
     Requests must include a session cookie or a Bearer API token:
     `Authorization: Bearer <API_TOKEN>`
   title: NativeBPM Engine REST API
-  version: 1.0.0
+  version: 1.0.1
 servers:
 - url: /
 paths:
@@ -822,6 +822,78 @@ paths:
       summary: List deliveries for webhook
       x-accepts:
       - application/json
+  /api/users/{username}/groups:
+    get:
+      description: Retrieve the list of groups (chats) the user is a member of.
+      operationId: getUserGroups
+      parameters:
+      - description: The username to retrieve groups for
+        explode: false
+        in: path
+        name: username
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get user groups
+      x-accepts:
+      - application/json
+  /api/smtp-config:
+    get:
+      description: Retrieve the current SMTP mailer configuration (admin/developer
+        only).
+      operationId: getSMTPConfig
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SMTPConfig"
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Forbidden - insufficient operator permissions or role level
+        "404":
+          description: SMTP config not found
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get SMTP configuration
+      x-accepts:
+      - application/json
 components:
   responses:
     "401Unauthorized":
@@ -1299,6 +1371,43 @@ components:
       required:
       - events
       - url
+      type: object
+    SMTPConfig:
+      example:
+        host: host
+        port: 0
+        username: username
+        password: password
+        from: from
+        from_name: from_name
+        use_ssl: true
+        max_html_size: 6
+        max_attachment_size: 1
+        max_total_attachments_size: 5
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+        username:
+          type: string
+        password:
+          type: string
+        from:
+          type: string
+        from_name:
+          type: string
+        use_ssl:
+          type: boolean
+        max_html_size:
+          format: int64
+          type: integer
+        max_attachment_size:
+          format: int64
+          type: integer
+        max_total_attachments_size:
+          format: int64
+          type: integer
       type: object
     listDefinitions_401_response:
       example:

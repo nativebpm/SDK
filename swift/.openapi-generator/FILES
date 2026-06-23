@@ -21,6 +21,7 @@ NativeBPMClient/Classes/OpenAPIs/Models/ListDefinitions401Response.swift
 NativeBPMClient/Classes/OpenAPIs/Models/ProcessDefinition.swift
 NativeBPMClient/Classes/OpenAPIs/Models/ProcessInstance.swift
 NativeBPMClient/Classes/OpenAPIs/Models/ResolveIncident200Response.swift
+NativeBPMClient/Classes/OpenAPIs/Models/SMTPConfig.swift
 NativeBPMClient/Classes/OpenAPIs/Models/StartInstanceRequest.swift
 NativeBPMClient/Classes/OpenAPIs/Models/TaskRecord.swift
 NativeBPMClient/Classes/OpenAPIs/Models/VisualizationData.swift
@@ -43,6 +44,7 @@ docs/ListDefinitions401Response.md
 docs/ProcessDefinition.md
 docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
+docs/SMTPConfig.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
 docs/VisualizationData.md

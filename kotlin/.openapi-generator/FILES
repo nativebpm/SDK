@@ -11,6 +11,7 @@ docs/ListDefinitions401Response.md
 docs/ProcessDefinition.md
 docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
+docs/SMTPConfig.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
 docs/VisualizationData.md
@@ -49,9 +50,10 @@ src/main/kotlin/com/nativebpm/client/models/ListDefinitions401Response.kt
 src/main/kotlin/com/nativebpm/client/models/ProcessDefinition.kt
 src/main/kotlin/com/nativebpm/client/models/ProcessInstance.kt
 src/main/kotlin/com/nativebpm/client/models/ResolveIncident200Response.kt
+src/main/kotlin/com/nativebpm/client/models/SMTPConfig.kt
 src/main/kotlin/com/nativebpm/client/models/StartInstanceRequest.kt
 src/main/kotlin/com/nativebpm/client/models/TaskRecord.kt
 src/main/kotlin/com/nativebpm/client/models/VisualizationData.kt
 src/main/kotlin/com/nativebpm/client/models/WebhookDeliveryRecord.kt
 src/main/kotlin/com/nativebpm/client/models/WebhookRecord.kt
-src/test/kotlin/com/nativebpm/client/models/VisualizationDataTest.kt
+src/test/kotlin/com/nativebpm/client/models/SMTPConfigTest.kt

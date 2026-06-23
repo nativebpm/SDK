@@ -19,6 +19,8 @@ Method | HTTP request | Description
 [**getInstanceHistory**](DefaultApi.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history
 [**getInstanceVisualization**](DefaultApi.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
 [**getInstanceVisualizationWidget**](DefaultApi.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
+[**getSMTPConfig**](DefaultApi.md#getsmtpconfig) | **GET** /api/smtp-config | Get SMTP configuration
+[**getUserGroups**](DefaultApi.md#getusergroups) | **GET** /api/users/{username}/groups | Get user groups
 [**listDefinitions**](DefaultApi.md#listdefinitions) | **GET** /api/definitions | List process definitions
 [**listIncidents**](DefaultApi.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 [**listInstances**](DefaultApi.md#listinstances) | **GET** /api/instances | List process instances
@@ -465,6 +467,88 @@ No authorization required
 
  - **Content-Type**: Not defined
  - **Accept**: text/html, application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getSMTPConfig**
+> SMTPConfig getSMTPConfig()
+
+Get SMTP configuration
+
+Retrieve the current SMTP mailer configuration (admin/developer only).
+
+### Example
+```dart
+import 'package:nativebpm_client/api.dart';
+
+final api_instance = DefaultApi();
+
+try {
+    final result = api_instance.getSMTPConfig();
+    print(result);
+} catch (e) {
+    print('Exception when calling DefaultApi->getSMTPConfig: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**SMTPConfig**](SMTPConfig.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getUserGroups**
+> List<String> getUserGroups(username)
+
+Get user groups
+
+Retrieve the list of groups (chats) the user is a member of.
+
+### Example
+```dart
+import 'package:nativebpm_client/api.dart';
+
+final api_instance = DefaultApi();
+final username = username_example; // String | The username to retrieve groups for
+
+try {
+    final result = api_instance.getUserGroups(username);
+    print(result);
+} catch (e) {
+    print('Exception when calling DefaultApi->getUserGroups: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **username** | **String**| The username to retrieve groups for | 
+
+### Return type
+
+**List<String>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

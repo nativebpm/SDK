@@ -40,6 +40,7 @@ part 'model/list_definitions401_response.dart';
 part 'model/process_definition.dart';
 part 'model/process_instance.dart';
 part 'model/resolve_incident200_response.dart';
+part 'model/smtp_config.dart';
 part 'model/start_instance_request.dart';
 part 'model/task_record.dart';
 part 'model/visualization_data.dart';

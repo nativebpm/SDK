@@ -16,6 +16,7 @@ docs/ListDefinitions401Response.md
 docs/ProcessDefinition.md
 docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
+docs/SMTPConfig.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
 docs/VisualizationData.md
@@ -59,9 +60,10 @@ src/main/java/com/nativebpm/client/model/ListDefinitions401Response.java
 src/main/java/com/nativebpm/client/model/ProcessDefinition.java
 src/main/java/com/nativebpm/client/model/ProcessInstance.java
 src/main/java/com/nativebpm/client/model/ResolveIncident200Response.java
+src/main/java/com/nativebpm/client/model/SMTPConfig.java
 src/main/java/com/nativebpm/client/model/StartInstanceRequest.java
 src/main/java/com/nativebpm/client/model/TaskRecord.java
 src/main/java/com/nativebpm/client/model/VisualizationData.java
 src/main/java/com/nativebpm/client/model/WebhookDeliveryRecord.java
 src/main/java/com/nativebpm/client/model/WebhookRecord.java
-src/test/java/com/nativebpm/client/model/VisualizationDataTest.java
+src/test/java/com/nativebpm/client/model/SMTPConfigTest.java

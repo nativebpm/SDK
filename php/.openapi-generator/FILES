@@ -14,6 +14,7 @@ docs/Model/ListDefinitions401Response.md
 docs/Model/ProcessDefinition.md
 docs/Model/ProcessInstance.md
 docs/Model/ResolveIncident200Response.md
+docs/Model/SMTPConfig.md
 docs/Model/StartInstanceRequest.md
 docs/Model/TaskRecord.md
 docs/Model/VisualizationData.md
@@ -36,6 +37,7 @@ lib/Model/ModelInterface.php
 lib/Model/ProcessDefinition.php
 lib/Model/ProcessInstance.php
 lib/Model/ResolveIncident200Response.php
+lib/Model/SMTPConfig.php
 lib/Model/StartInstanceRequest.php
 lib/Model/TaskRecord.php
 lib/Model/VisualizationData.php
@@ -43,4 +45,4 @@ lib/Model/WebhookDeliveryRecord.php
 lib/Model/WebhookRecord.php
 lib/ObjectSerializer.php
 phpunit.xml.dist
-test/Model/VisualizationDataTest.php
+test/Model/SMTPConfigTest.php

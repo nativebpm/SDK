@@ -18,6 +18,8 @@ pub mod process_instance;
 pub use self::process_instance::ProcessInstance;
 pub mod resolve_incident_200_response;
 pub use self::resolve_incident_200_response::ResolveIncident200Response;
+pub mod smtp_config;
+pub use self::smtp_config::SmtpConfig;
 pub mod start_instance_request;
 pub use self::start_instance_request::StartInstanceRequest;
 pub mod task_record;

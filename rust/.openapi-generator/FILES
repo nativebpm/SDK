@@ -1,6 +1,5 @@
 .gitignore
 .travis.yml
-Cargo.toml
 README.md
 docs/ClaimTaskRequest.md
 docs/CompleteInstanceTaskRequest.md
@@ -13,6 +12,7 @@ docs/ListDefinitions401Response.md
 docs/ProcessDefinition.md
 docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
+docs/SmtpConfig.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
 docs/VisualizationData.md
@@ -22,7 +22,6 @@ git_push.sh
 src/apis/configuration.rs
 src/apis/default_api.rs
 src/apis/mod.rs
-src/lib.rs
 src/models/claim_task_request.rs
 src/models/complete_instance_task_request.rs
 src/models/complete_task_request.rs
@@ -34,6 +33,7 @@ src/models/mod.rs
 src/models/process_definition.rs
 src/models/process_instance.rs
 src/models/resolve_incident_200_response.rs
+src/models/smtp_config.rs
 src/models/start_instance_request.rs
 src/models/task_record.rs
 src/models/visualization_data.rs

@@ -203,6 +203,8 @@ class ApiClient {
           return ProcessInstance.fromJson(value);
         case 'ResolveIncident200Response':
           return ResolveIncident200Response.fromJson(value);
+        case 'SMTPConfig':
+          return SMTPConfig.fromJson(value);
         case 'StartInstanceRequest':
           return StartInstanceRequest.fromJson(value);
         case 'TaskRecord':

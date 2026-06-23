@@ -14,6 +14,8 @@ All URIs are relative to *http://localhost*
 | [**getInstanceHistory**](DefaultApi.md#getInstanceHistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
 | [**getInstanceVisualization**](DefaultApi.md#getInstanceVisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
 | [**getInstanceVisualizationWidget**](DefaultApi.md#getInstanceVisualizationWidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
+| [**getSMTPConfig**](DefaultApi.md#getSMTPConfig) | **GET** /api/smtp-config | Get SMTP configuration |
+| [**getUserGroups**](DefaultApi.md#getUserGroups) | **GET** /api/users/{username}/groups | Get user groups |
 | [**listDefinitions**](DefaultApi.md#listDefinitions) | **GET** /api/definitions | List process definitions |
 | [**listIncidents**](DefaultApi.md#listIncidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**listInstances**](DefaultApi.md#listInstances) | **GET** /api/instances | List process instances |
@@ -688,6 +690,133 @@ No authorization required
 | **200** | Successful response |  -  |
 | **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
 | **404** | Process instance not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+<a id="getSMTPConfig"></a>
+# **getSMTPConfig**
+> SMTPConfig getSMTPConfig()
+
+Get SMTP configuration
+
+Retrieve the current SMTP mailer configuration (admin/developer only).
+
+### Example
+```java
+// Import classes:
+import com.nativebpm.client.ApiClient;
+import com.nativebpm.client.ApiException;
+import com.nativebpm.client.Configuration;
+import com.nativebpm.client.models.*;
+import com.nativebpm.client.api.DefaultApi;
+
+public class Example {
+  public static void main(String[] args) {
+    ApiClient defaultClient = Configuration.getDefaultApiClient();
+    defaultClient.setBasePath("http://localhost");
+
+    DefaultApi apiInstance = new DefaultApi(defaultClient);
+    try {
+      SMTPConfig result = apiInstance.getSMTPConfig();
+      System.out.println(result);
+    } catch (ApiException e) {
+      System.err.println("Exception when calling DefaultApi#getSMTPConfig");
+      System.err.println("Status code: " + e.getCode());
+      System.err.println("Reason: " + e.getResponseBody());
+      System.err.println("Response headers: " + e.getResponseHeaders());
+      e.printStackTrace();
+    }
+  }
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**SMTPConfig**](SMTPConfig.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **403** | Forbidden - insufficient operator permissions or role level |  -  |
+| **404** | SMTP config not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+<a id="getUserGroups"></a>
+# **getUserGroups**
+> List&lt;String&gt; getUserGroups(username)
+
+Get user groups
+
+Retrieve the list of groups (chats) the user is a member of.
+
+### Example
+```java
+// Import classes:
+import com.nativebpm.client.ApiClient;
+import com.nativebpm.client.ApiException;
+import com.nativebpm.client.Configuration;
+import com.nativebpm.client.models.*;
+import com.nativebpm.client.api.DefaultApi;
+
+public class Example {
+  public static void main(String[] args) {
+    ApiClient defaultClient = Configuration.getDefaultApiClient();
+    defaultClient.setBasePath("http://localhost");
+
+    DefaultApi apiInstance = new DefaultApi(defaultClient);
+    String username = "username_example"; // String | The username to retrieve groups for
+    try {
+      List<String> result = apiInstance.getUserGroups(username);
+      System.out.println(result);
+    } catch (ApiException e) {
+      System.err.println("Exception when calling DefaultApi#getUserGroups");
+      System.err.println("Status code: " + e.getCode());
+      System.err.println("Reason: " + e.getResponseBody());
+      System.err.println("Response headers: " + e.getResponseHeaders());
+      e.printStackTrace();
+    }
+  }
+}
+```
+
+### Parameters
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **username** | **String**| The username to retrieve groups for | |
+
+### Return type
+
+**List&lt;String&gt;**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **403** | Forbidden - insufficient operator permissions or role level |  -  |
 | **500** | Internal Server Error - database failure or execution crash |  -  |
 
 <a id="listDefinitions"></a>

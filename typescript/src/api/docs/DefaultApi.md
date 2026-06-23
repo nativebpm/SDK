@@ -14,6 +14,8 @@ All URIs are relative to *http://localhost*
 | [**getInstanceHistory**](DefaultApi.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
 | [**getInstanceVisualization**](DefaultApi.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
 | [**getInstanceVisualizationWidget**](DefaultApi.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
+| [**getSMTPConfig**](DefaultApi.md#getsmtpconfig) | **GET** /api/smtp-config | Get SMTP configuration |
+| [**getUserGroups**](DefaultApi.md#getusergroups) | **GET** /api/users/{username}/groups | Get user groups |
 | [**listDefinitions**](DefaultApi.md#listdefinitions) | **GET** /api/definitions | List process definitions |
 | [**listIncidents**](DefaultApi.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**listInstances**](DefaultApi.md#listinstances) | **GET** /api/instances | List process instances |
@@ -739,6 +741,139 @@ No authorization required
 | **200** | Successful response |  -  |
 | **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
 | **404** | Process instance not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## getSMTPConfig
+
+> SMTPConfig getSMTPConfig()
+
+Get SMTP configuration
+
+Retrieve the current SMTP mailer configuration (admin/developer only).
+
+### Example
+
+```ts
+import {
+  Configuration,
+  DefaultApi,
+} from '@nativebpm/client';
+import type { GetSMTPConfigRequest } from '@nativebpm/client';
+
+async function example() {
+  console.log("🚀 Testing @nativebpm/client SDK...");
+  const api = new DefaultApi();
+
+  try {
+    const data = await api.getSMTPConfig();
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**SMTPConfig**](SMTPConfig.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **403** | Forbidden - insufficient operator permissions or role level |  -  |
+| **404** | SMTP config not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## getUserGroups
+
+> Array&lt;string&gt; getUserGroups(username)
+
+Get user groups
+
+Retrieve the list of groups (chats) the user is a member of.
+
+### Example
+
+```ts
+import {
+  Configuration,
+  DefaultApi,
+} from '@nativebpm/client';
+import type { GetUserGroupsRequest } from '@nativebpm/client';
+
+async function example() {
+  console.log("🚀 Testing @nativebpm/client SDK...");
+  const api = new DefaultApi();
+
+  const body = {
+    // string | The username to retrieve groups for
+    username: username_example,
+  } satisfies GetUserGroupsRequest;
+
+  try {
+    const data = await api.getUserGroups(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **username** | `string` | The username to retrieve groups for | [Defaults to `undefined`] |
+
+### Return type
+
+**Array<string>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **403** | Forbidden - insufficient operator permissions or role level |  -  |
 | **500** | Internal Server Error - database failure or execution crash |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

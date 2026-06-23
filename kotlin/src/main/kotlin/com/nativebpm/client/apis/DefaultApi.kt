@@ -37,6 +37,7 @@ import com.nativebpm.client.models.ListDefinitions401Response
 import com.nativebpm.client.models.ProcessDefinition
 import com.nativebpm.client.models.ProcessInstance
 import com.nativebpm.client.models.ResolveIncident200Response
+import com.nativebpm.client.models.SMTPConfig
 import com.nativebpm.client.models.StartInstanceRequest
 import com.nativebpm.client.models.TaskRecord
 import com.nativebpm.client.models.VisualizationData
@@ -804,6 +805,149 @@ open class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Fa
         return RequestConfig(
             method = RequestMethod.GET,
             path = "/api/instances/{id}/visualization/widget".replace("{"+"id"+"}", encodeURIComponent(id.toString())),
+            query = localVariableQuery,
+            headers = localVariableHeaders,
+            requiresAuthentication = false,
+            body = localVariableBody
+        )
+    }
+
+    /**
+     * GET /api/smtp-config
+     * Get SMTP configuration
+     * Retrieve the current SMTP mailer configuration (admin/developer only).
+     * @return SMTPConfig
+     * @throws IllegalStateException If the request is not correctly configured
+     * @throws IOException Rethrows the OkHttp execute method exception
+     * @throws UnsupportedOperationException If the API returns an informational or redirection response
+     * @throws ClientException If the API returns a client error response
+     * @throws ServerException If the API returns a server error response
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IllegalStateException::class, IOException::class, UnsupportedOperationException::class, ClientException::class, ServerException::class)
+    fun getSMTPConfig() : SMTPConfig {
+        val localVarResponse = getSMTPConfigWithHttpInfo()
+
+        return when (localVarResponse.responseType) {
+            ResponseType.Success -> (localVarResponse as Success<*>).data as SMTPConfig
+            ResponseType.Informational -> throw UnsupportedOperationException("Client does not support Informational responses.")
+            ResponseType.Redirection -> throw UnsupportedOperationException("Client does not support Redirection responses.")
+            ResponseType.ClientError -> {
+                val localVarError = localVarResponse as ClientError<*>
+                throw ClientException("Client error : ${localVarError.statusCode} ${localVarError.message.orEmpty()}", localVarError.statusCode, localVarResponse)
+            }
+            ResponseType.ServerError -> {
+                val localVarError = localVarResponse as ServerError<*>
+                throw ServerException("Server error : ${localVarError.statusCode} ${localVarError.message.orEmpty()} ${localVarError.body}", localVarError.statusCode, localVarResponse)
+            }
+        }
+    }
+
+    /**
+     * GET /api/smtp-config
+     * Get SMTP configuration
+     * Retrieve the current SMTP mailer configuration (admin/developer only).
+     * @return ApiResponse<SMTPConfig?>
+     * @throws IllegalStateException If the request is not correctly configured
+     * @throws IOException Rethrows the OkHttp execute method exception
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IllegalStateException::class, IOException::class)
+    fun getSMTPConfigWithHttpInfo() : ApiResponse<SMTPConfig?> {
+        val localVariableConfig = getSMTPConfigRequestConfig()
+
+        return request<Unit, SMTPConfig>(
+            localVariableConfig
+        )
+    }
+
+    /**
+     * To obtain the request config of the operation getSMTPConfig
+     *
+     * @return RequestConfig
+     */
+    fun getSMTPConfigRequestConfig() : RequestConfig<Unit> {
+        val localVariableBody = null
+        val localVariableQuery: MultiValueMap = mutableMapOf()
+        val localVariableHeaders: MutableMap<String, String> = mutableMapOf()
+        localVariableHeaders["Accept"] = "application/json"
+
+        return RequestConfig(
+            method = RequestMethod.GET,
+            path = "/api/smtp-config",
+            query = localVariableQuery,
+            headers = localVariableHeaders,
+            requiresAuthentication = false,
+            body = localVariableBody
+        )
+    }
+
+    /**
+     * GET /api/users/{username}/groups
+     * Get user groups
+     * Retrieve the list of groups (chats) the user is a member of.
+     * @param username The username to retrieve groups for
+     * @return kotlin.collections.List<kotlin.String>
+     * @throws IllegalStateException If the request is not correctly configured
+     * @throws IOException Rethrows the OkHttp execute method exception
+     * @throws UnsupportedOperationException If the API returns an informational or redirection response
+     * @throws ClientException If the API returns a client error response
+     * @throws ServerException If the API returns a server error response
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IllegalStateException::class, IOException::class, UnsupportedOperationException::class, ClientException::class, ServerException::class)
+    fun getUserGroups(username: kotlin.String) : kotlin.collections.List<kotlin.String> {
+        val localVarResponse = getUserGroupsWithHttpInfo(username = username)
+
+        return when (localVarResponse.responseType) {
+            ResponseType.Success -> (localVarResponse as Success<*>).data as kotlin.collections.List<kotlin.String>
+            ResponseType.Informational -> throw UnsupportedOperationException("Client does not support Informational responses.")
+            ResponseType.Redirection -> throw UnsupportedOperationException("Client does not support Redirection responses.")
+            ResponseType.ClientError -> {
+                val localVarError = localVarResponse as ClientError<*>
+                throw ClientException("Client error : ${localVarError.statusCode} ${localVarError.message.orEmpty()}", localVarError.statusCode, localVarResponse)
+            }
+            ResponseType.ServerError -> {
+                val localVarError = localVarResponse as ServerError<*>
+                throw ServerException("Server error : ${localVarError.statusCode} ${localVarError.message.orEmpty()} ${localVarError.body}", localVarError.statusCode, localVarResponse)
+            }
+        }
+    }
+
+    /**
+     * GET /api/users/{username}/groups
+     * Get user groups
+     * Retrieve the list of groups (chats) the user is a member of.
+     * @param username The username to retrieve groups for
+     * @return ApiResponse<kotlin.collections.List<kotlin.String>?>
+     * @throws IllegalStateException If the request is not correctly configured
+     * @throws IOException Rethrows the OkHttp execute method exception
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IllegalStateException::class, IOException::class)
+    fun getUserGroupsWithHttpInfo(username: kotlin.String) : ApiResponse<kotlin.collections.List<kotlin.String>?> {
+        val localVariableConfig = getUserGroupsRequestConfig(username = username)
+
+        return request<Unit, kotlin.collections.List<kotlin.String>>(
+            localVariableConfig
+        )
+    }
+
+    /**
+     * To obtain the request config of the operation getUserGroups
+     *
+     * @param username The username to retrieve groups for
+     * @return RequestConfig
+     */
+    fun getUserGroupsRequestConfig(username: kotlin.String) : RequestConfig<Unit> {
+        val localVariableBody = null
+        val localVariableQuery: MultiValueMap = mutableMapOf()
+        val localVariableHeaders: MutableMap<String, String> = mutableMapOf()
+        localVariableHeaders["Accept"] = "application/json"
+
+        return RequestConfig(
+            method = RequestMethod.GET,
+            path = "/api/users/{username}/groups".replace("{"+"username"+"}", encodeURIComponent(username.toString())),
             query = localVariableQuery,
             headers = localVariableHeaders,
             requiresAuthentication = false,

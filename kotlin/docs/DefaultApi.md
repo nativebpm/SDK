@@ -14,6 +14,8 @@ All URIs are relative to *http://localhost*
 | [**getInstanceHistory**](DefaultApi.md#getInstanceHistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
 | [**getInstanceVisualization**](DefaultApi.md#getInstanceVisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
 | [**getInstanceVisualizationWidget**](DefaultApi.md#getInstanceVisualizationWidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
+| [**getSMTPConfig**](DefaultApi.md#getSMTPConfig) | **GET** /api/smtp-config | Get SMTP configuration |
+| [**getUserGroups**](DefaultApi.md#getUserGroups) | **GET** /api/users/{username}/groups | Get user groups |
 | [**listDefinitions**](DefaultApi.md#listDefinitions) | **GET** /api/definitions | List process definitions |
 | [**listIncidents**](DefaultApi.md#listIncidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**listInstances**](DefaultApi.md#listInstances) | **GET** /api/instances | List process instances |
@@ -483,6 +485,95 @@ try {
 ### Return type
 
 **kotlin.String**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+<a id="getSMTPConfig"></a>
+# **getSMTPConfig**
+> SMTPConfig getSMTPConfig()
+
+Get SMTP configuration
+
+Retrieve the current SMTP mailer configuration (admin/developer only).
+
+### Example
+```kotlin
+// Import classes:
+//import com.nativebpm.client.infrastructure.*
+//import com.nativebpm.client.models.*
+
+val apiInstance = DefaultApi()
+try {
+    val result : SMTPConfig = apiInstance.getSMTPConfig()
+    println(result)
+} catch (e: ClientException) {
+    println("4xx response calling DefaultApi#getSMTPConfig")
+    e.printStackTrace()
+} catch (e: ServerException) {
+    println("5xx response calling DefaultApi#getSMTPConfig")
+    e.printStackTrace()
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**SMTPConfig**](SMTPConfig.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+<a id="getUserGroups"></a>
+# **getUserGroups**
+> kotlin.collections.List&lt;kotlin.String&gt; getUserGroups(username)
+
+Get user groups
+
+Retrieve the list of groups (chats) the user is a member of.
+
+### Example
+```kotlin
+// Import classes:
+//import com.nativebpm.client.infrastructure.*
+//import com.nativebpm.client.models.*
+
+val apiInstance = DefaultApi()
+val username : kotlin.String = username_example // kotlin.String | The username to retrieve groups for
+try {
+    val result : kotlin.collections.List<kotlin.String> = apiInstance.getUserGroups(username)
+    println(result)
+} catch (e: ClientException) {
+    println("4xx response calling DefaultApi#getUserGroups")
+    e.printStackTrace()
+} catch (e: ServerException) {
+    println("5xx response calling DefaultApi#getUserGroups")
+    e.printStackTrace()
+}
+```
+
+### Parameters
+| Name | Type | Description  | Notes |
+| ------------- | ------------- | ------------- | ------------- |
+| **username** | **kotlin.String**| The username to retrieve groups for | |
+
+### Return type
+
+**kotlin.collections.List&lt;kotlin.String&gt;**
 
 ### Authorization
 

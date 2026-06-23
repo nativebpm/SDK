@@ -11,7 +11,7 @@ outputDir: out
 
 # https://openapi-generator.tech/docs/generators/csharp
 additionalProperties:
-  packageGuid: '{08679063-D7A9-4300-A1CC-316749BBDDA7}'
+  packageGuid: '{42B03691-766C-4175-8005-80DDF43EE9D9}'
 
 # https://openapi-generator.tech/docs/integrations/#github-integration
 # gitHost:
@@ -100,7 +100,7 @@ namespace YourProject
 
 ## Api Information
 - appName: NativeBPM Engine REST API
-- appVersion: 1.0.3
+- appVersion: 1.0.1
 - appDescription: REST API for managing, executing, and monitoring workflows, human tasks, incidents, and outgoing webhooks inside the NativeBPM Cloud-Native engine.  ### Authentication Requests must include a session cookie or a Bearer API token: &#x60;Authorization: Bearer &lt;API_TOKEN&gt;&#x60; 
 
 ## Build

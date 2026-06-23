@@ -14,6 +14,8 @@ Method | HTTP request | Description
 [**get_instance_history**](DefaultApi.md#get_instance_history) | **GET** /api/instances/{id}/history | Get process instance execution history
 [**get_instance_visualization**](DefaultApi.md#get_instance_visualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
 [**get_instance_visualization_widget**](DefaultApi.md#get_instance_visualization_widget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
+[**get_smtp_config**](DefaultApi.md#get_smtp_config) | **GET** /api/smtp-config | Get SMTP configuration
+[**get_user_groups**](DefaultApi.md#get_user_groups) | **GET** /api/users/{username}/groups | Get user groups
 [**list_definitions**](DefaultApi.md#list_definitions) | **GET** /api/definitions | List process definitions
 [**list_incidents**](DefaultApi.md#list_incidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 [**list_instances**](DefaultApi.md#list_instances) | **GET** /api/instances | List process instances
@@ -749,6 +751,144 @@ No authorization required
 **200** | Successful response |  -  |
 **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
 **404** | Process instance not found |  -  |
+**500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_smtp_config**
+> SMTPConfig get_smtp_config()
+
+Get SMTP configuration
+
+Retrieve the current SMTP mailer configuration (admin/developer only).
+
+### Example
+
+
+```python
+import nativebpm_client
+from nativebpm_client.models.smtp_config import SMTPConfig
+from nativebpm_client.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = nativebpm_client.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with nativebpm_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = nativebpm_client.DefaultApi(api_client)
+
+    try:
+        # Get SMTP configuration
+        api_response = api_instance.get_smtp_config()
+        print("The response of DefaultApi->get_smtp_config:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->get_smtp_config: %s\n" % e)
+```
+
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**SMTPConfig**](SMTPConfig.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Successful response |  -  |
+**401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+**403** | Forbidden - insufficient operator permissions or role level |  -  |
+**404** | SMTP config not found |  -  |
+**500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_user_groups**
+> List[str] get_user_groups(username)
+
+Get user groups
+
+Retrieve the list of groups (chats) the user is a member of.
+
+### Example
+
+
+```python
+import nativebpm_client
+from nativebpm_client.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = nativebpm_client.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with nativebpm_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = nativebpm_client.DefaultApi(api_client)
+    username = 'username_example' # str | The username to retrieve groups for
+
+    try:
+        # Get user groups
+        api_response = api_instance.get_user_groups(username)
+        print("The response of DefaultApi->get_user_groups:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->get_user_groups: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **username** | **str**| The username to retrieve groups for | 
+
+### Return type
+
+**List[str]**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Successful response |  -  |
+**401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+**403** | Forbidden - insufficient operator permissions or role level |  -  |
 **500** | Internal Server Error - database failure or execution crash |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

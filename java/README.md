@@ -1,8 +1,8 @@
 # nativebpm-java-client
 
 NativeBPM Engine REST API
-- API version: 1.0.0
-  - Build date: 2026-06-23T02:37:02.804899948Z[Etc/UTC]
+- API version: 1.0.1
+  - Build date: 2026-06-23T06:05:50.335281483Z[Etc/UTC]
   - Generator version: 7.24.0-SNAPSHOT
 
 REST API for managing, executing, and monitoring workflows, human tasks, incidents, and outgoing webhooks inside the NativeBPM Cloud-Native engine.
@@ -131,6 +131,8 @@ Class | Method | HTTP request | Description
 *DefaultApi* | [**getInstanceHistory**](docs/DefaultApi.md#getInstanceHistory) | **GET** /api/instances/{id}/history | Get process instance execution history
 *DefaultApi* | [**getInstanceVisualization**](docs/DefaultApi.md#getInstanceVisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
 *DefaultApi* | [**getInstanceVisualizationWidget**](docs/DefaultApi.md#getInstanceVisualizationWidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
+*DefaultApi* | [**getSMTPConfig**](docs/DefaultApi.md#getSMTPConfig) | **GET** /api/smtp-config | Get SMTP configuration
+*DefaultApi* | [**getUserGroups**](docs/DefaultApi.md#getUserGroups) | **GET** /api/users/{username}/groups | Get user groups
 *DefaultApi* | [**listDefinitions**](docs/DefaultApi.md#listDefinitions) | **GET** /api/definitions | List process definitions
 *DefaultApi* | [**listIncidents**](docs/DefaultApi.md#listIncidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 *DefaultApi* | [**listInstances**](docs/DefaultApi.md#listInstances) | **GET** /api/instances | List process instances
@@ -156,6 +158,7 @@ Class | Method | HTTP request | Description
  - [ProcessDefinition](docs/ProcessDefinition.md)
  - [ProcessInstance](docs/ProcessInstance.md)
  - [ResolveIncident200Response](docs/ResolveIncident200Response.md)
+ - [SMTPConfig](docs/SMTPConfig.md)
  - [StartInstanceRequest](docs/StartInstanceRequest.md)
  - [TaskRecord](docs/TaskRecord.md)
  - [VisualizationData](docs/VisualizationData.md)

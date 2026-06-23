@@ -408,6 +408,79 @@ open class DefaultAPI {
     }
 
     /**
+     Get SMTP configuration
+     
+     - returns: SMTPConfig
+     */
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    open class func getSMTPConfig() async throws -> SMTPConfig {
+        return try await getSMTPConfigWithRequestBuilder().execute().body
+    }
+
+    /**
+     Get SMTP configuration
+     - GET /api/smtp-config
+     - Retrieve the current SMTP mailer configuration (admin/developer only).
+     - returns: RequestBuilder<SMTPConfig> 
+     */
+    open class func getSMTPConfigWithRequestBuilder() -> RequestBuilder<SMTPConfig> {
+        let localVariablePath = "/api/smtp-config"
+        let localVariableURLString = NativeBPMClientAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<SMTPConfig>.Type = NativeBPMClientAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
+    }
+
+    /**
+     Get user groups
+     
+     - parameter username: (path) The username to retrieve groups for 
+     - returns: [String]
+     */
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    open class func getUserGroups(username: String) async throws -> [String] {
+        return try await getUserGroupsWithRequestBuilder(username: username).execute().body
+    }
+
+    /**
+     Get user groups
+     - GET /api/users/{username}/groups
+     - Retrieve the list of groups (chats) the user is a member of.
+     - parameter username: (path) The username to retrieve groups for 
+     - returns: RequestBuilder<[String]> 
+     */
+    open class func getUserGroupsWithRequestBuilder(username: String) -> RequestBuilder<[String]> {
+        var localVariablePath = "/api/users/{username}/groups"
+        let usernamePreEscape = "\(APIHelper.mapValueToPathItem(username))"
+        let usernamePostEscape = usernamePreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{username}", with: usernamePostEscape, options: .literal, range: nil)
+        let localVariableURLString = NativeBPMClientAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<[String]>.Type = NativeBPMClientAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
+    }
+
+    /**
      List process definitions
      
      - returns: [ProcessDefinition]

@@ -13,6 +13,7 @@ doc/ListDefinitions401Response.md
 doc/ProcessDefinition.md
 doc/ProcessInstance.md
 doc/ResolveIncident200Response.md
+doc/SMTPConfig.md
 doc/StartInstanceRequest.md
 doc/TaskRecord.md
 doc/VisualizationData.md
@@ -39,10 +40,11 @@ lib/model/list_definitions401_response.dart
 lib/model/process_definition.dart
 lib/model/process_instance.dart
 lib/model/resolve_incident200_response.dart
+lib/model/smtp_config.dart
 lib/model/start_instance_request.dart
 lib/model/task_record.dart
 lib/model/visualization_data.dart
 lib/model/webhook_delivery_record.dart
 lib/model/webhook_record.dart
 pubspec.yaml
-test/visualization_data_test.dart
+test/smtp_config_test.dart

@@ -14,6 +14,8 @@ Method | HTTP request | Description
 [**get_instance_history**](DefaultApi.md#get_instance_history) | **GET** /api/instances/{id}/history | Get process instance execution history
 [**get_instance_visualization**](DefaultApi.md#get_instance_visualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
 [**get_instance_visualization_widget**](DefaultApi.md#get_instance_visualization_widget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
+[**get_smtp_config**](DefaultApi.md#get_smtp_config) | **GET** /api/smtp-config | Get SMTP configuration
+[**get_user_groups**](DefaultApi.md#get_user_groups) | **GET** /api/users/{username}/groups | Get user groups
 [**list_definitions**](DefaultApi.md#list_definitions) | **GET** /api/definitions | List process definitions
 [**list_incidents**](DefaultApi.md#list_incidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 [**list_instances**](DefaultApi.md#list_instances) | **GET** /api/instances | List process instances
@@ -327,6 +329,63 @@ No authorization required
 
 - **Content-Type**: Not defined
 - **Accept**: text/html, application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## get_smtp_config
+
+> models::SmtpConfig get_smtp_config()
+Get SMTP configuration
+
+Retrieve the current SMTP mailer configuration (admin/developer only).
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**models::SmtpConfig**](SMTPConfig.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## get_user_groups
+
+> Vec<String> get_user_groups(username)
+Get user groups
+
+Retrieve the list of groups (chats) the user is a member of.
+
+### Parameters
+
+
+Name | Type | Description  | Required | Notes
+------------- | ------------- | ------------- | ------------- | -------------
+**username** | **String** | The username to retrieve groups for | [required] |
+
+### Return type
+
+**Vec<String>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
