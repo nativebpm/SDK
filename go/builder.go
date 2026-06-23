@@ -434,7 +434,13 @@ func (b *Branch) connectNode(id string) {
 	if b.hasEnded {
 		return
 	}
-	isBackEdge := b.workflow.findNode(id) != nil
+	isBackEdge := false
+	for i := 0; i < len(b.workflow.Nodes)-1; i++ {
+		if b.workflow.Nodes[i]["id"] == id {
+			isBackEdge = true
+			break
+		}
+	}
 
 	if len(b.workflow.pendingMerges) > 0 {
 		for _, sourceID := range b.workflow.pendingMerges {
