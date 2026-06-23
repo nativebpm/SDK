@@ -1,5 +1,4 @@
 README.md
-build.gradle
 docs/ClaimTaskRequest.md
 docs/CompleteInstanceTaskRequest.md
 docs/CompleteTaskRequest.md
@@ -56,4 +55,3 @@ src/main/kotlin/com/nativebpm/client/models/TaskRecord.kt
 src/main/kotlin/com/nativebpm/client/models/VisualizationData.kt
 src/main/kotlin/com/nativebpm/client/models/WebhookDeliveryRecord.kt
 src/main/kotlin/com/nativebpm/client/models/WebhookRecord.kt
-src/test/kotlin/com/nativebpm/client/models/SMTPConfigTest.kt

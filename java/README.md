@@ -2,7 +2,7 @@
 
 NativeBPM Engine REST API
 - API version: 1.0.1
-  - Build date: 2026-06-23T06:05:50.335281483Z[Etc/UTC]
+  - Build date: 2026-06-23T06:17:13.723602900Z[Etc/UTC]
   - Generator version: 7.24.0-SNAPSHOT
 
 REST API for managing, executing, and monitoring workflows, human tasks, incidents, and outgoing webhooks inside the NativeBPM Cloud-Native engine.

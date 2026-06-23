@@ -66,4 +66,3 @@ src/main/java/com/nativebpm/client/model/TaskRecord.java
 src/main/java/com/nativebpm/client/model/VisualizationData.java
 src/main/java/com/nativebpm/client/model/WebhookDeliveryRecord.java
 src/main/java/com/nativebpm/client/model/WebhookRecord.java
-src/test/java/com/nativebpm/client/model/SMTPConfigTest.java

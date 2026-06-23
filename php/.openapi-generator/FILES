@@ -45,4 +45,3 @@ lib/Model/WebhookDeliveryRecord.php
 lib/Model/WebhookRecord.php
 lib/ObjectSerializer.php
 phpunit.xml.dist
-test/Model/SMTPConfigTest.php
