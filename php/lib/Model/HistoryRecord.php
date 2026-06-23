@@ -63,7 +63,7 @@ class HistoryRecord implements ModelInterface, ArrayAccess, \JsonSerializable
         'node_name' => 'string',
         'node_type' => 'string',
         'action' => 'string',
-        'variables' => 'string',
+        'variables' => 'object',
         'timestamp' => '\DateTime'
     ];
 
@@ -81,7 +81,7 @@ class HistoryRecord implements ModelInterface, ArrayAccess, \JsonSerializable
         'node_name' => null,
         'node_type' => null,
         'action' => null,
-        'variables' => 'byte',
+        'variables' => null,
         'timestamp' => 'date-time'
     ];
 
@@ -524,7 +524,7 @@ class HistoryRecord implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets variables
      *
-     * @return string|null
+     * @return object|null
      */
     public function getVariables()
     {
@@ -534,7 +534,7 @@ class HistoryRecord implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets variables
      *
-     * @param string|null $variables JSON encoded payload variables associated with this transition
+     * @param object|null $variables JSON encoded payload variables associated with this transition
      *
      * @return self
      */

@@ -891,7 +891,8 @@ public class DefaultApi {
         }
 
         final String[] localVarContentTypes = {
-            "multipart/form-data"
+            "multipart/form-data",
+            "application/json"
         };
         final String localVarContentType = localVarApiClient.selectHeaderContentType(localVarContentTypes);
         if (localVarContentType != null) {

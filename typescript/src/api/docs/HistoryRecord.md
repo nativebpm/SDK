@@ -12,7 +12,7 @@ Name | Type
 `nodeName` | string
 `nodeType` | string
 `action` | string
-`variables` | string
+`variables` | object
 `timestamp` | Date
 
 ## Example

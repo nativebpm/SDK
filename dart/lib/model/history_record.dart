@@ -42,7 +42,7 @@ class HistoryRecord {
   /// source code must fall back to having a nullable type.
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
-  String? variables;
+  Object? variables;
 
   DateTime timestamp;
 
@@ -124,7 +124,7 @@ class HistoryRecord {
         nodeName: mapValueOfType<String>(json, r'node_name')!,
         nodeType: mapValueOfType<String>(json, r'node_type')!,
         action: mapValueOfType<String>(json, r'action')!,
-        variables: mapValueOfType<String>(json, r'variables'),
+        variables: mapValueOfType<Object>(json, r'variables'),
         timestamp: mapDateTime(json, r'timestamp', r'')!,
       );
     }

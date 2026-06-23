@@ -19,10 +19,10 @@ public struct HistoryRecord: Codable, JSONEncodable, Hashable {
     public var nodeType: String
     public var action: String
     /** JSON encoded payload variables associated with this transition */
-    public var variables: Data?
+    public var variables: AnyCodable?
     public var timestamp: Date
 
-    public init(id: UUID, instanceId: UUID, nodeId: String, nodeName: String, nodeType: String, action: String, variables: Data? = nil, timestamp: Date) {
+    public init(id: UUID, instanceId: UUID, nodeId: String, nodeName: String, nodeType: String, action: String, variables: AnyCodable? = nil, timestamp: Date) {
         self.id = id
         self.instanceId = instanceId
         self.nodeId = nodeId

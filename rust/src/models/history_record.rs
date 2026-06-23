@@ -11,9 +11,6 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-use serde_with::serde_as;
-
-#[serde_as]
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HistoryRecord {
     #[serde(rename = "id")]
@@ -29,9 +26,8 @@ pub struct HistoryRecord {
     #[serde(rename = "action")]
     pub action: String,
     /// JSON encoded payload variables associated with this transition
-    #[serde_as(as = "Option<serde_with::base64::Base64>")]
     #[serde(rename = "variables", skip_serializing_if = "Option::is_none")]
-    pub variables: Option<Vec<u8>>,
+    pub variables: Option<serde_json::Value>,
     #[serde(rename = "timestamp")]
     pub timestamp: chrono::DateTime<chrono::FixedOffset>,
 }

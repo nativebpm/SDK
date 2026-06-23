@@ -11,7 +11,7 @@
 | **nodeType** | **kotlin.String** |  |  |
 | **action** | **kotlin.String** |  |  |
 | **timestamp** | [**java.time.OffsetDateTime**](java.time.OffsetDateTime.md) |  |  |
-| **variables** | **kotlin.ByteArray** | JSON encoded payload variables associated with this transition |  [optional] |
+| **variables** | [**kotlin.Any**](.md) | JSON encoded payload variables associated with this transition |  [optional] |
 
 
 

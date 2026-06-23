@@ -42,7 +42,7 @@ namespace NativeBPM.Client.Model
         /// <param name="timestamp">timestamp</param>
         /// <param name="variables">JSON encoded payload variables associated with this transition</param>
         [JsonConstructor]
-        public HistoryRecord(Guid id, Guid instanceId, string nodeId, string nodeName, string nodeType, string action, DateTime timestamp, Option<byte[]?> variables = default)
+        public HistoryRecord(Guid id, Guid instanceId, string nodeId, string nodeName, string nodeType, string action, DateTime timestamp, Option<Object?> variables = default)
         {
             Id = id;
             InstanceId = instanceId;
@@ -105,14 +105,14 @@ namespace NativeBPM.Client.Model
         /// </summary>
         [JsonIgnore]
         [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-        public Option<byte[]?> VariablesOption { get; private set; }
+        public Option<Object?> VariablesOption { get; private set; }
 
         /// <summary>
         /// JSON encoded payload variables associated with this transition
         /// </summary>
         /// <value>JSON encoded payload variables associated with this transition</value>
         [JsonPropertyName("variables")]
-        public byte[]? Variables { get { return this.VariablesOption.Value; } set { this.VariablesOption = new(value); } }
+        public Object? Variables { get { return this.VariablesOption.Value; } set { this.VariablesOption = new(value); } }
 
         /// <summary>
         /// Returns the string presentation of the object
@@ -179,7 +179,7 @@ namespace NativeBPM.Client.Model
             Option<string?> nodeType = default;
             Option<string?> action = default;
             Option<DateTime?> timestamp = default;
-            Option<byte[]?> variables = default;
+            Option<Object?> variables = default;
 
             while (utf8JsonReader.Read())
             {
@@ -218,7 +218,7 @@ namespace NativeBPM.Client.Model
                             timestamp = new Option<DateTime?>(JsonSerializer.Deserialize<DateTime>(ref utf8JsonReader, jsonSerializerOptions));
                             break;
                         case "variables":
-                            variables = new Option<byte[]?>(JsonSerializer.Deserialize<byte[]>(ref utf8JsonReader, jsonSerializerOptions)!);
+                            variables = new Option<Object?>(JsonSerializer.Deserialize<Object>(ref utf8JsonReader, jsonSerializerOptions)!);
                             break;
                         default:
                             break;

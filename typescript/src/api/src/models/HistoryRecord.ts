@@ -57,10 +57,10 @@ export interface HistoryRecord {
     action: string;
     /**
      * JSON encoded payload variables associated with this transition
-     * @type {string}
+     * @type {object}
      * @memberof HistoryRecord
      */
-    variables?: string;
+    variables?: object;
     /**
      * 
      * @type {Date}

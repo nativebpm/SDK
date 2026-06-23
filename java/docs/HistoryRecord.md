@@ -13,7 +13,7 @@
 |**nodeName** | **String** |  |  |
 |**nodeType** | **String** |  |  |
 |**action** | **String** |  |  |
-|**variables** | **byte[]** | JSON encoded payload variables associated with this transition |  [optional] |
+|**variables** | **Object** | JSON encoded payload variables associated with this transition |  [optional] |
 |**timestamp** | **OffsetDateTime** |  |  |
 
 

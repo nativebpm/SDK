@@ -338,7 +338,7 @@ class DefaultApi {
     final headerParams = <String, String>{};
     final formParams = <String, String>{};
 
-    const contentTypes = <String>['multipart/form-data'];
+    const contentTypes = <String>['multipart/form-data', 'application/json'];
 
     bool hasFields = false;
     final mp = MultipartRequest('POST', Uri.parse(path));

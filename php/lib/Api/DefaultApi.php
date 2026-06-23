@@ -91,6 +91,7 @@ class DefaultApi
         ],
         'deployDefinition' => [
             'multipart/form-data',
+            'application/json',
         ],
         'getInstance' => [
             'application/json',

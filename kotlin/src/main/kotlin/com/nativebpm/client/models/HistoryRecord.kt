@@ -66,7 +66,7 @@ data class HistoryRecord (
 
     /* JSON encoded payload variables associated with this transition */
     @Json(name = "variables")
-    val variables: kotlin.ByteArray? = null
+    val variables: kotlin.Any? = null
 
 ) {
 

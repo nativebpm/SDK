@@ -453,6 +453,7 @@ export class DefaultApi extends runtime.BaseAPI {
 
         const consumes: runtime.Consume[] = [
             { contentType: 'multipart/form-data' },
+            { contentType: 'application/json' },
         ];
         // @ts-ignore: canConsumeForm may be unused
         const canConsumeForm = runtime.canConsumeForm(consumes);

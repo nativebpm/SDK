@@ -45,6 +45,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/deployDefinition_request"
+          application/json:
+            schema:
+              type: object
         required: true
       responses:
         "200":
@@ -932,7 +935,7 @@ components:
           node_name: node_name
           node_type: node_type
           action: start
-          variables: variables
+          variables: "{}"
           timestamp: 2000-01-23T04:56:07.000+00:00
         - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
           instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
@@ -940,7 +943,7 @@ components:
           node_name: node_name
           node_type: node_type
           action: start
-          variables: variables
+          variables: "{}"
           timestamp: 2000-01-23T04:56:07.000+00:00
         completed: true
       properties:
@@ -1062,7 +1065,7 @@ components:
         node_name: node_name
         node_type: node_type
         action: start
-        variables: variables
+        variables: "{}"
         timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
         id:
@@ -1082,8 +1085,7 @@ components:
           type: string
         variables:
           description: JSON encoded payload variables associated with this transition
-          format: byte
-          type: string
+          type: object
         timestamp:
           format: date-time
           type: string

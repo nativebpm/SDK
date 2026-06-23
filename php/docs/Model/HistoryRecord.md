@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **node_name** | **string** |  |
 **node_type** | **string** |  |
 **action** | **string** |  |
-**variables** | **string** | JSON encoded payload variables associated with this transition | [optional]
+**variables** | **object** | JSON encoded payload variables associated with this transition | [optional]
 **timestamp** | **\DateTime** |  |
 
 [[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

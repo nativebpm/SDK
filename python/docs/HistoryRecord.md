@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **node_name** | **str** |  | 
 **node_type** | **str** |  | 
 **action** | **str** |  | 
-**variables** | **bytes** | JSON encoded payload variables associated with this transition | [optional] 
+**variables** | **object** | JSON encoded payload variables associated with this transition | [optional] 
 **timestamp** | **datetime** |  | 
 
 ## Example

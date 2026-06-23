@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 **nodeName** | **String** |  | 
 **nodeType** | **String** |  | 
 **action** | **String** |  | 
-**variables** | **String** | JSON encoded payload variables associated with this transition | [optional] 
+**variables** | **Object** | JSON encoded payload variables associated with this transition | [optional] 
 **timestamp** | [**DateTime**](DateTime.md) |  | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

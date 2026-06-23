@@ -3693,7 +3693,8 @@ namespace NativeBPM.Client.Api
                     httpRequestMessageLocalVar.RequestUri = uriBuilderLocalVar.Uri;
 
                     string[] contentTypes = new string[] {
-                        "multipart/form-data"
+                        "multipart/form-data",
+                        "application/json"
                     };
 
                     string[] acceptLocalVars = new string[] {

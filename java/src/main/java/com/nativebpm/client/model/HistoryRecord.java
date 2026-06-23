@@ -85,7 +85,7 @@ public class HistoryRecord {
   public static final String SERIALIZED_NAME_VARIABLES = "variables";
   @SerializedName(SERIALIZED_NAME_VARIABLES)
   @javax.annotation.Nullable
-  private byte[] variables;
+  private Object variables;
 
   public static final String SERIALIZED_NAME_TIMESTAMP = "timestamp";
   @SerializedName(SERIALIZED_NAME_TIMESTAMP)
@@ -209,7 +209,7 @@ public class HistoryRecord {
   }
 
 
-  public HistoryRecord variables(@javax.annotation.Nullable byte[] variables) {
+  public HistoryRecord variables(@javax.annotation.Nullable Object variables) {
     this.variables = variables;
     return this;
   }
@@ -219,11 +219,11 @@ public class HistoryRecord {
    * @return variables
    */
   @javax.annotation.Nullable
-  public byte[] getVariables() {
+  public Object getVariables() {
     return variables;
   }
 
-  public void setVariables(@javax.annotation.Nullable byte[] variables) {
+  public void setVariables(@javax.annotation.Nullable Object variables) {
     this.variables = variables;
   }
 
@@ -263,13 +263,13 @@ public class HistoryRecord {
         Objects.equals(this.nodeName, historyRecord.nodeName) &&
         Objects.equals(this.nodeType, historyRecord.nodeType) &&
         Objects.equals(this.action, historyRecord.action) &&
-        Arrays.equals(this.variables, historyRecord.variables) &&
+        Objects.equals(this.variables, historyRecord.variables) &&
         Objects.equals(this.timestamp, historyRecord.timestamp);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, instanceId, nodeId, nodeName, nodeType, action, Arrays.hashCode(variables), timestamp);
+    return Objects.hash(id, instanceId, nodeId, nodeName, nodeType, action, variables, timestamp);
   }
 
   @Override

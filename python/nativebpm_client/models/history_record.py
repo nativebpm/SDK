@@ -18,8 +18,8 @@ import re  # noqa: F401
 import json
 
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, StrictBytes, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
 from uuid import UUID
 from typing import Optional, Set
 from typing_extensions import Self
@@ -35,7 +35,7 @@ class HistoryRecord(BaseModel):
     node_name: StrictStr
     node_type: StrictStr
     action: StrictStr = Field(json_schema_extra={"examples": ["start"]})
-    variables: Optional[Union[StrictBytes, StrictStr]] = Field(default=None, description="JSON encoded payload variables associated with this transition")
+    variables: Optional[Dict[str, Any]] = Field(default=None, description="JSON encoded payload variables associated with this transition")
     timestamp: datetime
     __properties: ClassVar[List[str]] = ["id", "instance_id", "node_id", "node_name", "node_type", "action", "variables", "timestamp"]
 

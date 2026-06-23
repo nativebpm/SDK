@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **node_name** | **String** |  | 
 **node_type** | **String** |  | 
 **action** | **String** |  | 
-**variables** | Option<**String**> | JSON encoded payload variables associated with this transition | [optional]
+**variables** | Option<**serde_json::Value**> | JSON encoded payload variables associated with this transition | [optional]
 **timestamp** | **chrono::DateTime<chrono::FixedOffset>** |  | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
