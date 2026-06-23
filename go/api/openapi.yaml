@@ -7,7 +7,7 @@ info:
     Requests must include a session cookie or a Bearer API token:
     `Authorization: Bearer <API_TOKEN>`
   title: NativeBPM Engine REST API
-  version: 1.0.3
+  version: 1.0.1
 servers:
 - url: /
 paths:
