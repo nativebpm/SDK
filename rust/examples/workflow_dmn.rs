@@ -1,4 +1,4 @@
-use nativebpm_client::builder::Workflow;
+use nativebpm_client::{Workflow, deploy_workflow};
 use nativebpm_client::apis::{configuration, default_api};
 
 #[tokio::main]
@@ -48,7 +48,7 @@ async fn main() {
 
     println!("\nDeploying to NativeBPM engine (JSON AST compiled server-side)...");
     
-    match default_api::deploy_workflow(&config, &workflow).await {
+    match deploy_workflow(&config, &workflow).await {
         Ok(definition) => {
             println!("✓ Deployed process definition (hash: {:?})", definition.hash);
 
