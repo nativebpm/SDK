@@ -8,6 +8,7 @@ export * from './ListDefinitions401Response';
 export * from './ProcessDefinition';
 export * from './ProcessInstance';
 export * from './ResolveIncident200Response';
+export * from './SMTPConfig';
 export * from './StartInstanceRequest';
 export * from './TaskRecord';
 export * from './VisualizationData';

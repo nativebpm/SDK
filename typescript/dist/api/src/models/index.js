@@ -26,6 +26,7 @@ __exportStar(require("./ListDefinitions401Response"), exports);
 __exportStar(require("./ProcessDefinition"), exports);
 __exportStar(require("./ProcessInstance"), exports);
 __exportStar(require("./ResolveIncident200Response"), exports);
+__exportStar(require("./SMTPConfig"), exports);
 __exportStar(require("./StartInstanceRequest"), exports);
 __exportStar(require("./TaskRecord"), exports);
 __exportStar(require("./VisualizationData"), exports);
