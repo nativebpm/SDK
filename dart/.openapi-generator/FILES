@@ -46,4 +46,3 @@ lib/model/task_record.dart
 lib/model/visualization_data.dart
 lib/model/webhook_delivery_record.dart
 lib/model/webhook_record.dart
-pubspec.yaml
