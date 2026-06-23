@@ -12,6 +12,8 @@ All URIs are relative to *http://localhost*
 | [**deployDefinition**](DefaultApi.md#deploydefinition) | **POST** /api/deploy | Deploy process definition |
 | [**getInstance**](DefaultApi.md#getinstance) | **GET** /api/instances/{id} | Get process instance |
 | [**getInstanceHistory**](DefaultApi.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
+| [**getInstanceVisualization**](DefaultApi.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
+| [**getInstanceVisualizationWidget**](DefaultApi.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
 | [**listDefinitions**](DefaultApi.md#listdefinitions) | **GET** /api/definitions | List process definitions |
 | [**listIncidents**](DefaultApi.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**listInstances**](DefaultApi.md#listinstances) | **GET** /api/instances | List process instances |
@@ -597,6 +599,146 @@ No authorization required
 |-------------|-------------|------------------|
 | **200** | Successful response |  -  |
 | **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## getInstanceVisualization
+
+> VisualizationData getInstanceVisualization(id)
+
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+### Example
+
+```ts
+import {
+  Configuration,
+  DefaultApi,
+} from '@nativebpm/client';
+import type { GetInstanceVisualizationRequest } from '@nativebpm/client';
+
+async function example() {
+  console.log("🚀 Testing @nativebpm/client SDK...");
+  const api = new DefaultApi();
+
+  const body = {
+    // string
+    id: id_example,
+  } satisfies GetInstanceVisualizationRequest;
+
+  try {
+    const data = await api.getInstanceVisualization(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+[**VisualizationData**](VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **404** | Process instance not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## getInstanceVisualizationWidget
+
+> string getInstanceVisualizationWidget(id)
+
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+### Example
+
+```ts
+import {
+  Configuration,
+  DefaultApi,
+} from '@nativebpm/client';
+import type { GetInstanceVisualizationWidgetRequest } from '@nativebpm/client';
+
+async function example() {
+  console.log("🚀 Testing @nativebpm/client SDK...");
+  const api = new DefaultApi();
+
+  const body = {
+    // string
+    id: id_example,
+  } satisfies GetInstanceVisualizationWidgetRequest;
+
+  try {
+    const data = await api.getInstanceVisualizationWidget(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+**string**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `text/html`, `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **404** | Process instance not found |  -  |
 | **500** | Internal Server Error - database failure or execution crash |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

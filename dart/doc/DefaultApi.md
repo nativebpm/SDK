@@ -17,6 +17,8 @@ Method | HTTP request | Description
 [**deployDefinition**](DefaultApi.md#deploydefinition) | **POST** /api/deploy | Deploy process definition
 [**getInstance**](DefaultApi.md#getinstance) | **GET** /api/instances/{id} | Get process instance
 [**getInstanceHistory**](DefaultApi.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history
+[**getInstanceVisualization**](DefaultApi.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
+[**getInstanceVisualizationWidget**](DefaultApi.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
 [**listDefinitions**](DefaultApi.md#listdefinitions) | **GET** /api/definitions | List process definitions
 [**listIncidents**](DefaultApi.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 [**listInstances**](DefaultApi.md#listinstances) | **GET** /api/instances | List process instances
@@ -377,6 +379,92 @@ No authorization required
 
  - **Content-Type**: Not defined
  - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getInstanceVisualization**
+> VisualizationData getInstanceVisualization(id)
+
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+### Example
+```dart
+import 'package:nativebpm_client/api.dart';
+
+final api_instance = DefaultApi();
+final id = id_example; // String | 
+
+try {
+    final result = api_instance.getInstanceVisualization(id);
+    print(result);
+} catch (e) {
+    print('Exception when calling DefaultApi->getInstanceVisualization: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+[**VisualizationData**](VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getInstanceVisualizationWidget**
+> String getInstanceVisualizationWidget(id)
+
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+### Example
+```dart
+import 'package:nativebpm_client/api.dart';
+
+final api_instance = DefaultApi();
+final id = id_example; // String | 
+
+try {
+    final result = api_instance.getInstanceVisualizationWidget(id);
+    print(result);
+} catch (e) {
+    print('Exception when calling DefaultApi->getInstanceVisualizationWidget: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+**String**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: text/html, application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

@@ -141,6 +141,14 @@ class InstancesService(private val client: Client) {
     fun start(definitionId: String): StartInstanceBuilder {
         return StartInstanceBuilder(client, definitionId)
     }
+
+    fun getVisualization(instanceId: String): VisualizationData {
+        return client.defaultApi.getInstanceVisualization(instanceId)
+    }
+
+    fun getVisualizationHTML(instanceId: String): String {
+        return client.defaultApi.getInstanceVisualizationWidget(instanceId)
+    }
 }
 
 class StartInstanceBuilder(private val client: Client, private val definitionId: String) {
@@ -168,8 +176,61 @@ class StartInstanceBuilder(private val client: Client, private val definitionId:
 }
 
 class TasksService(private val client: Client) {
+    fun list(): ListTasksBuilder {
+        return ListTasksBuilder(client)
+    }
+
+    fun claim(taskId: String): ClaimTaskBuilder {
+        return ClaimTaskBuilder(client, taskId)
+    }
+
     fun complete(taskId: String): CompleteTaskBuilder {
         return CompleteTaskBuilder(client, taskId)
+    }
+}
+
+class ListTasksBuilder(private val client: Client) {
+    private var assignee: String? = null
+    private var candidateGroup: String? = null
+    private var status: String? = null
+
+    fun withAssignee(assignee: String): ListTasksBuilder {
+        this.assignee = assignee
+        return this
+    }
+
+    fun withCandidateGroup(candidateGroup: String): ListTasksBuilder {
+        this.candidateGroup = candidateGroup
+        return this
+    }
+
+    fun withStatus(status: String): ListTasksBuilder {
+        this.status = status
+        return this
+    }
+
+    fun send(): List<TaskRecord> {
+        val mappedStatus = status?.let {
+            DefaultApi.StatusListTasks.values().firstOrNull { enumVal ->
+                enumVal.value.equals(it, ignoreCase = true)
+            }
+        }
+        return client.defaultApi.listTasks(assignee, candidateGroup, mappedStatus)
+    }
+}
+
+class ClaimTaskBuilder(private val client: Client, private val taskId: String) {
+    private var assignee: String? = null
+
+    fun withAssignee(assignee: String): ClaimTaskBuilder {
+        this.assignee = assignee
+        return this
+    }
+
+    fun send(): TaskRecord {
+        val currentAssignee = assignee ?: throw IllegalArgumentException("Assignee is required to claim a task")
+        val request = ClaimTaskRequest(assignee = currentAssignee)
+        return client.defaultApi.claimTask(taskId, request)
     }
 }
 

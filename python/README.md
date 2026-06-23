@@ -99,6 +99,8 @@ Class | Method | HTTP request | Description
 *DefaultApi* | [**deploy_definition**](docs/DefaultApi.md#deploy_definition) | **POST** /api/deploy | Deploy process definition
 *DefaultApi* | [**get_instance**](docs/DefaultApi.md#get_instance) | **GET** /api/instances/{id} | Get process instance
 *DefaultApi* | [**get_instance_history**](docs/DefaultApi.md#get_instance_history) | **GET** /api/instances/{id}/history | Get process instance execution history
+*DefaultApi* | [**get_instance_visualization**](docs/DefaultApi.md#get_instance_visualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
+*DefaultApi* | [**get_instance_visualization_widget**](docs/DefaultApi.md#get_instance_visualization_widget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
 *DefaultApi* | [**list_definitions**](docs/DefaultApi.md#list_definitions) | **GET** /api/definitions | List process definitions
 *DefaultApi* | [**list_incidents**](docs/DefaultApi.md#list_incidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 *DefaultApi* | [**list_instances**](docs/DefaultApi.md#list_instances) | **GET** /api/instances | List process instances
@@ -126,6 +128,7 @@ Class | Method | HTTP request | Description
  - [ResolveIncident200Response](docs/ResolveIncident200Response.md)
  - [StartInstanceRequest](docs/StartInstanceRequest.md)
  - [TaskRecord](docs/TaskRecord.md)
+ - [VisualizationData](docs/VisualizationData.md)
  - [WebhookDeliveryRecord](docs/WebhookDeliveryRecord.md)
  - [WebhookRecord](docs/WebhookRecord.md)
 

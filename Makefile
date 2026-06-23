@@ -9,7 +9,10 @@ generate-go:
 		-i /local/sdk/openapi.yaml \
 		-g go \
 		-o /local/sdk/go \
-		--additional-properties=packageName=nativebpm
+		--additional-properties=packageName=nativebpm \
+		--git-host gitlab.com \
+		--git-user-id nativebpm \
+		--git-repo-id sdk/go
 
 generate-python:
 	docker run --rm -v "$$(pwd)/..:/local" openapitools/openapi-generator-cli generate \
@@ -74,5 +77,32 @@ generate-dart:
 		-o /local/sdk/dart \
 		--additional-properties=pubName=nativebpm_client,pubVersion=1.0.0,pubDescription="NativeBPM Client SDK for Dart and Flutter"
 
+test: test-go test-python test-typescript test-java test-kotlin test-php test-dotnet test-rust test-dart
 
+test-go:
+	go test -v ./go/...
 
+test-python:
+	docker run --rm -v "$$(pwd):/local" -w /local/python python:3.11 sh -c "pip install -r requirements.txt -r test-requirements.txt && python -m unittest discover -s test"
+
+test-typescript:
+	docker run --rm -v "$$(pwd):/local" -w /local/typescript node:20-alpine sh -c "apk add --no-cache make && make test"
+
+test-java:
+	docker run --rm -v "$$(pwd):/local" -w /local/java gradle:8-jdk17 gradle test
+
+test-kotlin:
+	docker run --rm -v "$$(pwd):/local" -w /local/kotlin gradle:8-jdk17 gradle test
+
+test-php:
+	docker run --rm -v "$$(pwd):/local" -w /local/php composer install --no-interaction
+	docker run --rm -v "$$(pwd):/local" -w /local/php php:8.2-cli vendor/bin/phpunit
+
+test-dotnet:
+	docker run --rm -v "$$(pwd):/local" -w /local/dotnet mcr.microsoft.com/dotnet/sdk:8.0 dotnet test NativeBPM.Client.sln
+
+test-rust:
+	docker run --rm -v "$$(pwd):/local" -w /local/rust rust:1.75 cargo test
+
+test-dart:
+	docker run --rm -v "$$(pwd):/local" -w /local/dart dart:stable dart test

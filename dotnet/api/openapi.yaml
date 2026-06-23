@@ -167,6 +167,69 @@ paths:
         "500":
           description: Internal Server Error - database failure or execution crash
       summary: Get process instance
+  /api/instances/{id}/visualization:
+    get:
+      description: "Retrieve diagram XML, execution node status, and history events\
+        \ for visualization."
+      operationId: getInstanceVisualization
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisualizationData"
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "404":
+          description: Process instance not found
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get process instance visualization data
+  /api/instances/{id}/visualization/widget:
+    get:
+      description: Retrieve the ready-to-embed HTML process visualization widget.
+      operationId: getInstanceVisualizationWidget
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+          description: Successful response
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listDefinitions_401_response"
+          description: Unauthorized - missing or invalid session cookie / API Bearer
+            Token
+        "404":
+          description: Process instance not found
+        "500":
+          description: Internal Server Error - database failure or execution crash
+      summary: Get process instance visualization widget HTML
   /api/instances/{id}/history:
     get:
       description: Fetch the audit trail / execution history log for a process instance.
@@ -726,6 +789,73 @@ components:
     "500InternalError":
       description: Internal Server Error - database failure or execution crash
   schemas:
+    VisualizationData:
+      example:
+        instance_id: instance_id
+        definition_id: definition_id
+        xml: xml
+        active_nodes:
+        - active_nodes
+        - active_nodes
+        waiting_nodes:
+        - waiting_nodes
+        - waiting_nodes
+        completed_nodes:
+        - completed_nodes
+        - completed_nodes
+        history:
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          node_id: node_id
+          node_name: node_name
+          node_type: node_type
+          action: start
+          variables: variables
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          instance_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          node_id: node_id
+          node_name: node_name
+          node_type: node_type
+          action: start
+          variables: variables
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        completed: true
+      properties:
+        instance_id:
+          type: string
+        definition_id:
+          type: string
+        xml:
+          type: string
+        active_nodes:
+          items:
+            type: string
+          type: array
+        waiting_nodes:
+          items:
+            type: string
+          type: array
+        completed_nodes:
+          items:
+            type: string
+          type: array
+        history:
+          items:
+            $ref: "#/components/schemas/HistoryRecord"
+          type: array
+        completed:
+          type: boolean
+      required:
+      - active_nodes
+      - completed
+      - completed_nodes
+      - definition_id
+      - history
+      - instance_id
+      - waiting_nodes
+      - xml
+      type: object
     ProcessDefinition:
       example:
         hash: hash

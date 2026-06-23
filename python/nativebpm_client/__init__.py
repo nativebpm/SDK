@@ -40,6 +40,7 @@ __all__ = [
     "ResolveIncident200Response",
     "StartInstanceRequest",
     "TaskRecord",
+    "VisualizationData",
     "WebhookDeliveryRecord",
     "WebhookRecord",
 ]
@@ -71,6 +72,7 @@ from nativebpm_client.models.process_instance import ProcessInstance as ProcessI
 from nativebpm_client.models.resolve_incident200_response import ResolveIncident200Response as ResolveIncident200Response
 from nativebpm_client.models.start_instance_request import StartInstanceRequest as StartInstanceRequest
 from nativebpm_client.models.task_record import TaskRecord as TaskRecord
+from nativebpm_client.models.visualization_data import VisualizationData as VisualizationData
 from nativebpm_client.models.webhook_delivery_record import WebhookDeliveryRecord as WebhookDeliveryRecord
 from nativebpm_client.models.webhook_record import WebhookRecord as WebhookRecord
 

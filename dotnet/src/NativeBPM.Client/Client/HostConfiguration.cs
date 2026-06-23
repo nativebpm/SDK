@@ -55,6 +55,7 @@ namespace NativeBPM.Client.Client
             _jsonOptions.Converters.Add(new ResolveIncident200ResponseJsonConverter());
             _jsonOptions.Converters.Add(new StartInstanceRequestJsonConverter());
             _jsonOptions.Converters.Add(new TaskRecordJsonConverter());
+            _jsonOptions.Converters.Add(new VisualizationDataJsonConverter());
             _jsonOptions.Converters.Add(new WebhookDeliveryRecordJsonConverter());
             _jsonOptions.Converters.Add(new WebhookRecordJsonConverter());
             JsonSerializerOptionsProvider jsonSerializerOptionsProvider = new(_jsonOptions);

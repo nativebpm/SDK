@@ -228,6 +228,52 @@ namespace NativeBPM.Client.Api
         Task<IGetInstanceHistoryApiResponse?> GetInstanceHistoryOrDefaultAsync(string id, System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Get process instance visualization data
+        /// </summary>
+        /// <remarks>
+        /// Retrieve diagram XML, execution node status, and history events for visualization.
+        /// </remarks>
+        /// <exception cref="ApiException">Thrown when fails to make API call</exception>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationApiResponse"/>&gt;</returns>
+        Task<IGetInstanceVisualizationApiResponse> GetInstanceVisualizationAsync(string id, System.Threading.CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Get process instance visualization data
+        /// </summary>
+        /// <remarks>
+        /// Retrieve diagram XML, execution node status, and history events for visualization.
+        /// </remarks>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationApiResponse"/>?&gt;</returns>
+        Task<IGetInstanceVisualizationApiResponse?> GetInstanceVisualizationOrDefaultAsync(string id, System.Threading.CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Get process instance visualization widget HTML
+        /// </summary>
+        /// <remarks>
+        /// Retrieve the ready-to-embed HTML process visualization widget.
+        /// </remarks>
+        /// <exception cref="ApiException">Thrown when fails to make API call</exception>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationWidgetApiResponse"/>&gt;</returns>
+        Task<IGetInstanceVisualizationWidgetApiResponse> GetInstanceVisualizationWidgetAsync(string id, System.Threading.CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Get process instance visualization widget HTML
+        /// </summary>
+        /// <remarks>
+        /// Retrieve the ready-to-embed HTML process visualization widget.
+        /// </remarks>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationWidgetApiResponse"/>?&gt;</returns>
+        Task<IGetInstanceVisualizationWidgetApiResponse?> GetInstanceVisualizationWidgetOrDefaultAsync(string id, System.Threading.CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// List process definitions
         /// </summary>
         /// <remarks>
@@ -768,6 +814,66 @@ namespace NativeBPM.Client.Api
     }
 
     /// <summary>
+    /// The <see cref="IGetInstanceVisualizationApiResponse"/>
+    /// </summary>
+    public interface IGetInstanceVisualizationApiResponse : NativeBPM.Client.Client.IApiResponse, IOk<NativeBPM.Client.Model.VisualizationData?>, IUnauthorized<NativeBPM.Client.Model.ListDefinitions401Response?>
+    {
+        /// <summary>
+        /// Returns true if the response is 200 Ok
+        /// </summary>
+        /// <returns></returns>
+        bool IsOk { get; }
+
+        /// <summary>
+        /// Returns true if the response is 401 Unauthorized
+        /// </summary>
+        /// <returns></returns>
+        bool IsUnauthorized { get; }
+
+        /// <summary>
+        /// Returns true if the response is 404 NotFound
+        /// </summary>
+        /// <returns></returns>
+        bool IsNotFound { get; }
+
+        /// <summary>
+        /// Returns true if the response is 500 InternalServerError
+        /// </summary>
+        /// <returns></returns>
+        bool IsInternalServerError { get; }
+    }
+
+    /// <summary>
+    /// The <see cref="IGetInstanceVisualizationWidgetApiResponse"/>
+    /// </summary>
+    public interface IGetInstanceVisualizationWidgetApiResponse : NativeBPM.Client.Client.IApiResponse, IOk<string?>, IUnauthorized<NativeBPM.Client.Model.ListDefinitions401Response?>
+    {
+        /// <summary>
+        /// Returns true if the response is 200 Ok
+        /// </summary>
+        /// <returns></returns>
+        bool IsOk { get; }
+
+        /// <summary>
+        /// Returns true if the response is 401 Unauthorized
+        /// </summary>
+        /// <returns></returns>
+        bool IsUnauthorized { get; }
+
+        /// <summary>
+        /// Returns true if the response is 404 NotFound
+        /// </summary>
+        /// <returns></returns>
+        bool IsNotFound { get; }
+
+        /// <summary>
+        /// Returns true if the response is 500 InternalServerError
+        /// </summary>
+        /// <returns></returns>
+        bool IsInternalServerError { get; }
+    }
+
+    /// <summary>
     /// The <see cref="IListDefinitionsApiResponse"/>
     /// </summary>
     public interface IListDefinitionsApiResponse : NativeBPM.Client.Client.IApiResponse, IOk<List<ProcessDefinition>?>, IUnauthorized<NativeBPM.Client.Model.ListDefinitions401Response?>
@@ -1266,6 +1372,46 @@ namespace NativeBPM.Client.Api
         internal void ExecuteOnErrorGetInstanceHistory(Exception exception)
         {
             OnErrorGetInstanceHistory?.Invoke(this, new ExceptionEventArgs(exception));
+        }
+
+        /// <summary>
+        /// The event raised after the server response
+        /// </summary>
+        public event EventHandler<ApiResponseEventArgs>? OnGetInstanceVisualization;
+
+        /// <summary>
+        /// The event raised after an error querying the server
+        /// </summary>
+        public event EventHandler<ExceptionEventArgs>? OnErrorGetInstanceVisualization;
+
+        internal void ExecuteOnGetInstanceVisualization(DefaultApi.GetInstanceVisualizationApiResponse apiResponse)
+        {
+            OnGetInstanceVisualization?.Invoke(this, new ApiResponseEventArgs(apiResponse));
+        }
+
+        internal void ExecuteOnErrorGetInstanceVisualization(Exception exception)
+        {
+            OnErrorGetInstanceVisualization?.Invoke(this, new ExceptionEventArgs(exception));
+        }
+
+        /// <summary>
+        /// The event raised after the server response
+        /// </summary>
+        public event EventHandler<ApiResponseEventArgs>? OnGetInstanceVisualizationWidget;
+
+        /// <summary>
+        /// The event raised after an error querying the server
+        /// </summary>
+        public event EventHandler<ExceptionEventArgs>? OnErrorGetInstanceVisualizationWidget;
+
+        internal void ExecuteOnGetInstanceVisualizationWidget(DefaultApi.GetInstanceVisualizationWidgetApiResponse apiResponse)
+        {
+            OnGetInstanceVisualizationWidget?.Invoke(this, new ApiResponseEventArgs(apiResponse));
+        }
+
+        internal void ExecuteOnErrorGetInstanceVisualizationWidget(Exception exception)
+        {
+            OnErrorGetInstanceVisualizationWidget?.Invoke(this, new ExceptionEventArgs(exception));
         }
 
         /// <summary>
@@ -4184,6 +4330,591 @@ namespace NativeBPM.Client.Api
 
                 return result != null;
             }
+
+            /// <summary>
+            /// Returns true if the response is 500 InternalServerError
+            /// </summary>
+            /// <returns></returns>
+            public bool IsInternalServerError => 500 == (int)StatusCode;
+
+            private void OnDeserializationErrorDefaultImplementation(Exception exception, HttpStatusCode httpStatusCode)
+            {
+                bool suppressDefaultLog = false;
+                OnDeserializationError(ref suppressDefaultLog, exception, httpStatusCode);
+                if (!suppressDefaultLog)
+                    Logger.LogError(exception, "An error occurred while deserializing the {code} response.", httpStatusCode);
+            }
+
+            partial void OnDeserializationError(ref bool suppressDefaultLog, Exception exception, HttpStatusCode httpStatusCode);
+        }
+
+        partial void FormatGetInstanceVisualization(ref string id);
+
+        /// <summary>
+        /// Validates the request parameters
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private void ValidateGetInstanceVisualization(string id)
+        {
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+        }
+
+        /// <summary>
+        /// Processes the server response
+        /// </summary>
+        /// <param name="apiResponseLocalVar"></param>
+        /// <param name="id"></param>
+        private void AfterGetInstanceVisualizationDefaultImplementation(IGetInstanceVisualizationApiResponse apiResponseLocalVar, string id)
+        {
+            bool suppressDefaultLog = false;
+            AfterGetInstanceVisualization(ref suppressDefaultLog, apiResponseLocalVar, id);
+            if (!suppressDefaultLog)
+                Logger.LogInformation("{0,-9} | {1} | {2}", (apiResponseLocalVar.DownloadedAt - apiResponseLocalVar.RequestedAt).TotalSeconds, apiResponseLocalVar.StatusCode, apiResponseLocalVar.Path);
+        }
+
+        /// <summary>
+        /// Processes the server response
+        /// </summary>
+        /// <param name="suppressDefaultLog"></param>
+        /// <param name="apiResponseLocalVar"></param>
+        /// <param name="id"></param>
+        partial void AfterGetInstanceVisualization(ref bool suppressDefaultLog, IGetInstanceVisualizationApiResponse apiResponseLocalVar, string id);
+
+        /// <summary>
+        /// Logs exceptions that occur while retrieving the server response
+        /// </summary>
+        /// <param name="exceptionLocalVar"></param>
+        /// <param name="pathFormatLocalVar"></param>
+        /// <param name="pathLocalVar"></param>
+        /// <param name="id"></param>
+        private void OnErrorGetInstanceVisualizationDefaultImplementation(Exception exceptionLocalVar, string pathFormatLocalVar, string pathLocalVar, string id)
+        {
+            bool suppressDefaultLogLocalVar = false;
+            OnErrorGetInstanceVisualization(ref suppressDefaultLogLocalVar, exceptionLocalVar, pathFormatLocalVar, pathLocalVar, id);
+            if (!suppressDefaultLogLocalVar)
+                Logger.LogError(exceptionLocalVar, "An error occurred while sending the request to the server.");
+        }
+
+        /// <summary>
+        /// A partial method that gives developers a way to provide customized exception handling
+        /// </summary>
+        /// <param name="suppressDefaultLogLocalVar"></param>
+        /// <param name="exceptionLocalVar"></param>
+        /// <param name="pathFormatLocalVar"></param>
+        /// <param name="pathLocalVar"></param>
+        /// <param name="id"></param>
+        partial void OnErrorGetInstanceVisualization(ref bool suppressDefaultLogLocalVar, Exception exceptionLocalVar, string pathFormatLocalVar, string pathLocalVar, string id);
+
+        /// <summary>
+        /// Get process instance visualization data Retrieve diagram XML, execution node status, and history events for visualization.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationApiResponse"/>&gt;</returns>
+        public async Task<IGetInstanceVisualizationApiResponse?> GetInstanceVisualizationOrDefaultAsync(string id, System.Threading.CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await GetInstanceVisualizationAsync(id, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Get process instance visualization data Retrieve diagram XML, execution node status, and history events for visualization.
+        /// </summary>
+        /// <exception cref="ApiException">Thrown when fails to make API call</exception>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationApiResponse"/>&gt;</returns>
+        public async Task<IGetInstanceVisualizationApiResponse> GetInstanceVisualizationAsync(string id, System.Threading.CancellationToken cancellationToken = default)
+        {
+            UriBuilder uriBuilderLocalVar = new UriBuilder();
+
+            try
+            {
+                ValidateGetInstanceVisualization(id);
+
+                FormatGetInstanceVisualization(ref id);
+
+                using (HttpRequestMessage httpRequestMessageLocalVar = new HttpRequestMessage())
+                {
+                    uriBuilderLocalVar.Host = HttpClient.BaseAddress!.Host;
+                    uriBuilderLocalVar.Port = HttpClient.BaseAddress.Port;
+                    uriBuilderLocalVar.Scheme = HttpClient.BaseAddress.Scheme;
+                    uriBuilderLocalVar.Path = HttpClient.BaseAddress.AbsolutePath == "/"
+                        ? "/api/instances/{id}/visualization"
+                        : string.Concat(HttpClient.BaseAddress.AbsolutePath.TrimEnd('/'), "/api/instances/{id}/visualization");
+                    uriBuilderLocalVar.Path = uriBuilderLocalVar.Path.Replace("%7Bid%7D", Uri.EscapeDataString(id.ToString()));
+
+                    httpRequestMessageLocalVar.RequestUri = uriBuilderLocalVar.Uri;
+
+                    string[] acceptLocalVars = new string[] {
+                        "application/json"
+                    };
+
+                    IEnumerable<MediaTypeWithQualityHeaderValue> acceptHeaderValuesLocalVar = ClientUtils.SelectHeaderAcceptArray(acceptLocalVars);
+
+                    foreach (var acceptLocalVar in acceptHeaderValuesLocalVar)
+                        httpRequestMessageLocalVar.Headers.Accept.Add(acceptLocalVar);
+
+                    httpRequestMessageLocalVar.Method = HttpMethod.Get;
+
+                    DateTime requestedAtLocalVar = DateTime.UtcNow;
+
+                    using (HttpResponseMessage httpResponseMessageLocalVar = await HttpClient.SendAsync(httpRequestMessageLocalVar, cancellationToken).ConfigureAwait(false))
+                    {
+                        ILogger<GetInstanceVisualizationApiResponse> apiResponseLoggerLocalVar = LoggerFactory.CreateLogger<GetInstanceVisualizationApiResponse>();
+                        GetInstanceVisualizationApiResponse apiResponseLocalVar;
+
+                        switch ((int)httpResponseMessageLocalVar.StatusCode) {
+                            default: {
+                                string responseContentLocalVar = await httpResponseMessageLocalVar.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                                apiResponseLocalVar = new(apiResponseLoggerLocalVar, httpRequestMessageLocalVar, httpResponseMessageLocalVar, responseContentLocalVar, "/api/instances/{id}/visualization", requestedAtLocalVar, _jsonSerializerOptions);
+
+                                break;
+                            }
+                        }
+
+                        AfterGetInstanceVisualizationDefaultImplementation(apiResponseLocalVar, id);
+
+                        Events.ExecuteOnGetInstanceVisualization(apiResponseLocalVar);
+
+                        return apiResponseLocalVar;
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                OnErrorGetInstanceVisualizationDefaultImplementation(e, "/api/instances/{id}/visualization", uriBuilderLocalVar.Path, id);
+                Events.ExecuteOnErrorGetInstanceVisualization(e);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="GetInstanceVisualizationApiResponse"/>
+        /// </summary>
+        public partial class GetInstanceVisualizationApiResponse : NativeBPM.Client.Client.ApiResponse, IGetInstanceVisualizationApiResponse
+        {
+            /// <summary>
+            /// The logger
+            /// </summary>
+            public ILogger<GetInstanceVisualizationApiResponse> Logger { get; }
+
+            /// <summary>
+            /// The <see cref="GetInstanceVisualizationApiResponse"/>
+            /// </summary>
+            /// <param name="logger"></param>
+            /// <param name="httpRequestMessage"></param>
+            /// <param name="httpResponseMessage"></param>
+            /// <param name="rawContent"></param>
+            /// <param name="path"></param>
+            /// <param name="requestedAt"></param>
+            /// <param name="jsonSerializerOptions"></param>
+            public GetInstanceVisualizationApiResponse(ILogger<GetInstanceVisualizationApiResponse> logger, System.Net.Http.HttpRequestMessage httpRequestMessage, System.Net.Http.HttpResponseMessage httpResponseMessage, string rawContent, string path, DateTime requestedAt, System.Text.Json.JsonSerializerOptions jsonSerializerOptions) : base(httpRequestMessage, httpResponseMessage, rawContent, path, requestedAt, jsonSerializerOptions)
+            {
+                Logger = logger;
+                OnCreated(httpRequestMessage, httpResponseMessage);
+            }
+
+            /// <summary>
+            /// The <see cref="GetInstanceVisualizationApiResponse"/>
+            /// </summary>
+            /// <param name="logger"></param>
+            /// <param name="httpRequestMessage"></param>
+            /// <param name="httpResponseMessage"></param>
+            /// <param name="contentStream"></param>
+            /// <param name="path"></param>
+            /// <param name="requestedAt"></param>
+            /// <param name="jsonSerializerOptions"></param>
+            public GetInstanceVisualizationApiResponse(ILogger<GetInstanceVisualizationApiResponse> logger, System.Net.Http.HttpRequestMessage httpRequestMessage, System.Net.Http.HttpResponseMessage httpResponseMessage, System.IO.Stream contentStream, string path, DateTime requestedAt, System.Text.Json.JsonSerializerOptions jsonSerializerOptions) : base(httpRequestMessage, httpResponseMessage, contentStream, path, requestedAt, jsonSerializerOptions)
+            {
+                Logger = logger;
+                OnCreated(httpRequestMessage, httpResponseMessage);
+            }
+
+            partial void OnCreated(global::System.Net.Http.HttpRequestMessage httpRequestMessage, System.Net.Http.HttpResponseMessage httpResponseMessage);
+
+            /// <summary>
+            /// Returns true if the response is 200 Ok
+            /// </summary>
+            /// <returns></returns>
+            public bool IsOk => 200 == (int)StatusCode;
+
+            /// <summary>
+            /// Deserializes the response if the response is 200 Ok
+            /// </summary>
+            /// <returns></returns>
+            public NativeBPM.Client.Model.VisualizationData? Ok()
+            {
+                // This logic may be modified with the AsModel.mustache template
+                return IsOk
+                    ? System.Text.Json.JsonSerializer.Deserialize<NativeBPM.Client.Model.VisualizationData>(RawContent, _jsonSerializerOptions)
+                    : null;
+            }
+
+            /// <summary>
+            /// Returns true if the response is 200 Ok and the deserialized response is not null
+            /// </summary>
+            /// <param name="result"></param>
+            /// <returns></returns>
+            public bool TryOk([NotNullWhen(true)]out NativeBPM.Client.Model.VisualizationData? result)
+            {
+                result = null;
+
+                try
+                {
+                    result = Ok();
+                } catch (Exception e)
+                {
+                    OnDeserializationErrorDefaultImplementation(e, (HttpStatusCode)200);
+                }
+
+                return result != null;
+            }
+
+            /// <summary>
+            /// Returns true if the response is 401 Unauthorized
+            /// </summary>
+            /// <returns></returns>
+            public bool IsUnauthorized => 401 == (int)StatusCode;
+
+            /// <summary>
+            /// Deserializes the response if the response is 401 Unauthorized
+            /// </summary>
+            /// <returns></returns>
+            public NativeBPM.Client.Model.ListDefinitions401Response? Unauthorized()
+            {
+                // This logic may be modified with the AsModel.mustache template
+                return IsUnauthorized
+                    ? System.Text.Json.JsonSerializer.Deserialize<NativeBPM.Client.Model.ListDefinitions401Response>(RawContent, _jsonSerializerOptions)
+                    : null;
+            }
+
+            /// <summary>
+            /// Returns true if the response is 401 Unauthorized and the deserialized response is not null
+            /// </summary>
+            /// <param name="result"></param>
+            /// <returns></returns>
+            public bool TryUnauthorized([NotNullWhen(true)]out NativeBPM.Client.Model.ListDefinitions401Response? result)
+            {
+                result = null;
+
+                try
+                {
+                    result = Unauthorized();
+                } catch (Exception e)
+                {
+                    OnDeserializationErrorDefaultImplementation(e, (HttpStatusCode)401);
+                }
+
+                return result != null;
+            }
+
+            /// <summary>
+            /// Returns true if the response is 404 NotFound
+            /// </summary>
+            /// <returns></returns>
+            public bool IsNotFound => 404 == (int)StatusCode;
+
+            /// <summary>
+            /// Returns true if the response is 500 InternalServerError
+            /// </summary>
+            /// <returns></returns>
+            public bool IsInternalServerError => 500 == (int)StatusCode;
+
+            private void OnDeserializationErrorDefaultImplementation(Exception exception, HttpStatusCode httpStatusCode)
+            {
+                bool suppressDefaultLog = false;
+                OnDeserializationError(ref suppressDefaultLog, exception, httpStatusCode);
+                if (!suppressDefaultLog)
+                    Logger.LogError(exception, "An error occurred while deserializing the {code} response.", httpStatusCode);
+            }
+
+            partial void OnDeserializationError(ref bool suppressDefaultLog, Exception exception, HttpStatusCode httpStatusCode);
+        }
+
+        partial void FormatGetInstanceVisualizationWidget(ref string id);
+
+        /// <summary>
+        /// Validates the request parameters
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private void ValidateGetInstanceVisualizationWidget(string id)
+        {
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+        }
+
+        /// <summary>
+        /// Processes the server response
+        /// </summary>
+        /// <param name="apiResponseLocalVar"></param>
+        /// <param name="id"></param>
+        private void AfterGetInstanceVisualizationWidgetDefaultImplementation(IGetInstanceVisualizationWidgetApiResponse apiResponseLocalVar, string id)
+        {
+            bool suppressDefaultLog = false;
+            AfterGetInstanceVisualizationWidget(ref suppressDefaultLog, apiResponseLocalVar, id);
+            if (!suppressDefaultLog)
+                Logger.LogInformation("{0,-9} | {1} | {2}", (apiResponseLocalVar.DownloadedAt - apiResponseLocalVar.RequestedAt).TotalSeconds, apiResponseLocalVar.StatusCode, apiResponseLocalVar.Path);
+        }
+
+        /// <summary>
+        /// Processes the server response
+        /// </summary>
+        /// <param name="suppressDefaultLog"></param>
+        /// <param name="apiResponseLocalVar"></param>
+        /// <param name="id"></param>
+        partial void AfterGetInstanceVisualizationWidget(ref bool suppressDefaultLog, IGetInstanceVisualizationWidgetApiResponse apiResponseLocalVar, string id);
+
+        /// <summary>
+        /// Logs exceptions that occur while retrieving the server response
+        /// </summary>
+        /// <param name="exceptionLocalVar"></param>
+        /// <param name="pathFormatLocalVar"></param>
+        /// <param name="pathLocalVar"></param>
+        /// <param name="id"></param>
+        private void OnErrorGetInstanceVisualizationWidgetDefaultImplementation(Exception exceptionLocalVar, string pathFormatLocalVar, string pathLocalVar, string id)
+        {
+            bool suppressDefaultLogLocalVar = false;
+            OnErrorGetInstanceVisualizationWidget(ref suppressDefaultLogLocalVar, exceptionLocalVar, pathFormatLocalVar, pathLocalVar, id);
+            if (!suppressDefaultLogLocalVar)
+                Logger.LogError(exceptionLocalVar, "An error occurred while sending the request to the server.");
+        }
+
+        /// <summary>
+        /// A partial method that gives developers a way to provide customized exception handling
+        /// </summary>
+        /// <param name="suppressDefaultLogLocalVar"></param>
+        /// <param name="exceptionLocalVar"></param>
+        /// <param name="pathFormatLocalVar"></param>
+        /// <param name="pathLocalVar"></param>
+        /// <param name="id"></param>
+        partial void OnErrorGetInstanceVisualizationWidget(ref bool suppressDefaultLogLocalVar, Exception exceptionLocalVar, string pathFormatLocalVar, string pathLocalVar, string id);
+
+        /// <summary>
+        /// Get process instance visualization widget HTML Retrieve the ready-to-embed HTML process visualization widget.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationWidgetApiResponse"/>&gt;</returns>
+        public async Task<IGetInstanceVisualizationWidgetApiResponse?> GetInstanceVisualizationWidgetOrDefaultAsync(string id, System.Threading.CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await GetInstanceVisualizationWidgetAsync(id, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Get process instance visualization widget HTML Retrieve the ready-to-embed HTML process visualization widget.
+        /// </summary>
+        /// <exception cref="ApiException">Thrown when fails to make API call</exception>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationWidgetApiResponse"/>&gt;</returns>
+        public async Task<IGetInstanceVisualizationWidgetApiResponse> GetInstanceVisualizationWidgetAsync(string id, System.Threading.CancellationToken cancellationToken = default)
+        {
+            UriBuilder uriBuilderLocalVar = new UriBuilder();
+
+            try
+            {
+                ValidateGetInstanceVisualizationWidget(id);
+
+                FormatGetInstanceVisualizationWidget(ref id);
+
+                using (HttpRequestMessage httpRequestMessageLocalVar = new HttpRequestMessage())
+                {
+                    uriBuilderLocalVar.Host = HttpClient.BaseAddress!.Host;
+                    uriBuilderLocalVar.Port = HttpClient.BaseAddress.Port;
+                    uriBuilderLocalVar.Scheme = HttpClient.BaseAddress.Scheme;
+                    uriBuilderLocalVar.Path = HttpClient.BaseAddress.AbsolutePath == "/"
+                        ? "/api/instances/{id}/visualization/widget"
+                        : string.Concat(HttpClient.BaseAddress.AbsolutePath.TrimEnd('/'), "/api/instances/{id}/visualization/widget");
+                    uriBuilderLocalVar.Path = uriBuilderLocalVar.Path.Replace("%7Bid%7D", Uri.EscapeDataString(id.ToString()));
+
+                    httpRequestMessageLocalVar.RequestUri = uriBuilderLocalVar.Uri;
+
+                    string[] acceptLocalVars = new string[] {
+                        "text/html",
+                        "application/json"
+                    };
+
+                    IEnumerable<MediaTypeWithQualityHeaderValue> acceptHeaderValuesLocalVar = ClientUtils.SelectHeaderAcceptArray(acceptLocalVars);
+
+                    foreach (var acceptLocalVar in acceptHeaderValuesLocalVar)
+                        httpRequestMessageLocalVar.Headers.Accept.Add(acceptLocalVar);
+
+                    httpRequestMessageLocalVar.Method = HttpMethod.Get;
+
+                    DateTime requestedAtLocalVar = DateTime.UtcNow;
+
+                    using (HttpResponseMessage httpResponseMessageLocalVar = await HttpClient.SendAsync(httpRequestMessageLocalVar, cancellationToken).ConfigureAwait(false))
+                    {
+                        ILogger<GetInstanceVisualizationWidgetApiResponse> apiResponseLoggerLocalVar = LoggerFactory.CreateLogger<GetInstanceVisualizationWidgetApiResponse>();
+                        GetInstanceVisualizationWidgetApiResponse apiResponseLocalVar;
+
+                        switch ((int)httpResponseMessageLocalVar.StatusCode) {
+                            default: {
+                                string responseContentLocalVar = await httpResponseMessageLocalVar.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                                apiResponseLocalVar = new(apiResponseLoggerLocalVar, httpRequestMessageLocalVar, httpResponseMessageLocalVar, responseContentLocalVar, "/api/instances/{id}/visualization/widget", requestedAtLocalVar, _jsonSerializerOptions);
+
+                                break;
+                            }
+                        }
+
+                        AfterGetInstanceVisualizationWidgetDefaultImplementation(apiResponseLocalVar, id);
+
+                        Events.ExecuteOnGetInstanceVisualizationWidget(apiResponseLocalVar);
+
+                        return apiResponseLocalVar;
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                OnErrorGetInstanceVisualizationWidgetDefaultImplementation(e, "/api/instances/{id}/visualization/widget", uriBuilderLocalVar.Path, id);
+                Events.ExecuteOnErrorGetInstanceVisualizationWidget(e);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="GetInstanceVisualizationWidgetApiResponse"/>
+        /// </summary>
+        public partial class GetInstanceVisualizationWidgetApiResponse : NativeBPM.Client.Client.ApiResponse, IGetInstanceVisualizationWidgetApiResponse
+        {
+            /// <summary>
+            /// The logger
+            /// </summary>
+            public ILogger<GetInstanceVisualizationWidgetApiResponse> Logger { get; }
+
+            /// <summary>
+            /// The <see cref="GetInstanceVisualizationWidgetApiResponse"/>
+            /// </summary>
+            /// <param name="logger"></param>
+            /// <param name="httpRequestMessage"></param>
+            /// <param name="httpResponseMessage"></param>
+            /// <param name="rawContent"></param>
+            /// <param name="path"></param>
+            /// <param name="requestedAt"></param>
+            /// <param name="jsonSerializerOptions"></param>
+            public GetInstanceVisualizationWidgetApiResponse(ILogger<GetInstanceVisualizationWidgetApiResponse> logger, System.Net.Http.HttpRequestMessage httpRequestMessage, System.Net.Http.HttpResponseMessage httpResponseMessage, string rawContent, string path, DateTime requestedAt, System.Text.Json.JsonSerializerOptions jsonSerializerOptions) : base(httpRequestMessage, httpResponseMessage, rawContent, path, requestedAt, jsonSerializerOptions)
+            {
+                Logger = logger;
+                OnCreated(httpRequestMessage, httpResponseMessage);
+            }
+
+            /// <summary>
+            /// The <see cref="GetInstanceVisualizationWidgetApiResponse"/>
+            /// </summary>
+            /// <param name="logger"></param>
+            /// <param name="httpRequestMessage"></param>
+            /// <param name="httpResponseMessage"></param>
+            /// <param name="contentStream"></param>
+            /// <param name="path"></param>
+            /// <param name="requestedAt"></param>
+            /// <param name="jsonSerializerOptions"></param>
+            public GetInstanceVisualizationWidgetApiResponse(ILogger<GetInstanceVisualizationWidgetApiResponse> logger, System.Net.Http.HttpRequestMessage httpRequestMessage, System.Net.Http.HttpResponseMessage httpResponseMessage, System.IO.Stream contentStream, string path, DateTime requestedAt, System.Text.Json.JsonSerializerOptions jsonSerializerOptions) : base(httpRequestMessage, httpResponseMessage, contentStream, path, requestedAt, jsonSerializerOptions)
+            {
+                Logger = logger;
+                OnCreated(httpRequestMessage, httpResponseMessage);
+            }
+
+            partial void OnCreated(global::System.Net.Http.HttpRequestMessage httpRequestMessage, System.Net.Http.HttpResponseMessage httpResponseMessage);
+
+            /// <summary>
+            /// Returns true if the response is 200 Ok
+            /// </summary>
+            /// <returns></returns>
+            public bool IsOk => 200 == (int)StatusCode;
+
+            /// <summary>
+            /// Deserializes the response if the response is 200 Ok
+            /// </summary>
+            /// <returns></returns>
+            public string? Ok()
+            {
+                // This logic may be modified with the AsModel.mustache template
+                return IsOk
+                    ? System.Text.Json.JsonSerializer.Deserialize<string>(RawContent, _jsonSerializerOptions)
+                    : null;
+            }
+
+            /// <summary>
+            /// Returns true if the response is 200 Ok and the deserialized response is not null
+            /// </summary>
+            /// <param name="result"></param>
+            /// <returns></returns>
+            public bool TryOk([NotNullWhen(true)]out string? result)
+            {
+                result = null;
+
+                try
+                {
+                    result = Ok();
+                } catch (Exception e)
+                {
+                    OnDeserializationErrorDefaultImplementation(e, (HttpStatusCode)200);
+                }
+
+                return result != null;
+            }
+
+            /// <summary>
+            /// Returns true if the response is 401 Unauthorized
+            /// </summary>
+            /// <returns></returns>
+            public bool IsUnauthorized => 401 == (int)StatusCode;
+
+            /// <summary>
+            /// Deserializes the response if the response is 401 Unauthorized
+            /// </summary>
+            /// <returns></returns>
+            public NativeBPM.Client.Model.ListDefinitions401Response? Unauthorized()
+            {
+                // This logic may be modified with the AsModel.mustache template
+                return IsUnauthorized
+                    ? System.Text.Json.JsonSerializer.Deserialize<NativeBPM.Client.Model.ListDefinitions401Response>(RawContent, _jsonSerializerOptions)
+                    : null;
+            }
+
+            /// <summary>
+            /// Returns true if the response is 401 Unauthorized and the deserialized response is not null
+            /// </summary>
+            /// <param name="result"></param>
+            /// <returns></returns>
+            public bool TryUnauthorized([NotNullWhen(true)]out NativeBPM.Client.Model.ListDefinitions401Response? result)
+            {
+                result = null;
+
+                try
+                {
+                    result = Unauthorized();
+                } catch (Exception e)
+                {
+                    OnDeserializationErrorDefaultImplementation(e, (HttpStatusCode)401);
+                }
+
+                return result != null;
+            }
+
+            /// <summary>
+            /// Returns true if the response is 404 NotFound
+            /// </summary>
+            /// <returns></returns>
+            public bool IsNotFound => 404 == (int)StatusCode;
 
             /// <summary>
             /// Returns true if the response is 500 InternalServerError

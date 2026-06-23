@@ -330,6 +330,84 @@ open class DefaultAPI {
     }
 
     /**
+     Get process instance visualization data
+     
+     - parameter id: (path)  
+     - returns: VisualizationData
+     */
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    open class func getInstanceVisualization(id: String) async throws -> VisualizationData {
+        return try await getInstanceVisualizationWithRequestBuilder(id: id).execute().body
+    }
+
+    /**
+     Get process instance visualization data
+     - GET /api/instances/{id}/visualization
+     - Retrieve diagram XML, execution node status, and history events for visualization.
+     - parameter id: (path)  
+     - returns: RequestBuilder<VisualizationData> 
+     */
+    open class func getInstanceVisualizationWithRequestBuilder(id: String) -> RequestBuilder<VisualizationData> {
+        var localVariablePath = "/api/instances/{id}/visualization"
+        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
+        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+        let localVariableURLString = NativeBPMClientAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<VisualizationData>.Type = NativeBPMClientAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
+    }
+
+    /**
+     Get process instance visualization widget HTML
+     
+     - parameter id: (path)  
+     - returns: String
+     */
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    open class func getInstanceVisualizationWidget(id: String) async throws -> String {
+        return try await getInstanceVisualizationWidgetWithRequestBuilder(id: id).execute().body
+    }
+
+    /**
+     Get process instance visualization widget HTML
+     - GET /api/instances/{id}/visualization/widget
+     - Retrieve the ready-to-embed HTML process visualization widget.
+     - parameter id: (path)  
+     - returns: RequestBuilder<String> 
+     */
+    open class func getInstanceVisualizationWidgetWithRequestBuilder(id: String) -> RequestBuilder<String> {
+        var localVariablePath = "/api/instances/{id}/visualization/widget"
+        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
+        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+        let localVariableURLString = NativeBPMClientAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<String>.Type = NativeBPMClientAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
+    }
+
+    /**
      List process definitions
      
      - returns: [ProcessDefinition]

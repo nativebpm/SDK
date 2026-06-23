@@ -14,6 +14,8 @@ All URIs are relative to http://localhost, except if the operation defines anoth
 | [**deployDefinition()**](DefaultApi.md#deployDefinition) | **POST** /api/deploy | Deploy process definition |
 | [**getInstance()**](DefaultApi.md#getInstance) | **GET** /api/instances/{id} | Get process instance |
 | [**getInstanceHistory()**](DefaultApi.md#getInstanceHistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
+| [**getInstanceVisualization()**](DefaultApi.md#getInstanceVisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
+| [**getInstanceVisualizationWidget()**](DefaultApi.md#getInstanceVisualizationWidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
 | [**listDefinitions()**](DefaultApi.md#listDefinitions) | **GET** /api/definitions | List process definitions |
 | [**listIncidents()**](DefaultApi.md#listIncidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**listInstances()**](DefaultApi.md#listInstances) | **GET** /api/instances | List process instances |
@@ -476,6 +478,118 @@ No authorization required
 
 - **Content-Type**: Not defined
 - **Accept**: `application/json`
+
+[[Back to top]](#) [[Back to API list]](../../README.md#endpoints)
+[[Back to Model list]](../../README.md#models)
+[[Back to README]](../../README.md)
+
+## `getInstanceVisualization()`
+
+```php
+getInstanceVisualization($id): \NativeBPM\Client\Model\VisualizationData
+```
+
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+### Example
+
+```php
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+
+$apiInstance = new NativeBPM\Client\Api\DefaultApi(
+    // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+    // This is optional, `GuzzleHttp\Client` will be used as default.
+    new GuzzleHttp\Client()
+);
+$id = 'id_example'; // string
+
+try {
+    $result = $apiInstance->getInstanceVisualization($id);
+    print_r($result);
+} catch (Exception $e) {
+    echo 'Exception when calling DefaultApi->getInstanceVisualization: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+### Parameters
+
+| Name | Type | Description  | Notes |
+| ------------- | ------------- | ------------- | ------------- |
+| **id** | **string**|  | |
+
+### Return type
+
+[**\NativeBPM\Client\Model\VisualizationData**](../Model/VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+[[Back to top]](#) [[Back to API list]](../../README.md#endpoints)
+[[Back to Model list]](../../README.md#models)
+[[Back to README]](../../README.md)
+
+## `getInstanceVisualizationWidget()`
+
+```php
+getInstanceVisualizationWidget($id): string
+```
+
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+### Example
+
+```php
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+
+$apiInstance = new NativeBPM\Client\Api\DefaultApi(
+    // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+    // This is optional, `GuzzleHttp\Client` will be used as default.
+    new GuzzleHttp\Client()
+);
+$id = 'id_example'; // string
+
+try {
+    $result = $apiInstance->getInstanceVisualizationWidget($id);
+    print_r($result);
+} catch (Exception $e) {
+    echo 'Exception when calling DefaultApi->getInstanceVisualizationWidget: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+### Parameters
+
+| Name | Type | Description  | Notes |
+| ------------- | ------------- | ------------- | ------------- |
+| **id** | **string**|  | |
+
+### Return type
+
+**string**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `text/html`, `application/json`
 
 [[Back to top]](#) [[Back to API list]](../../README.md#endpoints)
 [[Back to Model list]](../../README.md#models)

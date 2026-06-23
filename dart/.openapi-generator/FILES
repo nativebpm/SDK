@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 .travis.yml
 README.md
 analysis_options.yaml
@@ -16,6 +15,7 @@ doc/ProcessInstance.md
 doc/ResolveIncident200Response.md
 doc/StartInstanceRequest.md
 doc/TaskRecord.md
+doc/VisualizationData.md
 doc/WebhookDeliveryRecord.md
 doc/WebhookRecord.md
 git_push.sh
@@ -41,21 +41,8 @@ lib/model/process_instance.dart
 lib/model/resolve_incident200_response.dart
 lib/model/start_instance_request.dart
 lib/model/task_record.dart
+lib/model/visualization_data.dart
 lib/model/webhook_delivery_record.dart
 lib/model/webhook_record.dart
 pubspec.yaml
-test/claim_task_request_test.dart
-test/complete_instance_task_request_test.dart
-test/complete_task_request_test.dart
-test/create_webhook_request_test.dart
-test/default_api_test.dart
-test/history_record_test.dart
-test/incident_record_test.dart
-test/list_definitions401_response_test.dart
-test/process_definition_test.dart
-test/process_instance_test.dart
-test/resolve_incident200_response_test.dart
-test/start_instance_request_test.dart
-test/task_record_test.dart
-test/webhook_delivery_record_test.dart
-test/webhook_record_test.dart
+test/visualization_data_test.dart

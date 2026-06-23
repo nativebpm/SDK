@@ -139,6 +139,56 @@ paths:
         '500':
           $ref: '#/components/responses/500InternalError'
 
+  /api/instances/{id}/visualization:
+    get:
+      summary: Get process instance visualization data
+      description: Retrieve diagram XML, execution node status, and history events for visualization.
+      operationId: getInstanceVisualization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisualizationData'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Process instance not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}/visualization/widget:
+    get:
+      summary: Get process instance visualization widget HTML
+      description: Retrieve the ready-to-embed HTML process visualization widget.
+      operationId: getInstanceVisualizationWidget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/html:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Process instance not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
   /api/instances/{id}/history:
     get:
       summary: Get process instance execution history
@@ -565,6 +615,55 @@ paths:
         '500':
           $ref: '#/components/responses/500InternalError'
 
+  /api/users/{username}/groups:
+    get:
+      summary: Get user groups
+      description: Retrieve the list of groups (chats) the user is a member of.
+      operationId: getUserGroups
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: The username to retrieve groups for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/smtp-config:
+    get:
+      summary: Get SMTP configuration
+      description: Retrieve the current SMTP mailer configuration (admin/developer only).
+      operationId: getSMTPConfig
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMTPConfig'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          description: SMTP config not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
 components:
   responses:
     401Unauthorized:
@@ -591,6 +690,43 @@ components:
       description: Internal Server Error - database failure or execution crash
 
   schemas:
+    VisualizationData:
+      type: object
+      required:
+        - instance_id
+        - definition_id
+        - xml
+        - active_nodes
+        - waiting_nodes
+        - completed_nodes
+        - history
+        - completed
+      properties:
+        instance_id:
+          type: string
+        definition_id:
+          type: string
+        xml:
+          type: string
+        active_nodes:
+          type: array
+          items:
+            type: string
+        waiting_nodes:
+          type: array
+          items:
+            type: string
+        completed_nodes:
+          type: array
+          items:
+            type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryRecord'
+        completed:
+          type: boolean
+
     ProcessDefinition:
       type: object
       required:
@@ -898,3 +1034,30 @@ components:
           type: boolean
         enable_audit:
           type: boolean
+
+    SMTPConfig:
+      type: object
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+        username:
+          type: string
+        password:
+          type: string
+        from:
+          type: string
+        from_name:
+          type: string
+        use_ssl:
+          type: boolean
+        max_html_size:
+          type: integer
+          format: int64
+        max_attachment_size:
+          type: integer
+          format: int64
+        max_total_attachments_size:
+          type: integer
+          format: int64

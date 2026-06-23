@@ -84,6 +84,10 @@ Class | Method | HTTP request | Description
 *DefaultAPI* | [**DeployDefinition**](docs/DefaultAPI.md#deploydefinition) | **Post** /api/deploy | Deploy process definition
 *DefaultAPI* | [**GetInstance**](docs/DefaultAPI.md#getinstance) | **Get** /api/instances/{id} | Get process instance
 *DefaultAPI* | [**GetInstanceHistory**](docs/DefaultAPI.md#getinstancehistory) | **Get** /api/instances/{id}/history | Get process instance execution history
+*DefaultAPI* | [**GetInstanceVisualization**](docs/DefaultAPI.md#getinstancevisualization) | **Get** /api/instances/{id}/visualization | Get process instance visualization data
+*DefaultAPI* | [**GetInstanceVisualizationWidget**](docs/DefaultAPI.md#getinstancevisualizationwidget) | **Get** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
+*DefaultAPI* | [**GetSMTPConfig**](docs/DefaultAPI.md#getsmtpconfig) | **Get** /api/smtp-config | Get SMTP configuration
+*DefaultAPI* | [**GetUserGroups**](docs/DefaultAPI.md#getusergroups) | **Get** /api/users/{username}/groups | Get user groups
 *DefaultAPI* | [**ListDefinitions**](docs/DefaultAPI.md#listdefinitions) | **Get** /api/definitions | List process definitions
 *DefaultAPI* | [**ListIncidents**](docs/DefaultAPI.md#listincidents) | **Get** /api/instances/{id}/incidents | List incidents for process instance
 *DefaultAPI* | [**ListInstances**](docs/DefaultAPI.md#listinstances) | **Get** /api/instances | List process instances
@@ -109,8 +113,10 @@ Class | Method | HTTP request | Description
  - [ProcessDefinition](docs/ProcessDefinition.md)
  - [ProcessInstance](docs/ProcessInstance.md)
  - [ResolveIncident200Response](docs/ResolveIncident200Response.md)
+ - [SMTPConfig](docs/SMTPConfig.md)
  - [StartInstanceRequest](docs/StartInstanceRequest.md)
  - [TaskRecord](docs/TaskRecord.md)
+ - [VisualizationData](docs/VisualizationData.md)
  - [WebhookDeliveryRecord](docs/WebhookDeliveryRecord.md)
  - [WebhookRecord](docs/WebhookRecord.md)
 

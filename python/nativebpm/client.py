@@ -12,6 +12,7 @@ from nativebpm_client.models import (
     StartInstanceRequest,
     CompleteInstanceTaskRequest,
     CreateWebhookRequest,
+    VisualizationData,
 )
 
 class Client:
@@ -146,12 +147,12 @@ class InstancesService:
     def resolve_incident(self, instance_id: str, incident_id: str) -> 'ResolveIncidentBuilder':
         return ResolveIncidentBuilder(self, instance_id, incident_id)
 
-    def get_visualization(self, instance_id: str) -> dict:
+    def get_visualization(self, instance_id: str) -> VisualizationData:
         url = f'{self.client._base_url}/api/instances/{instance_id}/visualization'
         resp = requests.get(url, headers=self.client._headers)
         if not resp.ok:
             raise RuntimeError(f"Failed to get visualization: {resp.text}")
-        return resp.json()
+        return VisualizationData.model_validate(resp.json())
 
     def get_visualization_html(self, instance_id: str) -> str:
         url = f'{self.client._base_url}/api/instances/{instance_id}/visualization/widget'

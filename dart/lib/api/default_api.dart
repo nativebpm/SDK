@@ -505,6 +505,122 @@ class DefaultApi {
     return null;
   }
 
+  /// Get process instance visualization data
+  ///
+  /// Retrieve diagram XML, execution node status, and history events for visualization.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  Future<Response> getInstanceVisualizationWithHttpInfo(String id, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/instances/{id}/visualization'
+      .replaceAll('{id}', id);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Get process instance visualization data
+  ///
+  /// Retrieve diagram XML, execution node status, and history events for visualization.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  Future<VisualizationData?> getInstanceVisualization(String id, { Future<void>? abortTrigger, }) async {
+    final response = await getInstanceVisualizationWithHttpInfo(id, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'VisualizationData',) as VisualizationData;
+    
+    }
+    return null;
+  }
+
+  /// Get process instance visualization widget HTML
+  ///
+  /// Retrieve the ready-to-embed HTML process visualization widget.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  Future<Response> getInstanceVisualizationWidgetWithHttpInfo(String id, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/api/instances/{id}/visualization/widget'
+      .replaceAll('{id}', id);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Get process instance visualization widget HTML
+  ///
+  /// Retrieve the ready-to-embed HTML process visualization widget.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  Future<String?> getInstanceVisualizationWidget(String id, { Future<void>? abortTrigger, }) async {
+    final response = await getInstanceVisualizationWidgetWithHttpInfo(id, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'String',) as String;
+    
+    }
+    return null;
+  }
+
   /// List process definitions
   ///
   /// Retrieve a list of all deployed process definitions.

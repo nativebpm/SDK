@@ -28,5 +28,6 @@ __exportStar(require("./ProcessInstance"), exports);
 __exportStar(require("./ResolveIncident200Response"), exports);
 __exportStar(require("./StartInstanceRequest"), exports);
 __exportStar(require("./TaskRecord"), exports);
+__exportStar(require("./VisualizationData"), exports);
 __exportStar(require("./WebhookDeliveryRecord"), exports);
 __exportStar(require("./WebhookRecord"), exports);

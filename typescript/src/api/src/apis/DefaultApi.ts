@@ -74,6 +74,11 @@ import {
     TaskRecordToJSON,
 } from '../models/TaskRecord';
 import {
+    type VisualizationData,
+    VisualizationDataFromJSON,
+    VisualizationDataToJSON,
+} from '../models/VisualizationData';
+import {
     type WebhookDeliveryRecord,
     WebhookDeliveryRecordFromJSON,
     WebhookDeliveryRecordToJSON,
@@ -116,6 +121,14 @@ export interface GetInstanceRequest {
 }
 
 export interface GetInstanceHistoryRequest {
+    id: string;
+}
+
+export interface GetInstanceVisualizationRequest {
+    id: string;
+}
+
+export interface GetInstanceVisualizationWidgetRequest {
     id: string;
 }
 
@@ -572,6 +585,104 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async getInstanceHistory(requestParameters: GetInstanceHistoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<HistoryRecord>> {
         const response = await this.getInstanceHistoryRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for getInstanceVisualization without sending the request
+     */
+    async getInstanceVisualizationRequestOpts(requestParameters: GetInstanceVisualizationRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling getInstanceVisualization().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/api/instances/{id}/visualization`;
+        urlPath = urlPath.replace('{id}', encodeURIComponent(String(requestParameters['id'])));
+
+        return {
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     * Retrieve diagram XML, execution node status, and history events for visualization.
+     * Get process instance visualization data
+     */
+    async getInstanceVisualizationRaw(requestParameters: GetInstanceVisualizationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VisualizationData>> {
+        const requestOptions = await this.getInstanceVisualizationRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => VisualizationDataFromJSON(jsonValue));
+    }
+
+    /**
+     * Retrieve diagram XML, execution node status, and history events for visualization.
+     * Get process instance visualization data
+     */
+    async getInstanceVisualization(requestParameters: GetInstanceVisualizationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VisualizationData> {
+        const response = await this.getInstanceVisualizationRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for getInstanceVisualizationWidget without sending the request
+     */
+    async getInstanceVisualizationWidgetRequestOpts(requestParameters: GetInstanceVisualizationWidgetRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling getInstanceVisualizationWidget().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/api/instances/{id}/visualization/widget`;
+        urlPath = urlPath.replace('{id}', encodeURIComponent(String(requestParameters['id'])));
+
+        return {
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     * Retrieve the ready-to-embed HTML process visualization widget.
+     * Get process instance visualization widget HTML
+     */
+    async getInstanceVisualizationWidgetRaw(requestParameters: GetInstanceVisualizationWidgetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        const requestOptions = await this.getInstanceVisualizationWidgetRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Retrieve the ready-to-embed HTML process visualization widget.
+     * Get process instance visualization widget HTML
+     */
+    async getInstanceVisualizationWidget(requestParameters: GetInstanceVisualizationWidgetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.getInstanceVisualizationWidgetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

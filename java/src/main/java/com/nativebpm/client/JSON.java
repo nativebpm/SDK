@@ -108,6 +108,7 @@ public class JSON {
         gsonBuilder.registerTypeAdapterFactory(new com.nativebpm.client.model.ResolveIncident200Response.CustomTypeAdapterFactory());
         gsonBuilder.registerTypeAdapterFactory(new com.nativebpm.client.model.StartInstanceRequest.CustomTypeAdapterFactory());
         gsonBuilder.registerTypeAdapterFactory(new com.nativebpm.client.model.TaskRecord.CustomTypeAdapterFactory());
+        gsonBuilder.registerTypeAdapterFactory(new com.nativebpm.client.model.VisualizationData.CustomTypeAdapterFactory());
         gsonBuilder.registerTypeAdapterFactory(new com.nativebpm.client.model.WebhookDeliveryRecord.CustomTypeAdapterFactory());
         gsonBuilder.registerTypeAdapterFactory(new com.nativebpm.client.model.WebhookRecord.CustomTypeAdapterFactory());
         gson = gsonBuilder.create();

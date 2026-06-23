@@ -207,6 +207,8 @@ class ApiClient {
           return StartInstanceRequest.fromJson(value);
         case 'TaskRecord':
           return TaskRecord.fromJson(value);
+        case 'VisualizationData':
+          return VisualizationData.fromJson(value);
         case 'WebhookDeliveryRecord':
           return WebhookDeliveryRecord.fromJson(value);
         case 'WebhookRecord':

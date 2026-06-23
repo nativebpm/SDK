@@ -141,6 +141,98 @@ To facilitate seamless AI and LLM orchestration without breaking BPMN 2.0 standa
 
 ---
 
+## ⚙️ Monorepo SDK Development, API Modification & Code Generation
+
+All client libraries in this monorepo are built on top of a single, standardized REST API contract defined by the OpenAPI 3.0 specification.
+
+For a detailed walkthrough on setting up your environment, modifying the API, generating code, and running tests, please refer to our [Contributing Guide](file:///Users/user/github.com/nativebpm/sdk/CONTRIBUTING.md).
+
+---
+
+### 1. How to Work with the SDKs
+
+The SDKs in this monorepo follow a dual-layer architecture:
+1. **Low-Level Generated Client**: Automatically generated from `openapi.yaml` under each language subdirectory. This layer handles low-level HTTP requests, route mapping, request/response serialization, and raw payload structures.
+2. **High-Level Fluent client wrapper**: A manually maintained wrapper that sits on top of the generated code. It provides an ergonomic, type-safe Fluent API for workflow builders, client configuration, and task handlers.
+
+#### General SDK Usage Workflow:
+1. **Initialize the Client**: Instantiate the main client configuration (setting the backend NativeBPM engine URL and any authentication headers).
+2. **Define a Workflow (Workflow-as-Code)**: Chain methods on the client builder to describe your process (steps, gateways, human tasks, AI tasks).
+3. **Deploy & Orchestrate**: Deploy the compiled AST to the server and manage/query process instances.
+
+#### Quick Go Example:
+```go
+import "github.com/nativebpm/sdk/go"
+
+// Initialize client
+client := nativebpm.NewClient(nativebpm.Config{
+    BaseURL: "http://localhost:8080",
+})
+
+// Build a workflow and deploy it
+workflow := client.Workflow("my-process").
+    Step("start").
+    HumanTask("review-task", "Review User Request").
+    Step("end")
+
+err := client.Deploy(workflow)
+```
+
+For package installation instructions and language-specific quickstarts, check the subdirectories for each language (e.g. `./go`, `./typescript`, `./python`).
+
+---
+
+### 2. How to Add or Modify APIs
+
+When you need to introduce new endpoints or modify existing data schemas (e.g., adding a new endpoint or extending data models):
+
+1. **Update the OpenAPI Contract**:
+   * Open the central API definition: [openapi.yaml](file:///Users/user/github.com/nativebpm/sdk/openapi.yaml).
+   * Define your new HTTP routes, methods (GET/POST/etc.), request bodies, path/query parameters, and response schemas.
+   * Make sure to follow OpenAPI 3.0 rules and add appropriate `operationId` definitions.
+2. **Regenerate Base Clients**:
+   * Run the generation commands (detailed in the next section) to rebuild the generated models and client files for all 10 languages.
+3. **Update Fluent client wrappers**:
+   * Modify the hand-written wrapper files in each language to expose the new functionality to developers.
+   * Key wrapper files to update:
+     - **Go**: [fluent_client.go](file:///Users/user/github.com/nativebpm/sdk/go/fluent_client.go)
+     - **TypeScript**: [client.ts](file:///Users/user/github.com/nativebpm/sdk/typescript/src/client.ts)
+     - **Python**: [client.py](file:///Users/user/github.com/nativebpm/sdk/python/nativebpm/client.py)
+     - **Dart**: [client.dart](file:///Users/user/github.com/nativebpm/sdk/dart/lib/src/client.dart)
+     - **Kotlin**: [Client.kt](file:///Users/user/github.com/nativebpm/sdk/kotlin/src/main/kotlin/com/nativebpm/client/Client.kt)
+     - **Swift**: [Client.swift](file:///Users/user/github.com/nativebpm/sdk/swift/NativeBPMClient/Classes/OpenAPIs/Client.swift)
+
+---
+
+### 3. How to Generate Code
+
+We use `openapi-generator-cli` packaged inside Docker containers to ensure consistent code generation across all developer workstations.
+
+#### Prerequisites
+* **Docker** must be installed and running.
+* **Make** tool must be available.
+
+#### Code Generation Commands
+* **Regenerate SDKs for all 10 languages**:
+  ```bash
+  make generate
+  ```
+* **Regenerate a specific language SDK**:
+  * **Go**: `make generate-go`
+  * **TypeScript**: `make generate-typescript`
+  * **Python**: `make generate-python`
+  * **Dart**: `make generate-dart`
+  * **Kotlin**: `make generate-kotlin`
+  * **Swift**: `make generate-swift`
+  * **PHP**: `make generate-php`
+  * **Rust**: `make generate-rust`
+  * **Java**: `make generate-java`
+  * **.NET**: `make generate-dotnet`
+
+Verify all compilation and tests pass in the respective directory after running code generation.
+
+---
+
 ## 📝 License
 
 This project is licensed under the terms of the **Unlicense** (see individual directories for details).

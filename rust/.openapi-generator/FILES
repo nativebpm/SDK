@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 .travis.yml
 Cargo.toml
 README.md
@@ -16,6 +15,7 @@ docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
+docs/VisualizationData.md
 docs/WebhookDeliveryRecord.md
 docs/WebhookRecord.md
 git_push.sh
@@ -36,5 +36,6 @@ src/models/process_instance.rs
 src/models/resolve_incident_200_response.rs
 src/models/start_instance_request.rs
 src/models/task_record.rs
+src/models/visualization_data.rs
 src/models/webhook_delivery_record.rs
 src/models/webhook_record.rs

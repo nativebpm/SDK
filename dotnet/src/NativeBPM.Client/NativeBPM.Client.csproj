@@ -27,4 +27,5 @@
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Condition="'$(TargetFramework)' == 'net8.0'" Version="8.0.20" />
     <PackageReference Include="Microsoft.Net.Http.Headers" Condition="'$(TargetFramework)' == 'net8.0'" Version="8.0.17" />
   </ItemGroup>
+
 </Project>

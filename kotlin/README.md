@@ -58,6 +58,8 @@ All URIs are relative to *http://localhost*
 | *DefaultApi* | [**deployDefinition**](docs/DefaultApi.md#deploydefinition) | **POST** /api/deploy | Deploy process definition |
 | *DefaultApi* | [**getInstance**](docs/DefaultApi.md#getinstance) | **GET** /api/instances/{id} | Get process instance |
 | *DefaultApi* | [**getInstanceHistory**](docs/DefaultApi.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
+| *DefaultApi* | [**getInstanceVisualization**](docs/DefaultApi.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
+| *DefaultApi* | [**getInstanceVisualizationWidget**](docs/DefaultApi.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
 | *DefaultApi* | [**listDefinitions**](docs/DefaultApi.md#listdefinitions) | **GET** /api/definitions | List process definitions |
 | *DefaultApi* | [**listIncidents**](docs/DefaultApi.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | *DefaultApi* | [**listInstances**](docs/DefaultApi.md#listinstances) | **GET** /api/instances | List process instances |
@@ -86,6 +88,7 @@ All URIs are relative to *http://localhost*
  - [com.nativebpm.client.models.ResolveIncident200Response](docs/ResolveIncident200Response.md)
  - [com.nativebpm.client.models.StartInstanceRequest](docs/StartInstanceRequest.md)
  - [com.nativebpm.client.models.TaskRecord](docs/TaskRecord.md)
+ - [com.nativebpm.client.models.VisualizationData](docs/VisualizationData.md)
  - [com.nativebpm.client.models.WebhookDeliveryRecord](docs/WebhookDeliveryRecord.md)
  - [com.nativebpm.client.models.WebhookRecord](docs/WebhookRecord.md)
 

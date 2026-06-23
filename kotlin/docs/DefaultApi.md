@@ -12,6 +12,8 @@ All URIs are relative to *http://localhost*
 | [**deployDefinition**](DefaultApi.md#deployDefinition) | **POST** /api/deploy | Deploy process definition |
 | [**getInstance**](DefaultApi.md#getInstance) | **GET** /api/instances/{id} | Get process instance |
 | [**getInstanceHistory**](DefaultApi.md#getInstanceHistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
+| [**getInstanceVisualization**](DefaultApi.md#getInstanceVisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
+| [**getInstanceVisualizationWidget**](DefaultApi.md#getInstanceVisualizationWidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
 | [**listDefinitions**](DefaultApi.md#listDefinitions) | **GET** /api/definitions | List process definitions |
 | [**listIncidents**](DefaultApi.md#listIncidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**listInstances**](DefaultApi.md#listInstances) | **GET** /api/instances | List process instances |
@@ -389,6 +391,98 @@ try {
 ### Return type
 
 [**kotlin.collections.List&lt;HistoryRecord&gt;**](HistoryRecord.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+<a id="getInstanceVisualization"></a>
+# **getInstanceVisualization**
+> VisualizationData getInstanceVisualization(id)
+
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+### Example
+```kotlin
+// Import classes:
+//import com.nativebpm.client.infrastructure.*
+//import com.nativebpm.client.models.*
+
+val apiInstance = DefaultApi()
+val id : kotlin.String = id_example // kotlin.String | 
+try {
+    val result : VisualizationData = apiInstance.getInstanceVisualization(id)
+    println(result)
+} catch (e: ClientException) {
+    println("4xx response calling DefaultApi#getInstanceVisualization")
+    e.printStackTrace()
+} catch (e: ServerException) {
+    println("5xx response calling DefaultApi#getInstanceVisualization")
+    e.printStackTrace()
+}
+```
+
+### Parameters
+| Name | Type | Description  | Notes |
+| ------------- | ------------- | ------------- | ------------- |
+| **id** | **kotlin.String**|  | |
+
+### Return type
+
+[**VisualizationData**](VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+<a id="getInstanceVisualizationWidget"></a>
+# **getInstanceVisualizationWidget**
+> kotlin.String getInstanceVisualizationWidget(id)
+
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+### Example
+```kotlin
+// Import classes:
+//import com.nativebpm.client.infrastructure.*
+//import com.nativebpm.client.models.*
+
+val apiInstance = DefaultApi()
+val id : kotlin.String = id_example // kotlin.String | 
+try {
+    val result : kotlin.String = apiInstance.getInstanceVisualizationWidget(id)
+    println(result)
+} catch (e: ClientException) {
+    println("4xx response calling DefaultApi#getInstanceVisualizationWidget")
+    e.printStackTrace()
+} catch (e: ServerException) {
+    println("5xx response calling DefaultApi#getInstanceVisualizationWidget")
+    e.printStackTrace()
+}
+```
+
+### Parameters
+| Name | Type | Description  | Notes |
+| ------------- | ------------- | ------------- | ------------- |
+| **id** | **kotlin.String**|  | |
+
+### Return type
+
+**kotlin.String**
 
 ### Authorization
 

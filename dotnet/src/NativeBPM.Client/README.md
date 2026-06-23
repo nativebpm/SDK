@@ -6,12 +6,12 @@ Create a config.yaml file similar to what is below, then run the following power
 
 ```yaml
 generatorName: csharp
-inputSpec: /local/public/swagger/openapi.yaml
+inputSpec: /local/sdk/openapi.yaml
 outputDir: out
 
 # https://openapi-generator.tech/docs/generators/csharp
 additionalProperties:
-  packageGuid: '{180AD027-30C8-4DCB-972E-6677AA524F02}'
+  packageGuid: '{0932D86F-6DDE-4084-BD5A-7C957C85A119}'
 
 # https://openapi-generator.tech/docs/integrations/#github-integration
 # gitHost:

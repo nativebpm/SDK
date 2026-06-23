@@ -12,6 +12,8 @@ All URIs are relative to *http://localhost*
 | [**DeployDefinition**](DefaultApi.md#deploydefinition) | **POST** /api/deploy | Deploy process definition |
 | [**GetInstance**](DefaultApi.md#getinstance) | **GET** /api/instances/{id} | Get process instance |
 | [**GetInstanceHistory**](DefaultApi.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
+| [**GetInstanceVisualization**](DefaultApi.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
+| [**GetInstanceVisualizationWidget**](DefaultApi.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
 | [**ListDefinitions**](DefaultApi.md#listdefinitions) | **GET** /api/definitions | List process definitions |
 | [**ListIncidents**](DefaultApi.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**ListInstances**](DefaultApi.md#listinstances) | **GET** /api/instances | List process instances |
@@ -342,6 +344,84 @@ No authorization required
 |-------------|-------------|------------------|
 | **200** | Successful response |  -  |
 | **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)
+
+<a id="getinstancevisualization"></a>
+# **GetInstanceVisualization**
+> VisualizationData GetInstanceVisualization (string id)
+
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+
+### Parameters
+
+| Name | Type | Description | Notes |
+|------|------|-------------|-------|
+| **id** | **string** |  |  |
+
+### Return type
+
+[**VisualizationData**](VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **404** | Process instance not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)
+
+<a id="getinstancevisualizationwidget"></a>
+# **GetInstanceVisualizationWidget**
+> string GetInstanceVisualizationWidget (string id)
+
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+
+### Parameters
+
+| Name | Type | Description | Notes |
+|------|------|-------------|-------|
+| **id** | **string** |  |  |
+
+### Return type
+
+**string**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: text/html, application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **404** | Process instance not found |  -  |
 | **500** | Internal Server Error - database failure or execution crash |  -  |
 
 [[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)

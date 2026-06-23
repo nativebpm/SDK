@@ -1,7 +1,6 @@
 .github/workflows/python.yml
 .gitignore
 .gitlab-ci.yml
-.openapi-generator-ignore
 .travis.yml
 README.md
 docs/ClaimTaskRequest.md
@@ -17,6 +16,7 @@ docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
+docs/VisualizationData.md
 docs/WebhookDeliveryRecord.md
 docs/WebhookRecord.md
 git_push.sh
@@ -40,6 +40,7 @@ nativebpm_client/models/process_instance.py
 nativebpm_client/models/resolve_incident200_response.py
 nativebpm_client/models/start_instance_request.py
 nativebpm_client/models/task_record.py
+nativebpm_client/models/visualization_data.py
 nativebpm_client/models/webhook_delivery_record.py
 nativebpm_client/models/webhook_record.py
 nativebpm_client/py.typed
@@ -50,19 +51,5 @@ setup.cfg
 setup.py
 test-requirements.txt
 test/__init__.py
-test/test_claim_task_request.py
-test/test_complete_instance_task_request.py
-test/test_complete_task_request.py
-test/test_create_webhook_request.py
-test/test_default_api.py
-test/test_history_record.py
-test/test_incident_record.py
-test/test_list_definitions401_response.py
-test/test_process_definition.py
-test/test_process_instance.py
-test/test_resolve_incident200_response.py
-test/test_start_instance_request.py
-test/test_task_record.py
-test/test_webhook_delivery_record.py
-test/test_webhook_record.py
+test/test_visualization_data.py
 tox.ini

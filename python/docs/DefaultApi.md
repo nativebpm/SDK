@@ -12,6 +12,8 @@ Method | HTTP request | Description
 [**deploy_definition**](DefaultApi.md#deploy_definition) | **POST** /api/deploy | Deploy process definition
 [**get_instance**](DefaultApi.md#get_instance) | **GET** /api/instances/{id} | Get process instance
 [**get_instance_history**](DefaultApi.md#get_instance_history) | **GET** /api/instances/{id}/history | Get process instance execution history
+[**get_instance_visualization**](DefaultApi.md#get_instance_visualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
+[**get_instance_visualization_widget**](DefaultApi.md#get_instance_visualization_widget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
 [**list_definitions**](DefaultApi.md#list_definitions) | **GET** /api/definitions | List process definitions
 [**list_incidents**](DefaultApi.md#list_incidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 [**list_instances**](DefaultApi.md#list_instances) | **GET** /api/instances | List process instances
@@ -606,6 +608,147 @@ No authorization required
 |-------------|-------------|------------------|
 **200** | Successful response |  -  |
 **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+**500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_instance_visualization**
+> VisualizationData get_instance_visualization(id)
+
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+### Example
+
+
+```python
+import nativebpm_client
+from nativebpm_client.models.visualization_data import VisualizationData
+from nativebpm_client.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = nativebpm_client.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with nativebpm_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = nativebpm_client.DefaultApi(api_client)
+    id = 'id_example' # str | 
+
+    try:
+        # Get process instance visualization data
+        api_response = api_instance.get_instance_visualization(id)
+        print("The response of DefaultApi->get_instance_visualization:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->get_instance_visualization: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **str**|  | 
+
+### Return type
+
+[**VisualizationData**](VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Successful response |  -  |
+**401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+**404** | Process instance not found |  -  |
+**500** | Internal Server Error - database failure or execution crash |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_instance_visualization_widget**
+> str get_instance_visualization_widget(id)
+
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+### Example
+
+
+```python
+import nativebpm_client
+from nativebpm_client.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = nativebpm_client.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with nativebpm_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = nativebpm_client.DefaultApi(api_client)
+    id = 'id_example' # str | 
+
+    try:
+        # Get process instance visualization widget HTML
+        api_response = api_instance.get_instance_visualization_widget(id)
+        print("The response of DefaultApi->get_instance_visualization_widget:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling DefaultApi->get_instance_visualization_widget: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **str**|  | 
+
+### Return type
+
+**str**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: text/html, application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Successful response |  -  |
+**401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+**404** | Process instance not found |  -  |
 **500** | Internal Server Error - database failure or execution crash |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

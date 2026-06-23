@@ -12,6 +12,8 @@ Method | HTTP request | Description
 [**deploy_definition**](DefaultApi.md#deploy_definition) | **POST** /api/deploy | Deploy process definition
 [**get_instance**](DefaultApi.md#get_instance) | **GET** /api/instances/{id} | Get process instance
 [**get_instance_history**](DefaultApi.md#get_instance_history) | **GET** /api/instances/{id}/history | Get process instance execution history
+[**get_instance_visualization**](DefaultApi.md#get_instance_visualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
+[**get_instance_visualization_widget**](DefaultApi.md#get_instance_visualization_widget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
 [**list_definitions**](DefaultApi.md#list_definitions) | **GET** /api/definitions | List process definitions
 [**list_incidents**](DefaultApi.md#list_incidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 [**list_instances**](DefaultApi.md#list_instances) | **GET** /api/instances | List process instances
@@ -265,6 +267,66 @@ No authorization required
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## get_instance_visualization
+
+> models::VisualizationData get_instance_visualization(id)
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+### Parameters
+
+
+Name | Type | Description  | Required | Notes
+------------- | ------------- | ------------- | ------------- | -------------
+**id** | **String** |  | [required] |
+
+### Return type
+
+[**models::VisualizationData**](VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## get_instance_visualization_widget
+
+> String get_instance_visualization_widget(id)
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+### Parameters
+
+
+Name | Type | Description  | Required | Notes
+------------- | ------------- | ------------- | ------------- | -------------
+**id** | **String** |  | [required] |
+
+### Return type
+
+**String**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: text/html, application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

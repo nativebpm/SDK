@@ -180,6 +180,16 @@ public class InstancesService {
     public func start(_ definitionID: String) -> StartInstanceBuilder {
         return StartInstanceBuilder(client: client, definitionID: definitionID)
     }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    public func getVisualization(_ instanceID: String) async throws -> VisualizationData {
+        return try await DefaultAPI.getInstanceVisualization(id: instanceID)
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    public func getVisualizationHTML(_ instanceID: String) async throws -> String {
+        return try await DefaultAPI.getInstanceVisualizationWidget(id: instanceID)
+    }
 }
 
 public class StartInstanceBuilder {
@@ -221,8 +231,76 @@ public class TasksService {
         self.client = client
     }
 
+    public func list() -> ListTasksBuilder {
+        return ListTasksBuilder(client: client)
+    }
+
+    public func claim(_ taskID: String) -> ClaimTaskBuilder {
+        return ClaimTaskBuilder(client: client, taskID: taskID)
+    }
+
     public func complete(_ taskID: String) -> CompleteTaskBuilder {
         return CompleteTaskBuilder(client: client, taskID: taskID)
+    }
+}
+
+public class ListTasksBuilder {
+    private let client: Client
+    private var assignee: String?
+    private var candidateGroup: String?
+    private var status: String?
+
+    public init(client: Client) {
+        self.client = client
+    }
+
+    public func withAssignee(_ assignee: String) -> Self {
+        self.assignee = assignee
+        return self
+    }
+
+    public func withCandidateGroup(_ candidateGroup: String) -> Self {
+        self.candidateGroup = candidateGroup
+        return self
+    }
+
+    public func withStatus(_ status: String) -> Self {
+        self.status = status
+        return self
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    public func send() async throws -> [TaskRecord] {
+        var mappedStatus: DefaultAPI.Status_listTasks? = nil
+        if let currentStatus = status {
+            mappedStatus = DefaultAPI.Status_listTasks(rawValue: currentStatus)
+        }
+        return try await DefaultAPI.listTasks(assignee: assignee, candidateGroup: candidateGroup, status: mappedStatus)
+    }
+}
+
+public class ClaimTaskBuilder {
+    private let client: Client
+    private let taskID: String
+    private var assignee: String?
+
+    public init(client: Client, taskID: String) {
+        self.client = client
+        self.taskID = taskID
+    }
+
+    public func withAssignee(_ assignee: String) -> Self {
+        self.assignee = assignee
+        return self
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    public func send() async throws -> TaskRecord {
+        guard let currentAssignee = assignee else {
+            throw NSError(domain: "NativeBPMClient", code: 400, userInfo: [NSLocalizedDescriptionKey: "Assignee is required to claim a task"])
+        }
+        let request = ClaimTaskRequest(assignee: currentAssignee)
+        return try await DefaultAPI.claimTask(id: taskID, claimTaskRequest: request)
     }
 }
 

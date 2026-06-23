@@ -48,7 +48,7 @@ import com.nativebpm.client.JSON;
 /**
  * ListDefinitions401Response
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-11T04:51:49.353723718Z[Etc/UTC]", comments = "Generator version: 7.24.0-SNAPSHOT")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T02:37:02.804899948Z[Etc/UTC]", comments = "Generator version: 7.24.0-SNAPSHOT")
 public class ListDefinitions401Response {
   public static final String SERIALIZED_NAME_ERROR = "error";
   @SerializedName(SERIALIZED_NAME_ERROR)

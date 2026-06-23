@@ -12,6 +12,8 @@ Method | HTTP request | Description
 [**deployDefinition**](DefaultAPI.md#deploydefinition) | **POST** /api/deploy | Deploy process definition
 [**getInstance**](DefaultAPI.md#getinstance) | **GET** /api/instances/{id} | Get process instance
 [**getInstanceHistory**](DefaultAPI.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history
+[**getInstanceVisualization**](DefaultAPI.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
+[**getInstanceVisualizationWidget**](DefaultAPI.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
 [**listDefinitions**](DefaultAPI.md#listdefinitions) | **GET** /api/definitions | List process definitions
 [**listIncidents**](DefaultAPI.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 [**listInstances**](DefaultAPI.md#listinstances) | **GET** /api/instances | List process instances
@@ -428,6 +430,106 @@ No authorization required
 
  - **Content-Type**: Not defined
  - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getInstanceVisualization**
+```swift
+    open class func getInstanceVisualization(id: String, completion: @escaping (_ data: VisualizationData?, _ error: Error?) -> Void)
+```
+
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+### Example
+```swift
+// The following code samples are still beta. For any issue, please report via http://github.com/OpenAPITools/openapi-generator/issues/new
+import NativeBPMClient
+
+let id = "id_example" // String | 
+
+// Get process instance visualization data
+DefaultAPI.getInstanceVisualization(id: id) { (response, error) in
+    guard error == nil else {
+        print(error)
+        return
+    }
+
+    if (response) {
+        dump(response)
+    }
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String** |  | 
+
+### Return type
+
+[**VisualizationData**](VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getInstanceVisualizationWidget**
+```swift
+    open class func getInstanceVisualizationWidget(id: String, completion: @escaping (_ data: String?, _ error: Error?) -> Void)
+```
+
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+### Example
+```swift
+// The following code samples are still beta. For any issue, please report via http://github.com/OpenAPITools/openapi-generator/issues/new
+import NativeBPMClient
+
+let id = "id_example" // String | 
+
+// Get process instance visualization widget HTML
+DefaultAPI.getInstanceVisualizationWidget(id: id) { (response, error) in
+    guard error == nil else {
+        print(error)
+        return
+    }
+
+    if (response) {
+        dump(response)
+    }
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String** |  | 
+
+### Return type
+
+**String**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: text/html, application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

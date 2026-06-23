@@ -61,6 +61,11 @@ func (c *Client) Webhooks() *WebhooksService {
 	return &WebhooksService{client: c}
 }
 
+// Users returns the Users management service.
+func (c *Client) Users() *UsersService {
+	return &UsersService{client: c}
+}
+
 // DefinitionsService manages process schemas
 type DefinitionsService struct {
 	client *Client
@@ -209,17 +214,6 @@ type InstancesService struct {
 
 func (s *InstancesService) Incidents() *IncidentsService {
 	return &IncidentsService{client: s.client}
-}
-
-type VisualizationData struct {
-	InstanceID     string          `json:"instance_id"`
-	DefinitionID   string          `json:"definition_id"`
-	XML            string          `json:"xml"`
-	ActiveNodes    []string        `json:"active_nodes"`
-	WaitingNodes   []string        `json:"waiting_nodes"`
-	CompletedNodes []string        `json:"completed_nodes"`
-	History        []HistoryRecord `json:"history"`
-	Completed      bool            `json:"completed"`
 }
 
 func (s *InstancesService) GetVisualization(ctx context.Context, instanceID string) (*VisualizationData, error) {
@@ -688,5 +682,24 @@ func (s *WebhooksService) Test(webhookID string) *TestWebhookBuilder {
 
 func (b *TestWebhookBuilder) Send(ctx context.Context) (*ResolveIncident200Response, error) {
 	res, _, err := b.service.client.apiClient.DefaultAPI.TestWebhook(ctx, b.webhookID).Execute()
+	return res, err
+}
+
+// UsersService manages user-related actions like group querying
+type UsersService struct {
+	client *Client
+}
+
+type UserGroupsBuilder struct {
+	service  *UsersService
+	username string
+}
+
+func (s *UsersService) Groups(username string) *UserGroupsBuilder {
+	return &UserGroupsBuilder{service: s, username: username}
+}
+
+func (b *UserGroupsBuilder) Send(ctx context.Context) ([]string, error) {
+	res, _, err := b.service.client.apiClient.DefaultAPI.GetUserGroups(ctx, b.username).Execute()
 	return res, err
 }

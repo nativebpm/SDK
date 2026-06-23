@@ -39,6 +39,7 @@ import com.nativebpm.client.models.ProcessInstance
 import com.nativebpm.client.models.ResolveIncident200Response
 import com.nativebpm.client.models.StartInstanceRequest
 import com.nativebpm.client.models.TaskRecord
+import com.nativebpm.client.models.VisualizationData
 import com.nativebpm.client.models.WebhookDeliveryRecord
 import com.nativebpm.client.models.WebhookRecord
 
@@ -657,6 +658,152 @@ open class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Fa
         return RequestConfig(
             method = RequestMethod.GET,
             path = "/api/instances/{id}/history".replace("{"+"id"+"}", encodeURIComponent(id.toString())),
+            query = localVariableQuery,
+            headers = localVariableHeaders,
+            requiresAuthentication = false,
+            body = localVariableBody
+        )
+    }
+
+    /**
+     * GET /api/instances/{id}/visualization
+     * Get process instance visualization data
+     * Retrieve diagram XML, execution node status, and history events for visualization.
+     * @param id 
+     * @return VisualizationData
+     * @throws IllegalStateException If the request is not correctly configured
+     * @throws IOException Rethrows the OkHttp execute method exception
+     * @throws UnsupportedOperationException If the API returns an informational or redirection response
+     * @throws ClientException If the API returns a client error response
+     * @throws ServerException If the API returns a server error response
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IllegalStateException::class, IOException::class, UnsupportedOperationException::class, ClientException::class, ServerException::class)
+    fun getInstanceVisualization(id: kotlin.String) : VisualizationData {
+        val localVarResponse = getInstanceVisualizationWithHttpInfo(id = id)
+
+        return when (localVarResponse.responseType) {
+            ResponseType.Success -> (localVarResponse as Success<*>).data as VisualizationData
+            ResponseType.Informational -> throw UnsupportedOperationException("Client does not support Informational responses.")
+            ResponseType.Redirection -> throw UnsupportedOperationException("Client does not support Redirection responses.")
+            ResponseType.ClientError -> {
+                val localVarError = localVarResponse as ClientError<*>
+                throw ClientException("Client error : ${localVarError.statusCode} ${localVarError.message.orEmpty()}", localVarError.statusCode, localVarResponse)
+            }
+            ResponseType.ServerError -> {
+                val localVarError = localVarResponse as ServerError<*>
+                throw ServerException("Server error : ${localVarError.statusCode} ${localVarError.message.orEmpty()} ${localVarError.body}", localVarError.statusCode, localVarResponse)
+            }
+        }
+    }
+
+    /**
+     * GET /api/instances/{id}/visualization
+     * Get process instance visualization data
+     * Retrieve diagram XML, execution node status, and history events for visualization.
+     * @param id 
+     * @return ApiResponse<VisualizationData?>
+     * @throws IllegalStateException If the request is not correctly configured
+     * @throws IOException Rethrows the OkHttp execute method exception
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IllegalStateException::class, IOException::class)
+    fun getInstanceVisualizationWithHttpInfo(id: kotlin.String) : ApiResponse<VisualizationData?> {
+        val localVariableConfig = getInstanceVisualizationRequestConfig(id = id)
+
+        return request<Unit, VisualizationData>(
+            localVariableConfig
+        )
+    }
+
+    /**
+     * To obtain the request config of the operation getInstanceVisualization
+     *
+     * @param id 
+     * @return RequestConfig
+     */
+    fun getInstanceVisualizationRequestConfig(id: kotlin.String) : RequestConfig<Unit> {
+        val localVariableBody = null
+        val localVariableQuery: MultiValueMap = mutableMapOf()
+        val localVariableHeaders: MutableMap<String, String> = mutableMapOf()
+        localVariableHeaders["Accept"] = "application/json"
+
+        return RequestConfig(
+            method = RequestMethod.GET,
+            path = "/api/instances/{id}/visualization".replace("{"+"id"+"}", encodeURIComponent(id.toString())),
+            query = localVariableQuery,
+            headers = localVariableHeaders,
+            requiresAuthentication = false,
+            body = localVariableBody
+        )
+    }
+
+    /**
+     * GET /api/instances/{id}/visualization/widget
+     * Get process instance visualization widget HTML
+     * Retrieve the ready-to-embed HTML process visualization widget.
+     * @param id 
+     * @return kotlin.String
+     * @throws IllegalStateException If the request is not correctly configured
+     * @throws IOException Rethrows the OkHttp execute method exception
+     * @throws UnsupportedOperationException If the API returns an informational or redirection response
+     * @throws ClientException If the API returns a client error response
+     * @throws ServerException If the API returns a server error response
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IllegalStateException::class, IOException::class, UnsupportedOperationException::class, ClientException::class, ServerException::class)
+    fun getInstanceVisualizationWidget(id: kotlin.String) : kotlin.String {
+        val localVarResponse = getInstanceVisualizationWidgetWithHttpInfo(id = id)
+
+        return when (localVarResponse.responseType) {
+            ResponseType.Success -> (localVarResponse as Success<*>).data as kotlin.String
+            ResponseType.Informational -> throw UnsupportedOperationException("Client does not support Informational responses.")
+            ResponseType.Redirection -> throw UnsupportedOperationException("Client does not support Redirection responses.")
+            ResponseType.ClientError -> {
+                val localVarError = localVarResponse as ClientError<*>
+                throw ClientException("Client error : ${localVarError.statusCode} ${localVarError.message.orEmpty()}", localVarError.statusCode, localVarResponse)
+            }
+            ResponseType.ServerError -> {
+                val localVarError = localVarResponse as ServerError<*>
+                throw ServerException("Server error : ${localVarError.statusCode} ${localVarError.message.orEmpty()} ${localVarError.body}", localVarError.statusCode, localVarResponse)
+            }
+        }
+    }
+
+    /**
+     * GET /api/instances/{id}/visualization/widget
+     * Get process instance visualization widget HTML
+     * Retrieve the ready-to-embed HTML process visualization widget.
+     * @param id 
+     * @return ApiResponse<kotlin.String?>
+     * @throws IllegalStateException If the request is not correctly configured
+     * @throws IOException Rethrows the OkHttp execute method exception
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IllegalStateException::class, IOException::class)
+    fun getInstanceVisualizationWidgetWithHttpInfo(id: kotlin.String) : ApiResponse<kotlin.String?> {
+        val localVariableConfig = getInstanceVisualizationWidgetRequestConfig(id = id)
+
+        return request<Unit, kotlin.String>(
+            localVariableConfig
+        )
+    }
+
+    /**
+     * To obtain the request config of the operation getInstanceVisualizationWidget
+     *
+     * @param id 
+     * @return RequestConfig
+     */
+    fun getInstanceVisualizationWidgetRequestConfig(id: kotlin.String) : RequestConfig<Unit> {
+        val localVariableBody = null
+        val localVariableQuery: MultiValueMap = mutableMapOf()
+        val localVariableHeaders: MutableMap<String, String> = mutableMapOf()
+        localVariableHeaders["Accept"] = "application/json"
+
+        return RequestConfig(
+            method = RequestMethod.GET,
+            path = "/api/instances/{id}/visualization/widget".replace("{"+"id"+"}", encodeURIComponent(id.toString())),
             query = localVariableQuery,
             headers = localVariableHeaders,
             requiresAuthentication = false,

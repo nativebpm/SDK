@@ -1,4 +1,3 @@
-.openapi-generator-ignore
 README.md
 build.gradle
 docs/ClaimTaskRequest.md
@@ -14,6 +13,7 @@ docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
+docs/VisualizationData.md
 docs/WebhookDeliveryRecord.md
 docs/WebhookRecord.md
 gradle/wrapper/gradle-wrapper.jar
@@ -51,20 +51,7 @@ src/main/kotlin/com/nativebpm/client/models/ProcessInstance.kt
 src/main/kotlin/com/nativebpm/client/models/ResolveIncident200Response.kt
 src/main/kotlin/com/nativebpm/client/models/StartInstanceRequest.kt
 src/main/kotlin/com/nativebpm/client/models/TaskRecord.kt
+src/main/kotlin/com/nativebpm/client/models/VisualizationData.kt
 src/main/kotlin/com/nativebpm/client/models/WebhookDeliveryRecord.kt
 src/main/kotlin/com/nativebpm/client/models/WebhookRecord.kt
-src/test/kotlin/com/nativebpm/client/apis/DefaultApiTest.kt
-src/test/kotlin/com/nativebpm/client/models/ClaimTaskRequestTest.kt
-src/test/kotlin/com/nativebpm/client/models/CompleteInstanceTaskRequestTest.kt
-src/test/kotlin/com/nativebpm/client/models/CompleteTaskRequestTest.kt
-src/test/kotlin/com/nativebpm/client/models/CreateWebhookRequestTest.kt
-src/test/kotlin/com/nativebpm/client/models/HistoryRecordTest.kt
-src/test/kotlin/com/nativebpm/client/models/IncidentRecordTest.kt
-src/test/kotlin/com/nativebpm/client/models/ListDefinitions401ResponseTest.kt
-src/test/kotlin/com/nativebpm/client/models/ProcessDefinitionTest.kt
-src/test/kotlin/com/nativebpm/client/models/ProcessInstanceTest.kt
-src/test/kotlin/com/nativebpm/client/models/ResolveIncident200ResponseTest.kt
-src/test/kotlin/com/nativebpm/client/models/StartInstanceRequestTest.kt
-src/test/kotlin/com/nativebpm/client/models/TaskRecordTest.kt
-src/test/kotlin/com/nativebpm/client/models/WebhookDeliveryRecordTest.kt
-src/test/kotlin/com/nativebpm/client/models/WebhookRecordTest.kt
+src/test/kotlin/com/nativebpm/client/models/VisualizationDataTest.kt

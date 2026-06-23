@@ -60,6 +60,8 @@ All URIs are relative to *http://localhost*
 *DefaultApi* | [**deployDefinition**](docs/DefaultApi.md#deploydefinition) | **POST** /api/deploy | Deploy process definition
 *DefaultApi* | [**getInstance**](docs/DefaultApi.md#getinstance) | **GET** /api/instances/{id} | Get process instance
 *DefaultApi* | [**getInstanceHistory**](docs/DefaultApi.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history
+*DefaultApi* | [**getInstanceVisualization**](docs/DefaultApi.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
+*DefaultApi* | [**getInstanceVisualizationWidget**](docs/DefaultApi.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
 *DefaultApi* | [**listDefinitions**](docs/DefaultApi.md#listdefinitions) | **GET** /api/definitions | List process definitions
 *DefaultApi* | [**listIncidents**](docs/DefaultApi.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 *DefaultApi* | [**listInstances**](docs/DefaultApi.md#listinstances) | **GET** /api/instances | List process instances
@@ -87,6 +89,7 @@ All URIs are relative to *http://localhost*
 - [ResolveIncident200Response](docs/ResolveIncident200Response.md)
 - [StartInstanceRequest](docs/StartInstanceRequest.md)
 - [TaskRecord](docs/TaskRecord.md)
+- [VisualizationData](docs/VisualizationData.md)
 - [WebhookDeliveryRecord](docs/WebhookDeliveryRecord.md)
 - [WebhookRecord](docs/WebhookRecord.md)
 

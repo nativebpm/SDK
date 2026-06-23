@@ -10,5 +10,6 @@ export * from './ProcessInstance';
 export * from './ResolveIncident200Response';
 export * from './StartInstanceRequest';
 export * from './TaskRecord';
+export * from './VisualizationData';
 export * from './WebhookDeliveryRecord';
 export * from './WebhookRecord';

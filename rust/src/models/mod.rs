@@ -22,6 +22,8 @@ pub mod start_instance_request;
 pub use self::start_instance_request::StartInstanceRequest;
 pub mod task_record;
 pub use self::task_record::TaskRecord;
+pub mod visualization_data;
+pub use self::visualization_data::VisualizationData;
 pub mod webhook_delivery_record;
 pub use self::webhook_delivery_record::WebhookDeliveryRecord;
 pub mod webhook_record;

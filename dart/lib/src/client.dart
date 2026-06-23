@@ -130,6 +130,22 @@ class InstancesService {
 
   StartInstanceBuilder start(String definitionId) => StartInstanceBuilder(client, definitionId);
   CompleteInstanceTaskBuilder completeTask(String instanceId, String nodeId) => CompleteInstanceTaskBuilder(client, instanceId, nodeId);
+
+  Future<VisualizationData> getVisualization(String instanceId) async {
+    final response = await client._defaultApi.getInstanceVisualization(instanceId);
+    if (response == null) {
+      throw Exception('Failed to get instance visualization');
+    }
+    return response;
+  }
+
+  Future<String> getVisualizationHTML(String instanceId) async {
+    final response = await client._defaultApi.getInstanceVisualizationWidget(instanceId);
+    if (response == null) {
+      throw Exception('Failed to get instance visualization HTML');
+    }
+    return response;
+  }
 }
 
 class StartInstanceBuilder {

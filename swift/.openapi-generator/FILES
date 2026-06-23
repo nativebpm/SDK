@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 .swiftformat
 Cartfile
 NativeBPMClient.podspec
@@ -24,6 +23,7 @@ NativeBPMClient/Classes/OpenAPIs/Models/ProcessInstance.swift
 NativeBPMClient/Classes/OpenAPIs/Models/ResolveIncident200Response.swift
 NativeBPMClient/Classes/OpenAPIs/Models/StartInstanceRequest.swift
 NativeBPMClient/Classes/OpenAPIs/Models/TaskRecord.swift
+NativeBPMClient/Classes/OpenAPIs/Models/VisualizationData.swift
 NativeBPMClient/Classes/OpenAPIs/Models/WebhookDeliveryRecord.swift
 NativeBPMClient/Classes/OpenAPIs/Models/WebhookRecord.swift
 NativeBPMClient/Classes/OpenAPIs/OpenISO8601DateFormatter.swift
@@ -45,6 +45,7 @@ docs/ProcessInstance.md
 docs/ResolveIncident200Response.md
 docs/StartInstanceRequest.md
 docs/TaskRecord.md
+docs/VisualizationData.md
 docs/WebhookDeliveryRecord.md
 docs/WebhookRecord.md
 git_push.sh

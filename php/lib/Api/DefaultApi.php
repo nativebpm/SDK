@@ -98,6 +98,12 @@ class DefaultApi
         'getInstanceHistory' => [
             'application/json',
         ],
+        'getInstanceVisualization' => [
+            'application/json',
+        ],
+        'getInstanceVisualizationWidget' => [
+            'application/json',
+        ],
         'listDefinitions' => [
             'application/json',
         ],
@@ -1728,192 +1734,6 @@ class DefaultApi
     }
 
     /**
-     * Operation deployWorkflow
-     *
-     * Deploy a Workflow directly as JSON AST.
-     *
-     * @param  \NativeBPM\Client\Builder\Workflow $workflow The workflow definition to deploy.
-     *
-     * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return \NativeBPM\Client\Model\ProcessDefinition
-     */
-    public function deployWorkflow(\NativeBPM\Client\Builder\Workflow $workflow)
-    {
-        list($response) = $this->deployWorkflowWithHttpInfo($workflow);
-        return $response;
-    }
-
-    /**
-     * Operation deployWorkflowWithHttpInfo
-     *
-     * Deploy a Workflow directly as JSON AST.
-     *
-     * @param  \NativeBPM\Client\Builder\Workflow $workflow The workflow definition to deploy.
-     *
-     * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return array
-     */
-    public function deployWorkflowWithHttpInfo(\NativeBPM\Client\Builder\Workflow $workflow)
-    {
-        $request = $this->deployWorkflowRequest($workflow);
-
-        try {
-            $options = $this->createHttpClientOption();
-            try {
-                $response = $this->client->send($request, $options);
-            } catch (RequestException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
-                );
-            } catch (ConnectException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    null,
-                    null
-                );
-            }
-
-            $statusCode = $response->getStatusCode();
-
-            if ($statusCode < 200 || $statusCode > 299) {
-                throw new ApiException(
-                    sprintf(
-                        '[%d] Error connecting to the API (%s)',
-                        $statusCode,
-                        (string) $request->getUri()
-                    ),
-                    $statusCode,
-                    $response->getHeaders(),
-                    (string) $response->getBody()
-                );
-            }
-
-            switch($statusCode) {
-                case 200:
-                    if ('\NativeBPM\Client\Model\ProcessDefinition' === '\SplFileObject') {
-                        $content = $response->getBody(); //stream goes to serializer
-                    } else {
-                        $content = (string) $response->getBody();
-                        if ('\NativeBPM\Client\Model\ProcessDefinition' !== 'string') {
-                            try {
-                                $content = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
-                            } catch (\JsonException $exception) {
-                                throw new ApiException(
-                                    sprintf(
-                                        'Error JSON decoding server response (%s)',
-                                        $request->getUri()
-                                    ),
-                                    $statusCode,
-                                    $response->getHeaders(),
-                                    $content
-                                );
-                            }
-                        }
-                    }
-
-                    return [
-                        \NativeBPM\Client\ObjectSerializer::deserialize($content, '\NativeBPM\Client\Model\ProcessDefinition', []),
-                        $response->getStatusCode(),
-                        $response->getHeaders()
-                    ];
-            }
-
-            $returnType = '\NativeBPM\Client\Model\ProcessDefinition';
-            if ($returnType === '\SplFileObject') {
-                $content = $response->getBody(); //stream goes to serializer
-            } else {
-                $content = (string) $response->getBody();
-                if ($returnType !== 'string') {
-                    try {
-                        $content = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
-                    } catch (\JsonException $exception) {
-                        throw new ApiException(
-                            sprintf(
-                                'Error JSON decoding server response (%s)',
-                                $request->getUri()
-                            ),
-                            $statusCode,
-                            $response->getHeaders(),
-                            $content
-                        );
-                    }
-                }
-            }
-
-            return [
-                \NativeBPM\Client\ObjectSerializer::deserialize($content, $returnType, []),
-                $response->getStatusCode(),
-                $response->getHeaders()
-            ];
-
-        } catch (ApiException $e) {
-            switch ($e->getCode()) {
-                case 200:
-                    $data = \NativeBPM\Client\ObjectSerializer::deserialize(
-                        $e->getResponseBody(),
-                        '\NativeBPM\Client\Model\ProcessDefinition',
-                        $e->getResponseHeaders()
-                    );
-                    $e->setResponseObject($data);
-                    break;
-                case 401:
-                    $data = \NativeBPM\Client\ObjectSerializer::deserialize(
-                        $e->getResponseBody(),
-                        '\NativeBPM\Client\Model\ListDefinitions401Response',
-                        $e->getResponseHeaders()
-                    );
-                    $e->setResponseObject($data);
-                    break;
-                case 403:
-                    $data = \NativeBPM\Client\ObjectSerializer::deserialize(
-                        $e->getResponseBody(),
-                        '\NativeBPM\Client\Model\ListDefinitions401Response',
-                        $e->getResponseHeaders()
-                    );
-                    $e->setResponseObject($data);
-                    break;
-            }
-            throw $e;
-        }
-    }
-
-    /**
-     * Create request for operation 'deployWorkflow'
-     *
-     * @param  \NativeBPM\Client\Builder\Workflow $workflow The workflow definition to deploy.
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
-     */
-    public function deployWorkflowRequest(\NativeBPM\Client\Builder\Workflow $workflow)
-    {
-        $resourcePath = '/api/deploy';
-        $queryParams = [];
-        $headerParams = [];
-        $httpBody = json_encode($workflow->toAST());
-
-        $headers = $this->headerSelector->selectHeaders(
-            ['application/json'],
-            'application/json',
-            false
-        );
-
-        $query = \GuzzleHttp\Psr7\Query::build($queryParams);
-        return new Request(
-            'POST',
-            $this->config->getHost() . $resourcePath . ($query ? "?{$query}" : ''),
-            $headers,
-            $httpBody
-        );
-    }
-
-    /**
      * Operation deployDefinitionWithHttpInfo
      *
      * Deploy process definition
@@ -2700,6 +2520,570 @@ class DefaultApi
 
         $headers = $this->headerSelector->selectHeaders(
             ['application/json', ],
+            $contentType,
+            $multipart
+        );
+
+        // for model (json/xml)
+        if (count($formParams) > 0) {
+            if ($multipart) {
+                $multipartContents = [];
+                foreach ($formParams as $formParamName => $formParamValue) {
+                    $formParamValueItems = is_array($formParamValue) ? $formParamValue : [$formParamValue];
+                    foreach ($formParamValueItems as $formParamValueItem) {
+                        $multipartContents[] = [
+                            'name' => $formParamName,
+                            'contents' => $formParamValueItem
+                        ];
+                    }
+                }
+                // for HTTP post (form)
+                $httpBody = new MultipartStream($multipartContents);
+
+            } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
+                # if Content-Type contains "application/json", json_encode the form parameters
+                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+            } else {
+                // for HTTP post (form)
+                $httpBody = ObjectSerializer::buildQuery($formParams);
+            }
+        }
+
+
+        $defaultHeaders = [];
+        if ($this->config->getUserAgent()) {
+            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
+        }
+
+        $headers = array_merge(
+            $defaultHeaders,
+            $headerParams,
+            $headers
+        );
+
+        $operationHost = $this->config->getHost();
+        $query = ObjectSerializer::buildQuery($queryParams);
+        return new Request(
+            'GET',
+            $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
+            $headers,
+            $httpBody
+        );
+    }
+
+    /**
+     * Operation getInstanceVisualization
+     *
+     * Get process instance visualization data
+     *
+     * @param  string $id id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualization'] to see the possible values for this operation
+     *
+     * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws \InvalidArgumentException
+     * @return \NativeBPM\Client\Model\VisualizationData|\NativeBPM\Client\Model\ListDefinitions401Response
+     */
+    public function getInstanceVisualization($id, string $contentType = self::contentTypes['getInstanceVisualization'][0])
+    {
+        list($response) = $this->getInstanceVisualizationWithHttpInfo($id, $contentType);
+        return $response;
+    }
+
+    /**
+     * Operation getInstanceVisualizationWithHttpInfo
+     *
+     * Get process instance visualization data
+     *
+     * @param  string $id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualization'] to see the possible values for this operation
+     *
+     * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws \InvalidArgumentException
+     * @return array of \NativeBPM\Client\Model\VisualizationData|\NativeBPM\Client\Model\ListDefinitions401Response, HTTP status code, HTTP response headers (array of strings)
+     */
+    public function getInstanceVisualizationWithHttpInfo($id, string $contentType = self::contentTypes['getInstanceVisualization'][0])
+    {
+        $request = $this->getInstanceVisualizationRequest($id, $contentType);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int) $e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
+                );
+            } catch (ConnectException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int) $e->getCode(),
+                    null,
+                    null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+
+            switch($statusCode) {
+                case 200:
+                    return $this->handleResponseWithDataType(
+                        '\NativeBPM\Client\Model\VisualizationData',
+                        $request,
+                        $response,
+                    );
+                case 401:
+                    return $this->handleResponseWithDataType(
+                        '\NativeBPM\Client\Model\ListDefinitions401Response',
+                        $request,
+                        $response,
+                    );
+            }
+
+            
+
+            if ($statusCode < 200 || $statusCode > 299) {
+                throw new ApiException(
+                    sprintf(
+                        '[%d] Error connecting to the API (%s)',
+                        $statusCode,
+                        (string) $request->getUri()
+                    ),
+                    $statusCode,
+                    $response->getHeaders(),
+                    (string) $response->getBody()
+                );
+            }
+
+            return $this->handleResponseWithDataType(
+                '\NativeBPM\Client\Model\VisualizationData',
+                $request,
+                $response,
+            );
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+                case 200:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\NativeBPM\Client\Model\VisualizationData',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    throw $e;
+                case 401:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\NativeBPM\Client\Model\ListDefinitions401Response',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    throw $e;
+            }
+        
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Operation getInstanceVisualizationAsync
+     *
+     * Get process instance visualization data
+     *
+     * @param  string $id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualization'] to see the possible values for this operation
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Promise\PromiseInterface
+     */
+    public function getInstanceVisualizationAsync($id, string $contentType = self::contentTypes['getInstanceVisualization'][0])
+    {
+        return $this->getInstanceVisualizationAsyncWithHttpInfo($id, $contentType)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
+    }
+
+    /**
+     * Operation getInstanceVisualizationAsyncWithHttpInfo
+     *
+     * Get process instance visualization data
+     *
+     * @param  string $id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualization'] to see the possible values for this operation
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Promise\PromiseInterface
+     */
+    public function getInstanceVisualizationAsyncWithHttpInfo($id, string $contentType = self::contentTypes['getInstanceVisualization'][0])
+    {
+        $returnType = '\NativeBPM\Client\Model\VisualizationData';
+        $request = $this->getInstanceVisualizationRequest($id, $contentType);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    if ($returnType === '\SplFileObject') {
+                        $content = $response->getBody(); //stream goes to serializer
+                    } else {
+                        $content = (string) $response->getBody();
+                        if ($returnType !== 'string') {
+                            $content = json_decode($content);
+                        }
+                    }
+
+                    return [
+                        ObjectSerializer::deserialize($content, $returnType, []),
+                        $response->getStatusCode(),
+                        $response->getHeaders()
+                    ];
+                },
+                function ($exception) {
+                    $response = $exception->getResponse();
+                    $statusCode = $response->getStatusCode();
+                    throw new ApiException(
+                        sprintf(
+                            '[%d] Error connecting to the API (%s)',
+                            $statusCode,
+                            $exception->getRequest()->getUri()
+                        ),
+                        $statusCode,
+                        $response->getHeaders(),
+                        (string) $response->getBody()
+                    );
+                }
+            );
+    }
+
+    /**
+     * Create request for operation 'getInstanceVisualization'
+     *
+     * @param  string $id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualization'] to see the possible values for this operation
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Psr7\Request
+     */
+    public function getInstanceVisualizationRequest($id, string $contentType = self::contentTypes['getInstanceVisualization'][0])
+    {
+
+        // verify the required parameter 'id' is set
+        if ($id === null || (is_array($id) && count($id) === 0)) {
+            throw new \InvalidArgumentException(
+                'Missing the required parameter $id when calling getInstanceVisualization'
+            );
+        }
+
+
+        $resourcePath = '/api/instances/{id}/visualization';
+        $formParams = [];
+        $queryParams = [];
+        $headerParams = [];
+        $httpBody = '';
+        $multipart = false;
+
+
+
+        // path params
+        if ($id !== null) {
+            $resourcePath = str_replace(
+                '{id}',
+                ObjectSerializer::toPathValue($id),
+                $resourcePath
+            );
+        }
+
+
+        $headers = $this->headerSelector->selectHeaders(
+            ['application/json', ],
+            $contentType,
+            $multipart
+        );
+
+        // for model (json/xml)
+        if (count($formParams) > 0) {
+            if ($multipart) {
+                $multipartContents = [];
+                foreach ($formParams as $formParamName => $formParamValue) {
+                    $formParamValueItems = is_array($formParamValue) ? $formParamValue : [$formParamValue];
+                    foreach ($formParamValueItems as $formParamValueItem) {
+                        $multipartContents[] = [
+                            'name' => $formParamName,
+                            'contents' => $formParamValueItem
+                        ];
+                    }
+                }
+                // for HTTP post (form)
+                $httpBody = new MultipartStream($multipartContents);
+
+            } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
+                # if Content-Type contains "application/json", json_encode the form parameters
+                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+            } else {
+                // for HTTP post (form)
+                $httpBody = ObjectSerializer::buildQuery($formParams);
+            }
+        }
+
+
+        $defaultHeaders = [];
+        if ($this->config->getUserAgent()) {
+            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
+        }
+
+        $headers = array_merge(
+            $defaultHeaders,
+            $headerParams,
+            $headers
+        );
+
+        $operationHost = $this->config->getHost();
+        $query = ObjectSerializer::buildQuery($queryParams);
+        return new Request(
+            'GET',
+            $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
+            $headers,
+            $httpBody
+        );
+    }
+
+    /**
+     * Operation getInstanceVisualizationWidget
+     *
+     * Get process instance visualization widget HTML
+     *
+     * @param  string $id id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
+     *
+     * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws \InvalidArgumentException
+     * @return string|\NativeBPM\Client\Model\ListDefinitions401Response
+     */
+    public function getInstanceVisualizationWidget($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    {
+        list($response) = $this->getInstanceVisualizationWidgetWithHttpInfo($id, $contentType);
+        return $response;
+    }
+
+    /**
+     * Operation getInstanceVisualizationWidgetWithHttpInfo
+     *
+     * Get process instance visualization widget HTML
+     *
+     * @param  string $id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
+     *
+     * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws \InvalidArgumentException
+     * @return array of string|\NativeBPM\Client\Model\ListDefinitions401Response, HTTP status code, HTTP response headers (array of strings)
+     */
+    public function getInstanceVisualizationWidgetWithHttpInfo($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    {
+        $request = $this->getInstanceVisualizationWidgetRequest($id, $contentType);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int) $e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
+                );
+            } catch (ConnectException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int) $e->getCode(),
+                    null,
+                    null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+
+            switch($statusCode) {
+                case 200:
+                    return $this->handleResponseWithDataType(
+                        'string',
+                        $request,
+                        $response,
+                    );
+                case 401:
+                    return $this->handleResponseWithDataType(
+                        '\NativeBPM\Client\Model\ListDefinitions401Response',
+                        $request,
+                        $response,
+                    );
+            }
+
+            
+
+            if ($statusCode < 200 || $statusCode > 299) {
+                throw new ApiException(
+                    sprintf(
+                        '[%d] Error connecting to the API (%s)',
+                        $statusCode,
+                        (string) $request->getUri()
+                    ),
+                    $statusCode,
+                    $response->getHeaders(),
+                    (string) $response->getBody()
+                );
+            }
+
+            return $this->handleResponseWithDataType(
+                'string',
+                $request,
+                $response,
+            );
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+                case 200:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        'string',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    throw $e;
+                case 401:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\NativeBPM\Client\Model\ListDefinitions401Response',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    throw $e;
+            }
+        
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Operation getInstanceVisualizationWidgetAsync
+     *
+     * Get process instance visualization widget HTML
+     *
+     * @param  string $id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Promise\PromiseInterface
+     */
+    public function getInstanceVisualizationWidgetAsync($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    {
+        return $this->getInstanceVisualizationWidgetAsyncWithHttpInfo($id, $contentType)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
+    }
+
+    /**
+     * Operation getInstanceVisualizationWidgetAsyncWithHttpInfo
+     *
+     * Get process instance visualization widget HTML
+     *
+     * @param  string $id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Promise\PromiseInterface
+     */
+    public function getInstanceVisualizationWidgetAsyncWithHttpInfo($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    {
+        $returnType = 'string';
+        $request = $this->getInstanceVisualizationWidgetRequest($id, $contentType);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    if ($returnType === '\SplFileObject') {
+                        $content = $response->getBody(); //stream goes to serializer
+                    } else {
+                        $content = (string) $response->getBody();
+                        if ($returnType !== 'string') {
+                            $content = json_decode($content);
+                        }
+                    }
+
+                    return [
+                        ObjectSerializer::deserialize($content, $returnType, []),
+                        $response->getStatusCode(),
+                        $response->getHeaders()
+                    ];
+                },
+                function ($exception) {
+                    $response = $exception->getResponse();
+                    $statusCode = $response->getStatusCode();
+                    throw new ApiException(
+                        sprintf(
+                            '[%d] Error connecting to the API (%s)',
+                            $statusCode,
+                            $exception->getRequest()->getUri()
+                        ),
+                        $statusCode,
+                        $response->getHeaders(),
+                        (string) $response->getBody()
+                    );
+                }
+            );
+    }
+
+    /**
+     * Create request for operation 'getInstanceVisualizationWidget'
+     *
+     * @param  string $id (required)
+     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Psr7\Request
+     */
+    public function getInstanceVisualizationWidgetRequest($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    {
+
+        // verify the required parameter 'id' is set
+        if ($id === null || (is_array($id) && count($id) === 0)) {
+            throw new \InvalidArgumentException(
+                'Missing the required parameter $id when calling getInstanceVisualizationWidget'
+            );
+        }
+
+
+        $resourcePath = '/api/instances/{id}/visualization/widget';
+        $formParams = [];
+        $queryParams = [];
+        $headerParams = [];
+        $httpBody = '';
+        $multipart = false;
+
+
+
+        // path params
+        if ($id !== null) {
+            $resourcePath = str_replace(
+                '{id}',
+                ObjectSerializer::toPathValue($id),
+                $resourcePath
+            );
+        }
+
+
+        $headers = $this->headerSelector->selectHeaders(
+            ['text/html', 'application/json', ],
             $contentType,
             $multipart
         );

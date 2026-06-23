@@ -42,6 +42,7 @@ part 'model/process_instance.dart';
 part 'model/resolve_incident200_response.dart';
 part 'model/start_instance_request.dart';
 part 'model/task_record.dart';
+part 'model/visualization_data.dart';
 part 'model/webhook_delivery_record.dart';
 part 'model/webhook_record.dart';
 

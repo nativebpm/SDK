@@ -39,6 +39,8 @@ Class | Method | HTTP request | Description
 *DefaultAPI* | [**deployDefinition**](docs/DefaultAPI.md#deploydefinition) | **POST** /api/deploy | Deploy process definition
 *DefaultAPI* | [**getInstance**](docs/DefaultAPI.md#getinstance) | **GET** /api/instances/{id} | Get process instance
 *DefaultAPI* | [**getInstanceHistory**](docs/DefaultAPI.md#getinstancehistory) | **GET** /api/instances/{id}/history | Get process instance execution history
+*DefaultAPI* | [**getInstanceVisualization**](docs/DefaultAPI.md#getinstancevisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data
+*DefaultAPI* | [**getInstanceVisualizationWidget**](docs/DefaultAPI.md#getinstancevisualizationwidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML
 *DefaultAPI* | [**listDefinitions**](docs/DefaultAPI.md#listdefinitions) | **GET** /api/definitions | List process definitions
 *DefaultAPI* | [**listIncidents**](docs/DefaultAPI.md#listincidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance
 *DefaultAPI* | [**listInstances**](docs/DefaultAPI.md#listinstances) | **GET** /api/instances | List process instances
@@ -66,6 +68,7 @@ Class | Method | HTTP request | Description
  - [ResolveIncident200Response](docs/ResolveIncident200Response.md)
  - [StartInstanceRequest](docs/StartInstanceRequest.md)
  - [TaskRecord](docs/TaskRecord.md)
+ - [VisualizationData](docs/VisualizationData.md)
  - [WebhookDeliveryRecord](docs/WebhookDeliveryRecord.md)
  - [WebhookRecord](docs/WebhookRecord.md)
 

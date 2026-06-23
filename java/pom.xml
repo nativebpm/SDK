@@ -305,23 +305,6 @@
             <artifactId>jakarta.ws.rs-api</artifactId>
             <version>${jakarta.ws.rs-api-version}</version>
         </dependency>
-        <!-- WASM Workflow Builder dependencies -->
-        <dependency>
-            <groupId>com.dylibso.chicory</groupId>
-            <artifactId>runtime</artifactId>
-            <version>1.7.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.dylibso.chicory</groupId>
-            <artifactId>wasi</artifactId>
-            <version>1.7.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.brotli</groupId>
-            <artifactId>dec</artifactId>
-            <version>0.1.2</version>
-        </dependency>
-
         <!-- test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -337,7 +320,7 @@
         </dependency>
     </dependencies>
     <properties>
-        <java.version>11</java.version>
+        <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <gson-fire-version>1.9.0</gson-fire-version>
@@ -354,14 +337,4 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spotless.version>2.43.0</spotless.version>
     </properties>
-    <distributionManagement>
-        <repository>
-            <id>gitlab-maven</id>
-            <url>${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/maven</url>
-        </repository>
-        <snapshotRepository>
-            <id>gitlab-maven</id>
-            <url>${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/maven</url>
-        </snapshotRepository>
-    </distributionManagement>
 </project>

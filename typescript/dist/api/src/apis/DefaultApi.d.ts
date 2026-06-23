@@ -21,6 +21,7 @@ import { type ProcessInstance } from '../models/ProcessInstance';
 import { type ResolveIncident200Response } from '../models/ResolveIncident200Response';
 import { type StartInstanceRequest } from '../models/StartInstanceRequest';
 import { type TaskRecord } from '../models/TaskRecord';
+import { type VisualizationData } from '../models/VisualizationData';
 import { type WebhookDeliveryRecord } from '../models/WebhookDeliveryRecord';
 import { type WebhookRecord } from '../models/WebhookRecord';
 export interface ClaimTaskOperationRequest {
@@ -48,6 +49,12 @@ export interface GetInstanceRequest {
     id: string;
 }
 export interface GetInstanceHistoryRequest {
+    id: string;
+}
+export interface GetInstanceVisualizationRequest {
+    id: string;
+}
+export interface GetInstanceVisualizationWidgetRequest {
     id: string;
 }
 export interface ListIncidentsRequest {
@@ -195,6 +202,34 @@ export declare class DefaultApi extends runtime.BaseAPI {
      * Get process instance execution history
      */
     getInstanceHistory(requestParameters: GetInstanceHistoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<HistoryRecord>>;
+    /**
+     * Creates request options for getInstanceVisualization without sending the request
+     */
+    getInstanceVisualizationRequestOpts(requestParameters: GetInstanceVisualizationRequest): Promise<runtime.RequestOpts>;
+    /**
+     * Retrieve diagram XML, execution node status, and history events for visualization.
+     * Get process instance visualization data
+     */
+    getInstanceVisualizationRaw(requestParameters: GetInstanceVisualizationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VisualizationData>>;
+    /**
+     * Retrieve diagram XML, execution node status, and history events for visualization.
+     * Get process instance visualization data
+     */
+    getInstanceVisualization(requestParameters: GetInstanceVisualizationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VisualizationData>;
+    /**
+     * Creates request options for getInstanceVisualizationWidget without sending the request
+     */
+    getInstanceVisualizationWidgetRequestOpts(requestParameters: GetInstanceVisualizationWidgetRequest): Promise<runtime.RequestOpts>;
+    /**
+     * Retrieve the ready-to-embed HTML process visualization widget.
+     * Get process instance visualization widget HTML
+     */
+    getInstanceVisualizationWidgetRaw(requestParameters: GetInstanceVisualizationWidgetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>>;
+    /**
+     * Retrieve the ready-to-embed HTML process visualization widget.
+     * Get process instance visualization widget HTML
+     */
+    getInstanceVisualizationWidget(requestParameters: GetInstanceVisualizationWidgetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string>;
     /**
      * Creates request options for listDefinitions without sending the request
      */

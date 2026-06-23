@@ -12,6 +12,8 @@ All URIs are relative to *http://localhost*
 | [**deployDefinition**](DefaultApi.md#deployDefinition) | **POST** /api/deploy | Deploy process definition |
 | [**getInstance**](DefaultApi.md#getInstance) | **GET** /api/instances/{id} | Get process instance |
 | [**getInstanceHistory**](DefaultApi.md#getInstanceHistory) | **GET** /api/instances/{id}/history | Get process instance execution history |
+| [**getInstanceVisualization**](DefaultApi.md#getInstanceVisualization) | **GET** /api/instances/{id}/visualization | Get process instance visualization data |
+| [**getInstanceVisualizationWidget**](DefaultApi.md#getInstanceVisualizationWidget) | **GET** /api/instances/{id}/visualization/widget | Get process instance visualization widget HTML |
 | [**listDefinitions**](DefaultApi.md#listDefinitions) | **GET** /api/definitions | List process definitions |
 | [**listIncidents**](DefaultApi.md#listIncidents) | **GET** /api/instances/{id}/incidents | List incidents for process instance |
 | [**listInstances**](DefaultApi.md#listInstances) | **GET** /api/instances | List process instances |
@@ -556,6 +558,136 @@ No authorization required
 |-------------|-------------|------------------|
 | **200** | Successful response |  -  |
 | **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+<a id="getInstanceVisualization"></a>
+# **getInstanceVisualization**
+> VisualizationData getInstanceVisualization(id)
+
+Get process instance visualization data
+
+Retrieve diagram XML, execution node status, and history events for visualization.
+
+### Example
+```java
+// Import classes:
+import com.nativebpm.client.ApiClient;
+import com.nativebpm.client.ApiException;
+import com.nativebpm.client.Configuration;
+import com.nativebpm.client.models.*;
+import com.nativebpm.client.api.DefaultApi;
+
+public class Example {
+  public static void main(String[] args) {
+    ApiClient defaultClient = Configuration.getDefaultApiClient();
+    defaultClient.setBasePath("http://localhost");
+
+    DefaultApi apiInstance = new DefaultApi(defaultClient);
+    String id = "id_example"; // String | 
+    try {
+      VisualizationData result = apiInstance.getInstanceVisualization(id);
+      System.out.println(result);
+    } catch (ApiException e) {
+      System.err.println("Exception when calling DefaultApi#getInstanceVisualization");
+      System.err.println("Status code: " + e.getCode());
+      System.err.println("Reason: " + e.getResponseBody());
+      System.err.println("Response headers: " + e.getResponseHeaders());
+      e.printStackTrace();
+    }
+  }
+}
+```
+
+### Parameters
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | **String**|  | |
+
+### Return type
+
+[**VisualizationData**](VisualizationData.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **404** | Process instance not found |  -  |
+| **500** | Internal Server Error - database failure or execution crash |  -  |
+
+<a id="getInstanceVisualizationWidget"></a>
+# **getInstanceVisualizationWidget**
+> String getInstanceVisualizationWidget(id)
+
+Get process instance visualization widget HTML
+
+Retrieve the ready-to-embed HTML process visualization widget.
+
+### Example
+```java
+// Import classes:
+import com.nativebpm.client.ApiClient;
+import com.nativebpm.client.ApiException;
+import com.nativebpm.client.Configuration;
+import com.nativebpm.client.models.*;
+import com.nativebpm.client.api.DefaultApi;
+
+public class Example {
+  public static void main(String[] args) {
+    ApiClient defaultClient = Configuration.getDefaultApiClient();
+    defaultClient.setBasePath("http://localhost");
+
+    DefaultApi apiInstance = new DefaultApi(defaultClient);
+    String id = "id_example"; // String | 
+    try {
+      String result = apiInstance.getInstanceVisualizationWidget(id);
+      System.out.println(result);
+    } catch (ApiException e) {
+      System.err.println("Exception when calling DefaultApi#getInstanceVisualizationWidget");
+      System.err.println("Status code: " + e.getCode());
+      System.err.println("Reason: " + e.getResponseBody());
+      System.err.println("Response headers: " + e.getResponseHeaders());
+      e.printStackTrace();
+    }
+  }
+}
+```
+
+### Parameters
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | **String**|  | |
+
+### Return type
+
+**String**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: text/html, application/json
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successful response |  -  |
+| **401** | Unauthorized - missing or invalid session cookie / API Bearer Token |  -  |
+| **404** | Process instance not found |  -  |
 | **500** | Internal Server Error - database failure or execution crash |  -  |
 
 <a id="listDefinitions"></a>

@@ -25,6 +25,7 @@ from nativebpm_client.models.process_instance import ProcessInstance
 from nativebpm_client.models.resolve_incident200_response import ResolveIncident200Response
 from nativebpm_client.models.start_instance_request import StartInstanceRequest
 from nativebpm_client.models.task_record import TaskRecord
+from nativebpm_client.models.visualization_data import VisualizationData
 from nativebpm_client.models.webhook_delivery_record import WebhookDeliveryRecord
 from nativebpm_client.models.webhook_record import WebhookRecord
 
