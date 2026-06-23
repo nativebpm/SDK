@@ -2866,15 +2866,16 @@ class DefaultApi
      * Get process instance visualization widget HTML
      *
      * @param  string $id id (required)
+     * @param  string|null $title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
      *
      * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
      * @throws \InvalidArgumentException
      * @return string|\NativeBPM\Client\Model\ListDefinitions401Response
      */
-    public function getInstanceVisualizationWidget($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    public function getInstanceVisualizationWidget($id, $title = null, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
     {
-        list($response) = $this->getInstanceVisualizationWidgetWithHttpInfo($id, $contentType);
+        list($response) = $this->getInstanceVisualizationWidgetWithHttpInfo($id, $title, $contentType);
         return $response;
     }
 
@@ -2884,15 +2885,16 @@ class DefaultApi
      * Get process instance visualization widget HTML
      *
      * @param  string $id (required)
+     * @param  string|null $title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
      *
      * @throws \NativeBPM\Client\ApiException on non-2xx response or if the response body is not in the expected format
      * @throws \InvalidArgumentException
      * @return array of string|\NativeBPM\Client\Model\ListDefinitions401Response, HTTP status code, HTTP response headers (array of strings)
      */
-    public function getInstanceVisualizationWidgetWithHttpInfo($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    public function getInstanceVisualizationWidgetWithHttpInfo($id, $title = null, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
     {
-        $request = $this->getInstanceVisualizationWidgetRequest($id, $contentType);
+        $request = $this->getInstanceVisualizationWidgetRequest($id, $title, $contentType);
 
         try {
             $options = $this->createHttpClientOption();
@@ -2983,14 +2985,15 @@ class DefaultApi
      * Get process instance visualization widget HTML
      *
      * @param  string $id (required)
+     * @param  string|null $title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
      *
      * @throws \InvalidArgumentException
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
-    public function getInstanceVisualizationWidgetAsync($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    public function getInstanceVisualizationWidgetAsync($id, $title = null, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
     {
-        return $this->getInstanceVisualizationWidgetAsyncWithHttpInfo($id, $contentType)
+        return $this->getInstanceVisualizationWidgetAsyncWithHttpInfo($id, $title, $contentType)
             ->then(
                 function ($response) {
                     return $response[0];
@@ -3004,15 +3007,16 @@ class DefaultApi
      * Get process instance visualization widget HTML
      *
      * @param  string $id (required)
+     * @param  string|null $title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
      *
      * @throws \InvalidArgumentException
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
-    public function getInstanceVisualizationWidgetAsyncWithHttpInfo($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    public function getInstanceVisualizationWidgetAsyncWithHttpInfo($id, $title = null, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
     {
         $returnType = 'string';
-        $request = $this->getInstanceVisualizationWidgetRequest($id, $contentType);
+        $request = $this->getInstanceVisualizationWidgetRequest($id, $title, $contentType);
 
         return $this->client
             ->sendAsync($request, $this->createHttpClientOption())
@@ -3054,12 +3058,13 @@ class DefaultApi
      * Create request for operation 'getInstanceVisualizationWidget'
      *
      * @param  string $id (required)
+     * @param  string|null $title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getInstanceVisualizationWidget'] to see the possible values for this operation
      *
      * @throws \InvalidArgumentException
      * @return \GuzzleHttp\Psr7\Request
      */
-    public function getInstanceVisualizationWidgetRequest($id, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
+    public function getInstanceVisualizationWidgetRequest($id, $title = null, string $contentType = self::contentTypes['getInstanceVisualizationWidget'][0])
     {
 
         // verify the required parameter 'id' is set
@@ -3070,6 +3075,7 @@ class DefaultApi
         }
 
 
+
         $resourcePath = '/api/instances/{id}/visualization/widget';
         $formParams = [];
         $queryParams = [];
@@ -3077,6 +3083,15 @@ class DefaultApi
         $httpBody = '';
         $multipart = false;
 
+        // query params
+        $queryParams = array_merge($queryParams, ObjectSerializer::toQueryValue(
+            $title,
+            'title', // param base name
+            'string', // openApiType
+            'form', // style
+            true, // explode
+            false // required
+        ) ?? []);
 
 
         // path params

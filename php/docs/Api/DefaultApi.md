@@ -544,7 +544,7 @@ No authorization required
 ## `getInstanceVisualizationWidget()`
 
 ```php
-getInstanceVisualizationWidget($id): string
+getInstanceVisualizationWidget($id, $title): string
 ```
 
 Get process instance visualization widget HTML
@@ -565,9 +565,10 @@ $apiInstance = new NativeBPM\Client\Api\DefaultApi(
     new GuzzleHttp\Client()
 );
 $id = 'id_example'; // string
+$title = 'title_example'; // string | Optional custom title for the visualization widget. If empty, the title header is hidden.
 
 try {
-    $result = $apiInstance->getInstanceVisualizationWidget($id);
+    $result = $apiInstance->getInstanceVisualizationWidget($id, $title);
     print_r($result);
 } catch (Exception $e) {
     echo 'Exception when calling DefaultApi->getInstanceVisualizationWidget: ', $e->getMessage(), PHP_EOL;
@@ -579,6 +580,7 @@ try {
 | Name | Type | Description  | Notes |
 | ------------- | ------------- | ------------- | ------------- |
 | **id** | **string**|  | |
+| **title** | **string**| Optional custom title for the visualization widget. If empty, the title header is hidden. | [optional] |
 
 ### Return type
 

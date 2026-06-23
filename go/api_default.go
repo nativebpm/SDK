@@ -1175,6 +1175,13 @@ type ApiGetInstanceVisualizationWidgetRequest struct {
 	ctx context.Context
 	ApiService *DefaultAPIService
 	id string
+	title *string
+}
+
+// Optional custom title for the visualization widget. If empty, the title header is hidden.
+func (r ApiGetInstanceVisualizationWidgetRequest) Title(title string) ApiGetInstanceVisualizationWidgetRequest {
+	r.title = &title
+	return r
 }
 
 func (r ApiGetInstanceVisualizationWidgetRequest) Execute() (string, *http.Response, error) {
@@ -1220,6 +1227,9 @@ func (a *DefaultAPIService) GetInstanceVisualizationWidgetExecute(r ApiGetInstan
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.title != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "title", r.title, "form", "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 

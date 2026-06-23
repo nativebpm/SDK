@@ -135,6 +135,7 @@ export interface GetInstanceVisualizationRequest {
 
 export interface GetInstanceVisualizationWidgetRequest {
     id: string;
+    title?: string;
 }
 
 export interface GetUserGroupsRequest {
@@ -657,6 +658,10 @@ export class DefaultApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['title'] != null) {
+            queryParameters['title'] = requestParameters['title'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

@@ -744,6 +744,7 @@ open class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Fa
      * Get process instance visualization widget HTML
      * Retrieve the ready-to-embed HTML process visualization widget.
      * @param id 
+     * @param title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @return kotlin.String
      * @throws IllegalStateException If the request is not correctly configured
      * @throws IOException Rethrows the OkHttp execute method exception
@@ -753,8 +754,8 @@ open class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Fa
      */
     @Suppress("UNCHECKED_CAST")
     @Throws(IllegalStateException::class, IOException::class, UnsupportedOperationException::class, ClientException::class, ServerException::class)
-    fun getInstanceVisualizationWidget(id: kotlin.String) : kotlin.String {
-        val localVarResponse = getInstanceVisualizationWidgetWithHttpInfo(id = id)
+    fun getInstanceVisualizationWidget(id: kotlin.String, title: kotlin.String? = null) : kotlin.String {
+        val localVarResponse = getInstanceVisualizationWidgetWithHttpInfo(id = id, title = title)
 
         return when (localVarResponse.responseType) {
             ResponseType.Success -> (localVarResponse as Success<*>).data as kotlin.String
@@ -776,14 +777,15 @@ open class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Fa
      * Get process instance visualization widget HTML
      * Retrieve the ready-to-embed HTML process visualization widget.
      * @param id 
+     * @param title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @return ApiResponse<kotlin.String?>
      * @throws IllegalStateException If the request is not correctly configured
      * @throws IOException Rethrows the OkHttp execute method exception
      */
     @Suppress("UNCHECKED_CAST")
     @Throws(IllegalStateException::class, IOException::class)
-    fun getInstanceVisualizationWidgetWithHttpInfo(id: kotlin.String) : ApiResponse<kotlin.String?> {
-        val localVariableConfig = getInstanceVisualizationWidgetRequestConfig(id = id)
+    fun getInstanceVisualizationWidgetWithHttpInfo(id: kotlin.String, title: kotlin.String?) : ApiResponse<kotlin.String?> {
+        val localVariableConfig = getInstanceVisualizationWidgetRequestConfig(id = id, title = title)
 
         return request<Unit, kotlin.String>(
             localVariableConfig
@@ -794,11 +796,17 @@ open class DefaultApi(basePath: kotlin.String = defaultBasePath, client: Call.Fa
      * To obtain the request config of the operation getInstanceVisualizationWidget
      *
      * @param id 
+     * @param title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @return RequestConfig
      */
-    fun getInstanceVisualizationWidgetRequestConfig(id: kotlin.String) : RequestConfig<Unit> {
+    fun getInstanceVisualizationWidgetRequestConfig(id: kotlin.String, title: kotlin.String?) : RequestConfig<Unit> {
         val localVariableBody = null
-        val localVariableQuery: MultiValueMap = mutableMapOf()
+        val localVariableQuery: MultiValueMap = mutableMapOf<kotlin.String, kotlin.collections.List<kotlin.String>>()
+            .apply {
+                if (title != null) {
+                    put("title", listOf(title.toString()))
+                }
+            }
         val localVariableHeaders: MutableMap<String, String> = mutableMapOf()
         localVariableHeaders["Accept"] = "application/json"
 

@@ -607,13 +607,17 @@ pub async fn get_instance_visualization(configuration: &configuration::Configura
 }
 
 /// Retrieve the ready-to-embed HTML process visualization widget.
-pub async fn get_instance_visualization_widget(configuration: &configuration::Configuration, id: &str) -> Result<String, Error<GetInstanceVisualizationWidgetError>> {
+pub async fn get_instance_visualization_widget(configuration: &configuration::Configuration, id: &str, title: Option<&str>) -> Result<String, Error<GetInstanceVisualizationWidgetError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_id = id;
+    let p_query_title = title;
 
     let uri_str = format!("{}/api/instances/{id}/visualization/widget", configuration.base_path, id=crate::apis::urlencode(p_path_id));
     let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
 
+    if let Some(ref param_value) = p_query_title {
+        req_builder = req_builder.query(&[("title", &param_value.to_string())]);
+    }
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
     }

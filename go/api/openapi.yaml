@@ -214,6 +214,15 @@ paths:
         schema:
           type: string
         style: simple
+      - description: "Optional custom title for the visualization widget. If empty,\
+          \ the title header is hidden."
+        explode: true
+        in: query
+        name: title
+        required: false
+        schema:
+          type: string
+        style: form
       responses:
         "200":
           content:

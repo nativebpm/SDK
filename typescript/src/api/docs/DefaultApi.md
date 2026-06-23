@@ -678,7 +678,7 @@ No authorization required
 
 ## getInstanceVisualizationWidget
 
-> string getInstanceVisualizationWidget(id)
+> string getInstanceVisualizationWidget(id, title)
 
 Get process instance visualization widget HTML
 
@@ -700,6 +700,8 @@ async function example() {
   const body = {
     // string
     id: id_example,
+    // string | Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
+    title: title_example,
   } satisfies GetInstanceVisualizationWidgetRequest;
 
   try {
@@ -720,6 +722,7 @@ example().catch(console.error);
 | Name | Type | Description  | Notes |
 |------------- | ------------- | ------------- | -------------|
 | **id** | `string` |  | [Defaults to `undefined`] |
+| **title** | `string` | Optional custom title for the visualization widget. If empty, the title header is hidden. | [Optional] [Defaults to `undefined`] |
 
 ### Return type
 

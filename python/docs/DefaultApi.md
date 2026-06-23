@@ -686,7 +686,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **get_instance_visualization_widget**
-> str get_instance_visualization_widget(id)
+> str get_instance_visualization_widget(id, title=title)
 
 Get process instance visualization widget HTML
 
@@ -712,10 +712,11 @@ with nativebpm_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = nativebpm_client.DefaultApi(api_client)
     id = 'id_example' # str | 
+    title = 'title_example' # str | Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
 
     try:
         # Get process instance visualization widget HTML
-        api_response = api_instance.get_instance_visualization_widget(id)
+        api_response = api_instance.get_instance_visualization_widget(id, title=title)
         print("The response of DefaultApi->get_instance_visualization_widget:\n")
         pprint(api_response)
     except Exception as e:
@@ -730,6 +731,7 @@ with nativebpm_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **str**|  | 
+ **title** | **str**| Optional custom title for the visualization widget. If empty, the title header is hidden. | [optional] 
 
 ### Return type
 

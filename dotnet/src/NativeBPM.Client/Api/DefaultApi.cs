@@ -258,9 +258,10 @@ namespace NativeBPM.Client.Api
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
+        /// <param name="title">Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationWidgetApiResponse"/>&gt;</returns>
-        Task<IGetInstanceVisualizationWidgetApiResponse> GetInstanceVisualizationWidgetAsync(string id, System.Threading.CancellationToken cancellationToken = default);
+        Task<IGetInstanceVisualizationWidgetApiResponse> GetInstanceVisualizationWidgetAsync(string id, Option<string> title = default, System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get process instance visualization widget HTML
@@ -269,9 +270,10 @@ namespace NativeBPM.Client.Api
         /// Retrieve the ready-to-embed HTML process visualization widget.
         /// </remarks>
         /// <param name="id"></param>
+        /// <param name="title">Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationWidgetApiResponse"/>?&gt;</returns>
-        Task<IGetInstanceVisualizationWidgetApiResponse?> GetInstanceVisualizationWidgetOrDefaultAsync(string id, System.Threading.CancellationToken cancellationToken = default);
+        Task<IGetInstanceVisualizationWidgetApiResponse?> GetInstanceVisualizationWidgetOrDefaultAsync(string id, Option<string> title = default, System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get SMTP configuration
@@ -4791,17 +4793,21 @@ namespace NativeBPM.Client.Api
             partial void OnDeserializationError(ref bool suppressDefaultLog, Exception exception, HttpStatusCode httpStatusCode);
         }
 
-        partial void FormatGetInstanceVisualizationWidget(ref string id);
+        partial void FormatGetInstanceVisualizationWidget(ref string id, ref Option<string> title);
 
         /// <summary>
         /// Validates the request parameters
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="title"></param>
         /// <returns></returns>
-        private void ValidateGetInstanceVisualizationWidget(string id)
+        private void ValidateGetInstanceVisualizationWidget(string id, Option<string> title)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
+
+            if (title.IsSet && title.Value == null)
+                throw new ArgumentNullException(nameof(title));
         }
 
         /// <summary>
@@ -4809,10 +4815,11 @@ namespace NativeBPM.Client.Api
         /// </summary>
         /// <param name="apiResponseLocalVar"></param>
         /// <param name="id"></param>
-        private void AfterGetInstanceVisualizationWidgetDefaultImplementation(IGetInstanceVisualizationWidgetApiResponse apiResponseLocalVar, string id)
+        /// <param name="title"></param>
+        private void AfterGetInstanceVisualizationWidgetDefaultImplementation(IGetInstanceVisualizationWidgetApiResponse apiResponseLocalVar, string id, Option<string> title)
         {
             bool suppressDefaultLog = false;
-            AfterGetInstanceVisualizationWidget(ref suppressDefaultLog, apiResponseLocalVar, id);
+            AfterGetInstanceVisualizationWidget(ref suppressDefaultLog, apiResponseLocalVar, id, title);
             if (!suppressDefaultLog)
                 Logger.LogInformation("{0,-9} | {1} | {2}", (apiResponseLocalVar.DownloadedAt - apiResponseLocalVar.RequestedAt).TotalSeconds, apiResponseLocalVar.StatusCode, apiResponseLocalVar.Path);
         }
@@ -4823,7 +4830,8 @@ namespace NativeBPM.Client.Api
         /// <param name="suppressDefaultLog"></param>
         /// <param name="apiResponseLocalVar"></param>
         /// <param name="id"></param>
-        partial void AfterGetInstanceVisualizationWidget(ref bool suppressDefaultLog, IGetInstanceVisualizationWidgetApiResponse apiResponseLocalVar, string id);
+        /// <param name="title"></param>
+        partial void AfterGetInstanceVisualizationWidget(ref bool suppressDefaultLog, IGetInstanceVisualizationWidgetApiResponse apiResponseLocalVar, string id, Option<string> title);
 
         /// <summary>
         /// Logs exceptions that occur while retrieving the server response
@@ -4832,10 +4840,11 @@ namespace NativeBPM.Client.Api
         /// <param name="pathFormatLocalVar"></param>
         /// <param name="pathLocalVar"></param>
         /// <param name="id"></param>
-        private void OnErrorGetInstanceVisualizationWidgetDefaultImplementation(Exception exceptionLocalVar, string pathFormatLocalVar, string pathLocalVar, string id)
+        /// <param name="title"></param>
+        private void OnErrorGetInstanceVisualizationWidgetDefaultImplementation(Exception exceptionLocalVar, string pathFormatLocalVar, string pathLocalVar, string id, Option<string> title)
         {
             bool suppressDefaultLogLocalVar = false;
-            OnErrorGetInstanceVisualizationWidget(ref suppressDefaultLogLocalVar, exceptionLocalVar, pathFormatLocalVar, pathLocalVar, id);
+            OnErrorGetInstanceVisualizationWidget(ref suppressDefaultLogLocalVar, exceptionLocalVar, pathFormatLocalVar, pathLocalVar, id, title);
             if (!suppressDefaultLogLocalVar)
                 Logger.LogError(exceptionLocalVar, "An error occurred while sending the request to the server.");
         }
@@ -4848,19 +4857,21 @@ namespace NativeBPM.Client.Api
         /// <param name="pathFormatLocalVar"></param>
         /// <param name="pathLocalVar"></param>
         /// <param name="id"></param>
-        partial void OnErrorGetInstanceVisualizationWidget(ref bool suppressDefaultLogLocalVar, Exception exceptionLocalVar, string pathFormatLocalVar, string pathLocalVar, string id);
+        /// <param name="title"></param>
+        partial void OnErrorGetInstanceVisualizationWidget(ref bool suppressDefaultLogLocalVar, Exception exceptionLocalVar, string pathFormatLocalVar, string pathLocalVar, string id, Option<string> title);
 
         /// <summary>
         /// Get process instance visualization widget HTML Retrieve the ready-to-embed HTML process visualization widget.
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="title">Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationWidgetApiResponse"/>&gt;</returns>
-        public async Task<IGetInstanceVisualizationWidgetApiResponse?> GetInstanceVisualizationWidgetOrDefaultAsync(string id, System.Threading.CancellationToken cancellationToken = default)
+        public async Task<IGetInstanceVisualizationWidgetApiResponse?> GetInstanceVisualizationWidgetOrDefaultAsync(string id, Option<string> title = default, System.Threading.CancellationToken cancellationToken = default)
         {
             try
             {
-                return await GetInstanceVisualizationWidgetAsync(id, cancellationToken).ConfigureAwait(false);
+                return await GetInstanceVisualizationWidgetAsync(id, title, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -4873,17 +4884,18 @@ namespace NativeBPM.Client.Api
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
+        /// <param name="title">Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns><see cref="Task"/>&lt;<see cref="IGetInstanceVisualizationWidgetApiResponse"/>&gt;</returns>
-        public async Task<IGetInstanceVisualizationWidgetApiResponse> GetInstanceVisualizationWidgetAsync(string id, System.Threading.CancellationToken cancellationToken = default)
+        public async Task<IGetInstanceVisualizationWidgetApiResponse> GetInstanceVisualizationWidgetAsync(string id, Option<string> title = default, System.Threading.CancellationToken cancellationToken = default)
         {
             UriBuilder uriBuilderLocalVar = new UriBuilder();
 
             try
             {
-                ValidateGetInstanceVisualizationWidget(id);
+                ValidateGetInstanceVisualizationWidget(id, title);
 
-                FormatGetInstanceVisualizationWidget(ref id);
+                FormatGetInstanceVisualizationWidget(ref id, ref title);
 
                 using (HttpRequestMessage httpRequestMessageLocalVar = new HttpRequestMessage())
                 {
@@ -4894,6 +4906,13 @@ namespace NativeBPM.Client.Api
                         ? "/api/instances/{id}/visualization/widget"
                         : string.Concat(HttpClient.BaseAddress.AbsolutePath.TrimEnd('/'), "/api/instances/{id}/visualization/widget");
                     uriBuilderLocalVar.Path = uriBuilderLocalVar.Path.Replace("%7Bid%7D", Uri.EscapeDataString(id.ToString()));
+
+                    System.Collections.Specialized.NameValueCollection parseQueryStringLocalVar = System.Web.HttpUtility.ParseQueryString(string.Empty);
+
+                    if (title.IsSet)
+                        parseQueryStringLocalVar["title"] = ClientUtils.ParameterToString(title.Value);
+
+                    uriBuilderLocalVar.Query = parseQueryStringLocalVar.ToString();
 
                     httpRequestMessageLocalVar.RequestUri = uriBuilderLocalVar.Uri;
 
@@ -4925,7 +4944,7 @@ namespace NativeBPM.Client.Api
                             }
                         }
 
-                        AfterGetInstanceVisualizationWidgetDefaultImplementation(apiResponseLocalVar, id);
+                        AfterGetInstanceVisualizationWidgetDefaultImplementation(apiResponseLocalVar, id, title);
 
                         Events.ExecuteOnGetInstanceVisualizationWidget(apiResponseLocalVar);
 
@@ -4935,7 +4954,7 @@ namespace NativeBPM.Client.Api
             }
             catch(Exception e)
             {
-                OnErrorGetInstanceVisualizationWidgetDefaultImplementation(e, "/api/instances/{id}/visualization/widget", uriBuilderLocalVar.Path, id);
+                OnErrorGetInstanceVisualizationWidgetDefaultImplementation(e, "/api/instances/{id}/visualization/widget", uriBuilderLocalVar.Path, id, title);
                 Events.ExecuteOnErrorGetInstanceVisualizationWidget(e);
                 throw;
             }

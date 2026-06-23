@@ -451,7 +451,7 @@ No authorization required
 
 <a id="getInstanceVisualizationWidget"></a>
 # **getInstanceVisualizationWidget**
-> kotlin.String getInstanceVisualizationWidget(id)
+> kotlin.String getInstanceVisualizationWidget(id, title)
 
 Get process instance visualization widget HTML
 
@@ -465,8 +465,9 @@ Retrieve the ready-to-embed HTML process visualization widget.
 
 val apiInstance = DefaultApi()
 val id : kotlin.String = id_example // kotlin.String | 
+val title : kotlin.String = title_example // kotlin.String | Optional custom title for the visualization widget. If empty, the title header is hidden.
 try {
-    val result : kotlin.String = apiInstance.getInstanceVisualizationWidget(id)
+    val result : kotlin.String = apiInstance.getInstanceVisualizationWidget(id, title)
     println(result)
 } catch (e: ClientException) {
     println("4xx response calling DefaultApi#getInstanceVisualizationWidget")
@@ -478,9 +479,10 @@ try {
 ```
 
 ### Parameters
+| **id** | **kotlin.String**|  | |
 | Name | Type | Description  | Notes |
 | ------------- | ------------- | ------------- | ------------- |
-| **id** | **kotlin.String**|  | |
+| **title** | **kotlin.String**| Optional custom title for the visualization widget. If empty, the title header is hidden. | [optional] |
 
 ### Return type
 

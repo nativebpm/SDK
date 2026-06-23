@@ -660,7 +660,7 @@ No authorization required
 
 ## GetInstanceVisualizationWidget
 
-> string GetInstanceVisualizationWidget(ctx, id).Execute()
+> string GetInstanceVisualizationWidget(ctx, id).Title(title).Execute()
 
 Get process instance visualization widget HTML
 
@@ -680,10 +680,11 @@ import (
 
 func main() {
 	id := "id_example" // string | 
+	title := "title_example" // string | Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.DefaultAPI.GetInstanceVisualizationWidget(context.Background(), id).Execute()
+	resp, r, err := apiClient.DefaultAPI.GetInstanceVisualizationWidget(context.Background(), id).Title(title).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `DefaultAPI.GetInstanceVisualizationWidget``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -709,6 +710,7 @@ Other parameters are passed through a pointer to a apiGetInstanceVisualizationWi
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
+ **title** | **string** | Optional custom title for the visualization widget. If empty, the title header is hidden. | 
 
 ### Return type
 

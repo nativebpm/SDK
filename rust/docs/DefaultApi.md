@@ -305,7 +305,7 @@ No authorization required
 
 ## get_instance_visualization_widget
 
-> String get_instance_visualization_widget(id)
+> String get_instance_visualization_widget(id, title)
 Get process instance visualization widget HTML
 
 Retrieve the ready-to-embed HTML process visualization widget.
@@ -316,6 +316,7 @@ Retrieve the ready-to-embed HTML process visualization widget.
 Name | Type | Description  | Required | Notes
 ------------- | ------------- | ------------- | ------------- | -------------
 **id** | **String** |  | [required] |
+**title** | Option<**String**> | Optional custom title for the visualization widget. If empty, the title header is hidden. |  |
 
 ### Return type
 

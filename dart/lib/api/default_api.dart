@@ -572,7 +572,10 @@ class DefaultApi {
   /// Parameters:
   ///
   /// * [String] id (required):
-  Future<Response> getInstanceVisualizationWidgetWithHttpInfo(String id, { Future<void>? abortTrigger, }) async {
+  ///
+  /// * [String] title:
+  ///   Optional custom title for the visualization widget. If empty, the title header is hidden.
+  Future<Response> getInstanceVisualizationWidgetWithHttpInfo(String id, { String? title, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/api/instances/{id}/visualization/widget'
       .replaceAll('{id}', id);
@@ -583,6 +586,10 @@ class DefaultApi {
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
     final formParams = <String, String>{};
+
+    if (title != null) {
+      queryParams.addAll(_queryParams('', 'title', title));
+    }
 
     const contentTypes = <String>[];
 
@@ -606,8 +613,11 @@ class DefaultApi {
   /// Parameters:
   ///
   /// * [String] id (required):
-  Future<String?> getInstanceVisualizationWidget(String id, { Future<void>? abortTrigger, }) async {
-    final response = await getInstanceVisualizationWidgetWithHttpInfo(id, abortTrigger: abortTrigger,);
+  ///
+  /// * [String] title:
+  ///   Optional custom title for the visualization widget. If empty, the title header is hidden.
+  Future<String?> getInstanceVisualizationWidget(String id, { String? title, Future<void>? abortTrigger, }) async {
+    final response = await getInstanceVisualizationWidgetWithHttpInfo(id, title: title, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

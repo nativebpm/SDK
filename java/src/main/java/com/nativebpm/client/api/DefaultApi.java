@@ -1395,6 +1395,7 @@ public class DefaultApi {
     /**
      * Build call for getInstanceVisualizationWidget
      * @param id  (required)
+     * @param title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @param _callback Callback for upload/download progress
      * @return Call to execute
      * @throws ApiException If fail to serialize the request body object
@@ -1408,7 +1409,7 @@ public class DefaultApi {
         <tr><td> 500 </td><td> Internal Server Error - database failure or execution crash </td><td>  -  </td></tr>
      </table>
      */
-    public okhttp3.Call getInstanceVisualizationWidgetCall(@javax.annotation.Nonnull String id, final ApiCallback _callback) throws ApiException {
+    public okhttp3.Call getInstanceVisualizationWidgetCall(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String title, final ApiCallback _callback) throws ApiException {
         String basePath = null;
         // Operation Servers
         String[] localBasePaths = new String[] {  };
@@ -1434,6 +1435,10 @@ public class DefaultApi {
         Map<String, String> localVarCookieParams = new HashMap<String, String>();
         Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
+        if (title != null) {
+            localVarQueryParams.addAll(localVarApiClient.parameterToPair("title", title));
+        }
+
         final String[] localVarAccepts = {
             "text/html",
             "application/json"
@@ -1455,13 +1460,13 @@ public class DefaultApi {
     }
 
     @SuppressWarnings("rawtypes")
-    private okhttp3.Call getInstanceVisualizationWidgetValidateBeforeCall(@javax.annotation.Nonnull String id, final ApiCallback _callback) throws ApiException {
+    private okhttp3.Call getInstanceVisualizationWidgetValidateBeforeCall(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String title, final ApiCallback _callback) throws ApiException {
         // verify the required parameter 'id' is set
         if (id == null) {
             throw new ApiException("Missing the required parameter 'id' when calling getInstanceVisualizationWidget(Async)");
         }
 
-        return getInstanceVisualizationWidgetCall(id, _callback);
+        return getInstanceVisualizationWidgetCall(id, title, _callback);
 
     }
 
@@ -1469,6 +1474,7 @@ public class DefaultApi {
      * Get process instance visualization widget HTML
      * Retrieve the ready-to-embed HTML process visualization widget.
      * @param id  (required)
+     * @param title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @return String
      * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
      * @http.response.details
@@ -1481,8 +1487,8 @@ public class DefaultApi {
         <tr><td> 500 </td><td> Internal Server Error - database failure or execution crash </td><td>  -  </td></tr>
      </table>
      */
-    public String getInstanceVisualizationWidget(@javax.annotation.Nonnull String id) throws ApiException {
-        ApiResponse<String> localVarResp = getInstanceVisualizationWidgetWithHttpInfo(id);
+    public String getInstanceVisualizationWidget(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String title) throws ApiException {
+        ApiResponse<String> localVarResp = getInstanceVisualizationWidgetWithHttpInfo(id, title);
         return localVarResp.getData();
     }
 
@@ -1490,6 +1496,7 @@ public class DefaultApi {
      * Get process instance visualization widget HTML
      * Retrieve the ready-to-embed HTML process visualization widget.
      * @param id  (required)
+     * @param title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @return ApiResponse&lt;String&gt;
      * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
      * @http.response.details
@@ -1502,8 +1509,8 @@ public class DefaultApi {
         <tr><td> 500 </td><td> Internal Server Error - database failure or execution crash </td><td>  -  </td></tr>
      </table>
      */
-    public ApiResponse<String> getInstanceVisualizationWidgetWithHttpInfo(@javax.annotation.Nonnull String id) throws ApiException {
-        okhttp3.Call localVarCall = getInstanceVisualizationWidgetValidateBeforeCall(id, null);
+    public ApiResponse<String> getInstanceVisualizationWidgetWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String title) throws ApiException {
+        okhttp3.Call localVarCall = getInstanceVisualizationWidgetValidateBeforeCall(id, title, null);
         Type localVarReturnType = new TypeToken<String>(){}.getType();
         return localVarApiClient.execute(localVarCall, localVarReturnType);
     }
@@ -1512,6 +1519,7 @@ public class DefaultApi {
      * Get process instance visualization widget HTML (asynchronously)
      * Retrieve the ready-to-embed HTML process visualization widget.
      * @param id  (required)
+     * @param title Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      * @param _callback The callback to be executed when the API call finishes
      * @return The request call
      * @throws ApiException If fail to process the API call, e.g. serializing the request body object
@@ -1525,9 +1533,9 @@ public class DefaultApi {
         <tr><td> 500 </td><td> Internal Server Error - database failure or execution crash </td><td>  -  </td></tr>
      </table>
      */
-    public okhttp3.Call getInstanceVisualizationWidgetAsync(@javax.annotation.Nonnull String id, final ApiCallback<String> _callback) throws ApiException {
+    public okhttp3.Call getInstanceVisualizationWidgetAsync(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String title, final ApiCallback<String> _callback) throws ApiException {
 
-        okhttp3.Call localVarCall = getInstanceVisualizationWidgetValidateBeforeCall(id, _callback);
+        okhttp3.Call localVarCall = getInstanceVisualizationWidgetValidateBeforeCall(id, title, _callback);
         Type localVarReturnType = new TypeToken<String>(){}.getType();
         localVarApiClient.executeAsync(localVarCall, localVarReturnType, _callback);
         return localVarCall;

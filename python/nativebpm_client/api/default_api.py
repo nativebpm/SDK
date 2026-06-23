@@ -2609,6 +2609,7 @@ class DefaultApi:
     def get_instance_visualization_widget(
         self,
         id: StrictStr,
+        title: Annotated[Optional[StrictStr], Field(description="Optional custom title for the visualization widget. If empty, the title header is hidden.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -2628,6 +2629,8 @@ class DefaultApi:
 
         :param id: (required)
         :type id: str
+        :param title: Optional custom title for the visualization widget. If empty, the title header is hidden.
+        :type title: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -2652,6 +2655,7 @@ class DefaultApi:
 
         _param = self._get_instance_visualization_widget_serialize(
             id=id,
+            title=title,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -2679,6 +2683,7 @@ class DefaultApi:
     def get_instance_visualization_widget_with_http_info(
         self,
         id: StrictStr,
+        title: Annotated[Optional[StrictStr], Field(description="Optional custom title for the visualization widget. If empty, the title header is hidden.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -2698,6 +2703,8 @@ class DefaultApi:
 
         :param id: (required)
         :type id: str
+        :param title: Optional custom title for the visualization widget. If empty, the title header is hidden.
+        :type title: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -2722,6 +2729,7 @@ class DefaultApi:
 
         _param = self._get_instance_visualization_widget_serialize(
             id=id,
+            title=title,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -2749,6 +2757,7 @@ class DefaultApi:
     def get_instance_visualization_widget_without_preload_content(
         self,
         id: StrictStr,
+        title: Annotated[Optional[StrictStr], Field(description="Optional custom title for the visualization widget. If empty, the title header is hidden.")] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -2768,6 +2777,8 @@ class DefaultApi:
 
         :param id: (required)
         :type id: str
+        :param title: Optional custom title for the visualization widget. If empty, the title header is hidden.
+        :type title: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -2792,6 +2803,7 @@ class DefaultApi:
 
         _param = self._get_instance_visualization_widget_serialize(
             id=id,
+            title=title,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -2814,6 +2826,7 @@ class DefaultApi:
     def _get_instance_visualization_widget_serialize(
         self,
         id,
+        title,
         _request_auth,
         _content_type,
         _headers,
@@ -2838,6 +2851,10 @@ class DefaultApi:
         if id is not None:
             _path_params['id'] = id
         # process the query parameters
+        if title is not None:
+            
+            _query_params.append(('title', title))
+            
         # process the header parameters
         # process the form parameters
         # process the body parameter

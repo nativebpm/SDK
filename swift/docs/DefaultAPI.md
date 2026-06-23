@@ -487,7 +487,7 @@ No authorization required
 
 # **getInstanceVisualizationWidget**
 ```swift
-    open class func getInstanceVisualizationWidget(id: String, completion: @escaping (_ data: String?, _ error: Error?) -> Void)
+    open class func getInstanceVisualizationWidget(id: String, title: String? = nil, completion: @escaping (_ data: String?, _ error: Error?) -> Void)
 ```
 
 Get process instance visualization widget HTML
@@ -500,9 +500,10 @@ Retrieve the ready-to-embed HTML process visualization widget.
 import NativeBPMClient
 
 let id = "id_example" // String | 
+let title = "title_example" // String | Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
 
 // Get process instance visualization widget HTML
-DefaultAPI.getInstanceVisualizationWidget(id: id) { (response, error) in
+DefaultAPI.getInstanceVisualizationWidget(id: id, title: title) { (response, error) in
     guard error == nil else {
         print(error)
         return
@@ -519,6 +520,7 @@ DefaultAPI.getInstanceVisualizationWidget(id: id) { (response, error) in
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **String** |  | 
+ **title** | **String** | Optional custom title for the visualization widget. If empty, the title header is hidden. | [optional] 
 
 ### Return type
 

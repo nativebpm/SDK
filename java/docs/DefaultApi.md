@@ -629,7 +629,7 @@ No authorization required
 
 <a id="getInstanceVisualizationWidget"></a>
 # **getInstanceVisualizationWidget**
-> String getInstanceVisualizationWidget(id)
+> String getInstanceVisualizationWidget(id, title)
 
 Get process instance visualization widget HTML
 
@@ -651,8 +651,9 @@ public class Example {
 
     DefaultApi apiInstance = new DefaultApi(defaultClient);
     String id = "id_example"; // String | 
+    String title = "title_example"; // String | Optional custom title for the visualization widget. If empty, the title header is hidden.
     try {
-      String result = apiInstance.getInstanceVisualizationWidget(id);
+      String result = apiInstance.getInstanceVisualizationWidget(id, title);
       System.out.println(result);
     } catch (ApiException e) {
       System.err.println("Exception when calling DefaultApi#getInstanceVisualizationWidget");
@@ -670,6 +671,7 @@ public class Example {
 | Name | Type | Description  | Notes |
 |------------- | ------------- | ------------- | -------------|
 | **id** | **String**|  | |
+| **title** | **String**| Optional custom title for the visualization widget. If empty, the title header is hidden. | [optional] |
 
 ### Return type
 

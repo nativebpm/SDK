@@ -428,7 +428,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **getInstanceVisualizationWidget**
-> String getInstanceVisualizationWidget(id)
+> String getInstanceVisualizationWidget(id, title)
 
 Get process instance visualization widget HTML
 
@@ -440,9 +440,10 @@ import 'package:nativebpm_client/api.dart';
 
 final api_instance = DefaultApi();
 final id = id_example; // String | 
+final title = title_example; // String | Optional custom title for the visualization widget. If empty, the title header is hidden.
 
 try {
-    final result = api_instance.getInstanceVisualizationWidget(id);
+    final result = api_instance.getInstanceVisualizationWidget(id, title);
     print(result);
 } catch (e) {
     print('Exception when calling DefaultApi->getInstanceVisualizationWidget: $e\n');
@@ -454,6 +455,7 @@ try {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **String**|  | 
+ **title** | **String**| Optional custom title for the visualization widget. If empty, the title header is hidden. | [optional] 
 
 ### Return type
 

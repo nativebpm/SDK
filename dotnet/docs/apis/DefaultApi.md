@@ -391,7 +391,7 @@ No authorization required
 
 <a id="getinstancevisualizationwidget"></a>
 # **GetInstanceVisualizationWidget**
-> string GetInstanceVisualizationWidget (string id)
+> string GetInstanceVisualizationWidget (string id, string title = null)
 
 Get process instance visualization widget HTML
 
@@ -403,6 +403,7 @@ Retrieve the ready-to-embed HTML process visualization widget.
 | Name | Type | Description | Notes |
 |------|------|-------------|-------|
 | **id** | **string** |  |  |
+| **title** | **string** | Optional custom title for the visualization widget. If empty, the title header is hidden. | [optional]  |
 
 ### Return type
 

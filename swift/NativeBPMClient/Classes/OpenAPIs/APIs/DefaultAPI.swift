@@ -372,11 +372,12 @@ open class DefaultAPI {
      Get process instance visualization widget HTML
      
      - parameter id: (path)  
+     - parameter title: (query) Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      - returns: String
      */
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-    open class func getInstanceVisualizationWidget(id: String) async throws -> String {
-        return try await getInstanceVisualizationWidgetWithRequestBuilder(id: id).execute().body
+    open class func getInstanceVisualizationWidget(id: String, title: String? = nil) async throws -> String {
+        return try await getInstanceVisualizationWidgetWithRequestBuilder(id: id, title: title).execute().body
     }
 
     /**
@@ -384,9 +385,10 @@ open class DefaultAPI {
      - GET /api/instances/{id}/visualization/widget
      - Retrieve the ready-to-embed HTML process visualization widget.
      - parameter id: (path)  
+     - parameter title: (query) Optional custom title for the visualization widget. If empty, the title header is hidden. (optional)
      - returns: RequestBuilder<String> 
      */
-    open class func getInstanceVisualizationWidgetWithRequestBuilder(id: String) -> RequestBuilder<String> {
+    open class func getInstanceVisualizationWidgetWithRequestBuilder(id: String, title: String? = nil) -> RequestBuilder<String> {
         var localVariablePath = "/api/instances/{id}/visualization/widget"
         let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
         let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
@@ -394,7 +396,10 @@ open class DefaultAPI {
         let localVariableURLString = NativeBPMClientAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
 
-        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
+            "title": (wrappedValue: title?.encodeToJSON(), isExplode: true),
+        ])
 
         let localVariableNillableHeaders: [String: Any?] = [
             :
