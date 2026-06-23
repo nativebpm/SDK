@@ -133,74 +133,54 @@ login-registry:
 	@if [ -z "$$GL_PAT" ]; then echo "Error: GL_PAT environment variable is not set." && exit 1; fi
 	docker login -u sauran -p $$GL_PAT registry.gitlab.com
 
+define mirror_image
+	@docker manifest inspect $(2) >/dev/null 2>&1 || ( \
+		docker pull $(1) && \
+		docker tag $(1) $(2) && \
+		docker push $(2) \
+	)
+endef
+
 push-gradle:
-	docker pull mirror.gcr.io/library/gradle:8-jdk17
-	docker tag mirror.gcr.io/library/gradle:8-jdk17 $(GRADLE_IMG)
-	docker push $(GRADLE_IMG)
+	$(call mirror_image,mirror.gcr.io/library/gradle:8-jdk17,$(GRADLE_IMG))
 
 push-composer:
-	docker pull mirror.gcr.io/library/composer:latest
-	docker tag mirror.gcr.io/library/composer:latest $(COMPOSER_IMG)
-	docker push $(COMPOSER_IMG)
+	$(call mirror_image,mirror.gcr.io/library/composer:latest,$(COMPOSER_IMG))
 
 push-php:
-	docker pull mirror.gcr.io/library/php:8.2-cli
-	docker tag mirror.gcr.io/library/php:8.2-cli $(PHP_IMG)
-	docker push $(PHP_IMG)
+	$(call mirror_image,mirror.gcr.io/library/php:8.2-cli,$(PHP_IMG))
 
 push-dotnet:
-	docker pull mcr.microsoft.com/dotnet/sdk:8.0
-	docker tag mcr.microsoft.com/dotnet/sdk:8.0 $(DOTNET_IMG)
-	docker push $(DOTNET_IMG)
+	$(call mirror_image,mcr.microsoft.com/dotnet/sdk:8.0,$(DOTNET_IMG))
 
 push-rust:
-	docker pull mirror.gcr.io/library/rust:1.75
-	docker tag mirror.gcr.io/library/rust:1.75 $(RUST_IMG)
-	docker push $(RUST_IMG)
+	$(call mirror_image,mirror.gcr.io/library/rust:1.75,$(RUST_IMG))
 
 push-dart:
-	docker pull mirror.gcr.io/library/dart:stable
-	docker tag mirror.gcr.io/library/dart:stable $(DART_IMG)
-	docker push $(DART_IMG)
+	$(call mirror_image,mirror.gcr.io/library/dart:stable,$(DART_IMG))
 
 push-maven:
-	docker pull mirror.gcr.io/library/maven:3.9-eclipse-temurin-17
-	docker tag mirror.gcr.io/library/maven:3.9-eclipse-temurin-17 $(MAVEN_IMG)
-	docker push $(MAVEN_IMG)
+	$(call mirror_image,mirror.gcr.io/library/maven:3.9-eclipse-temurin-17,$(MAVEN_IMG))
 
 push-node:
-	docker pull mirror.gcr.io/library/node:20
-	docker tag mirror.gcr.io/library/node:20 $(NODE20_IMG)
-	docker push $(NODE20_IMG)
+	$(call mirror_image,mirror.gcr.io/library/node:20,$(NODE20_IMG))
 
 push-docker-git:
-	docker pull mirror.gcr.io/library/docker:24.0.9-git
-	docker tag mirror.gcr.io/library/docker:24.0.9-git $(DOCKER_GIT_IMG)
-	docker push $(DOCKER_GIT_IMG)
+	$(call mirror_image,mirror.gcr.io/library/docker:24.0.9-git,$(DOCKER_GIT_IMG))
 
 push-docker-dind:
-	docker pull mirror.gcr.io/library/docker:24.0.9-dind
-	docker tag mirror.gcr.io/library/docker:24.0.9-dind $(DOCKER_DIND_IMG)
-	docker push $(DOCKER_DIND_IMG)
+	$(call mirror_image,mirror.gcr.io/library/docker:24.0.9-dind,$(DOCKER_DIND_IMG))
 
 push-openapi-gen:
-	docker pull openapitools/openapi-generator-cli:latest
-	docker tag openapitools/openapi-generator-cli:latest $(OPENAPI_GEN_IMG)
-	docker push $(OPENAPI_GEN_IMG)
+	$(call mirror_image,openapitools/openapi-generator-cli:latest,$(OPENAPI_GEN_IMG))
 
 push-golang:
-	docker pull mirror.gcr.io/library/golang:1.26-alpine
-	docker tag mirror.gcr.io/library/golang:1.26-alpine $(GOLANG_IMG)
-	docker push $(GOLANG_IMG)
+	$(call mirror_image,mirror.gcr.io/library/golang:1.26-alpine,$(GOLANG_IMG))
 
 push-python:
-	docker pull mirror.gcr.io/library/python:3.11
-	docker tag mirror.gcr.io/library/python:3.11 $(PYTHON_IMG)
-	docker push $(PYTHON_IMG)
+	$(call mirror_image,mirror.gcr.io/library/python:3.11,$(PYTHON_IMG))
 
 push-node-alpine:
-	docker pull mirror.gcr.io/library/node:20-alpine
-	docker tag mirror.gcr.io/library/node:20-alpine $(NODE_IMG)
-	docker push $(NODE_IMG)
+	$(call mirror_image,mirror.gcr.io/library/node:20-alpine,$(NODE_IMG))
 
 
