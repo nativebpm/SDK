@@ -80,7 +80,7 @@ generate-dart:
 test: test-go test-python test-typescript test-java test-kotlin test-php test-dotnet test-rust test-dart
 
 test-go:
-	docker run --rm -v "$$(pwd):/local" -w /local/go golang:1.26-alpine go test -v ./...
+	docker run --rm -v "$$(pwd):/local" -w /local/go golang:1.26-alpine sh -c "go get github.com/stretchr/testify/assert && go test -v ./..."
 
 test-python:
 	docker run --rm -v "$$(pwd):/local" -w /local/python python:3.11 sh -c "pip install -r requirements.txt -r test-requirements.txt && python -m unittest discover -s test"
