@@ -46,6 +46,9 @@ paths:
                   type: string
                   format: binary
                   description: BPMN 2.0 XML file content to deploy
+          application/json:
+            schema:
+              type: object
       responses:
         '200':
           description: Successful response
@@ -815,8 +818,7 @@ components:
           type: string
           example: start
         variables:
-          type: string
-          format: byte
+          type: object
           description: JSON encoded payload variables associated with this transition
         timestamp:
           type: string
