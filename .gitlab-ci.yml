@@ -1,0 +1,72 @@
+stages:
+  - generate-test
+  - publish
+
+include:
+  - project: 'nativebpm/infra'
+    file: 'sdk-gitlab-ci.yml'
+
+generate_and_test_sdk:
+  stage: generate-test
+  image: docker:24.0.9-git
+  services:
+    - name: docker:24.0.9-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  parallel:
+    matrix:
+      - SDK: [go, python, typescript, java, kotlin, php, dotnet, rust, swift, dart]
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - openapi.yaml
+  script:
+    - apk add --no-cache make git
+    - git config --global user.email "ci-bot@nativebpm.com"
+    - git config --global user.name "NativeBPM CI Bot"
+    # Ensure a symlink named 'sdk' exists in the parent directory so volume mounts resolve correctly
+    - ln -sf "$CI_PROJECT_DIR" "$CI_PROJECT_DIR/../sdk"
+    # 1. Generate and test the SDK locally
+    - make generate-${SDK}
+    - make test-${SDK}
+    # 2. Push changes to standalone sdk repository (ourselves)
+    - git add ${SDK}/ openapi.yaml
+    - |
+      for i in 1 2 3 4 5; do
+        if ! git diff-index --quiet HEAD --; then
+          git commit -m "chore(sdk): regenerate ${SDK} SDK from updated openapi.yaml"
+          if git push https://oauth2:${GL_PAT}@gitlab.com/nativebpm/sdk.git HEAD:main; then
+            break
+          fi
+          echo "Push conflict on sdk, pulling latest and retrying..."
+          git fetch origin main
+          git rebase origin/main
+          sleep $((RANDOM % 5 + 2))
+        else
+          break
+        fi
+      done
+    # 3. Clone platform repository, copy updated SDK, and push
+    - git clone https://oauth2:${GL_PAT}@gitlab.com/nativebpm/platform.git platform-repo
+    - mkdir -p platform-repo/sdk/${SDK}
+    - cp -r ${SDK}/* platform-repo/sdk/${SDK}/
+    - cp openapi.yaml platform-repo/sdk/openapi.yaml
+    - mkdir -p platform-repo/public/swagger
+    - cp openapi.yaml platform-repo/public/swagger/openapi.yaml
+    - cd platform-repo
+    - git add sdk/${SDK} sdk/openapi.yaml public/swagger/openapi.yaml
+    - |
+      for i in 1 2 3 4 5; do
+        if ! git diff-index --quiet HEAD --; then
+          git commit -m "chore(sdk): regenerate ${SDK} SDK inside platform from updated openapi.yaml"
+          if git pull --rebase origin main && git push origin main; then
+            break
+          fi
+          echo "Push conflict on platform, retrying..."
+          sleep $((RANDOM % 5 + 2))
+        else
+          break
+        fi
+      done
