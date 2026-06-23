@@ -36,6 +36,7 @@ public class WorkflowTest {
         assertEquals("Test Process Schema", ast.get("name"));
         
         String json = workflow.toJSON();
+        System.out.println("JSON OUTPUT: " + json);
         assertTrue(json.contains("\"id\":\"test-process\""));
         assertTrue(json.contains("\"name\":\"Test Process Schema\""));
         assertTrue(json.contains("\"type\":\"startEvent\""));

@@ -546,7 +546,7 @@ public class Workflow {
     }
 
     public String toJSON() {
-        return new Gson().toJson(toAST());
+        return new com.google.gson.GsonBuilder().disableHtmlEscaping().create().toJson(toAST());
     }
 
     public static class Expression {
