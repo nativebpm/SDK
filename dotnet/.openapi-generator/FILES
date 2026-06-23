@@ -63,4 +63,3 @@ src/NativeBPM.Client/Model/TaskRecord.cs
 src/NativeBPM.Client/Model/VisualizationData.cs
 src/NativeBPM.Client/Model/WebhookDeliveryRecord.cs
 src/NativeBPM.Client/Model/WebhookRecord.cs
-src/NativeBPM.Client/README.md
