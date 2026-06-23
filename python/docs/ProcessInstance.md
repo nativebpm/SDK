@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **process_id** | **str** |  | 
 **definition_hash** | **str** |  | 
 **business_key** | **str** |  | 
-**state** | **bytes** | Base64/raw JSON encoded internal Wazero process engine state representation | 
+**state** | **object** | Raw JSON object representing internal Wazero process engine state representation | 
 **version** | **int** |  | 
 **completed** | **bool** |  | 
 **updated_at** | **datetime** |  | 

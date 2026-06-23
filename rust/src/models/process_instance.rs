@@ -11,9 +11,6 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-use serde_with::serde_as;
-
-#[serde_as]
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProcessInstance {
     #[serde(rename = "id")]
@@ -24,10 +21,9 @@ pub struct ProcessInstance {
     pub definition_hash: String,
     #[serde(rename = "business_key")]
     pub business_key: String,
-    /// Base64/raw JSON encoded internal Wazero process engine state representation
-    #[serde_as(as = "serde_with::base64::Base64")]
+    /// Raw JSON object representing internal Wazero process engine state representation
     #[serde(rename = "state")]
-    pub state: Vec<u8>,
+    pub state: serde_json::Value,
     #[serde(rename = "version")]
     pub version: i32,
     #[serde(rename = "completed")]
@@ -39,7 +35,7 @@ pub struct ProcessInstance {
 }
 
 impl ProcessInstance {
-    pub fn new(id: uuid::Uuid, process_id: String, definition_hash: String, business_key: String, state: Vec<u8>, version: i32, completed: bool, updated_at: chrono::DateTime<chrono::FixedOffset>, tenant_id: String) -> ProcessInstance {
+    pub fn new(id: uuid::Uuid, process_id: String, definition_hash: String, business_key: String, state: serde_json::Value, version: i32, completed: bool, updated_at: chrono::DateTime<chrono::FixedOffset>, tenant_id: String) -> ProcessInstance {
         ProcessInstance {
             id,
             process_id,

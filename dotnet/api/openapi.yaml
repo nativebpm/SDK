@@ -961,7 +961,7 @@ components:
         process_id: process_id
         definition_hash: definition_hash
         business_key: business_key
-        state: state
+        state: "{}"
         version: 0
         completed: true
         updated_at: 2000-01-23T04:56:07.000+00:00
@@ -977,10 +977,9 @@ components:
         business_key:
           type: string
         state:
-          description: Base64/raw JSON encoded internal Wazero process engine state
-            representation
-          format: byte
-          type: string
+          description: Raw JSON object representing internal Wazero process engine
+            state representation
+          type: object
         version:
           type: integer
         completed:

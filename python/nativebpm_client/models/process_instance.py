@@ -18,8 +18,8 @@ import re  # noqa: F401
 import json
 
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictBytes, StrictInt, StrictStr
-from typing import Any, ClassVar, Dict, List, Union
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
+from typing import Any, ClassVar, Dict, List
 from uuid import UUID
 from typing import Optional, Set
 from typing_extensions import Self
@@ -33,7 +33,7 @@ class ProcessInstance(BaseModel):
     process_id: StrictStr
     definition_hash: StrictStr
     business_key: StrictStr
-    state: Union[StrictBytes, StrictStr] = Field(description="Base64/raw JSON encoded internal Wazero process engine state representation")
+    state: Dict[str, Any] = Field(description="Raw JSON object representing internal Wazero process engine state representation")
     version: StrictInt
     completed: StrictBool
     updated_at: datetime

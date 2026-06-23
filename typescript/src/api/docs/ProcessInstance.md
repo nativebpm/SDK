@@ -10,7 +10,7 @@ Name | Type
 `processId` | string
 `definitionHash` | string
 `businessKey` | string
-`state` | string
+`state` | object
 `version` | number
 `completed` | boolean
 `updatedAt` | Date

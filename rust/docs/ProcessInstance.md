@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **process_id** | **String** |  | 
 **definition_hash** | **String** |  | 
 **business_key** | **String** |  | 
-**state** | **String** | Base64/raw JSON encoded internal Wazero process engine state representation | 
+**state** | **serde_json::Value** | Raw JSON object representing internal Wazero process engine state representation | 
 **version** | **i32** |  | 
 **completed** | **bool** |  | 
 **updated_at** | **chrono::DateTime<chrono::FixedOffset>** |  | 

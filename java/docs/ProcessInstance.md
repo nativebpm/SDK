@@ -11,7 +11,7 @@
 |**processId** | **String** |  |  |
 |**definitionHash** | **String** |  |  |
 |**businessKey** | **String** |  |  |
-|**state** | **byte[]** | Base64/raw JSON encoded internal Wazero process engine state representation |  |
+|**state** | **Object** | Raw JSON object representing internal Wazero process engine state representation |  |
 |**version** | **Integer** |  |  |
 |**completed** | **Boolean** |  |  |
 |**updatedAt** | **OffsetDateTime** |  |  |

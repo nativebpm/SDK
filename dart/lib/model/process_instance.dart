@@ -32,8 +32,8 @@ class ProcessInstance {
 
   String businessKey;
 
-  /// Base64/raw JSON encoded internal Wazero process engine state representation
-  String state;
+  /// Raw JSON object representing internal Wazero process engine state representation
+  Object state;
 
   int version;
 
@@ -122,7 +122,7 @@ class ProcessInstance {
         processId: mapValueOfType<String>(json, r'process_id')!,
         definitionHash: mapValueOfType<String>(json, r'definition_hash')!,
         businessKey: mapValueOfType<String>(json, r'business_key')!,
-        state: mapValueOfType<String>(json, r'state')!,
+        state: mapValueOfType<Object>(json, r'state')!,
         version: mapValueOfType<int>(json, r'version')!,
         completed: mapValueOfType<bool>(json, r'completed')!,
         updatedAt: mapDateTime(json, r'updated_at', r'')!,

@@ -34,7 +34,7 @@ import com.squareup.moshi.JsonClass
  * @param processId 
  * @param definitionHash 
  * @param businessKey 
- * @param state Base64/raw JSON encoded internal Wazero process engine state representation
+ * @param state Raw JSON object representing internal Wazero process engine state representation
  * @param version 
  * @param completed 
  * @param updatedAt 
@@ -56,9 +56,9 @@ data class ProcessInstance (
     @Json(name = "business_key")
     val businessKey: kotlin.String,
 
-    /* Base64/raw JSON encoded internal Wazero process engine state representation */
+    /* Raw JSON object representing internal Wazero process engine state representation */
     @Json(name = "state")
-    val state: kotlin.ByteArray,
+    val state: kotlin.Any,
 
     @Json(name = "version")
     val version: kotlin.Int,

@@ -37,13 +37,13 @@ namespace NativeBPM.Client.Model
         /// <param name="processId">processId</param>
         /// <param name="definitionHash">definitionHash</param>
         /// <param name="businessKey">businessKey</param>
-        /// <param name="state">Base64/raw JSON encoded internal Wazero process engine state representation</param>
+        /// <param name="state">Raw JSON object representing internal Wazero process engine state representation</param>
         /// <param name="varVersion">varVersion</param>
         /// <param name="completed">completed</param>
         /// <param name="updatedAt">updatedAt</param>
         /// <param name="tenantId">tenantId</param>
         [JsonConstructor]
-        public ProcessInstance(Guid id, string processId, string definitionHash, string businessKey, byte[] state, int varVersion, bool completed, DateTime updatedAt, string tenantId)
+        public ProcessInstance(Guid id, string processId, string definitionHash, string businessKey, Object state, int varVersion, bool completed, DateTime updatedAt, string tenantId)
         {
             Id = id;
             ProcessId = processId;
@@ -84,11 +84,11 @@ namespace NativeBPM.Client.Model
         public string BusinessKey { get; set; }
 
         /// <summary>
-        /// Base64/raw JSON encoded internal Wazero process engine state representation
+        /// Raw JSON object representing internal Wazero process engine state representation
         /// </summary>
-        /// <value>Base64/raw JSON encoded internal Wazero process engine state representation</value>
+        /// <value>Raw JSON object representing internal Wazero process engine state representation</value>
         [JsonPropertyName("state")]
-        public byte[] State { get; set; }
+        public Object State { get; set; }
 
         /// <summary>
         /// Gets or Sets VarVersion
@@ -177,7 +177,7 @@ namespace NativeBPM.Client.Model
             Option<string?> processId = default;
             Option<string?> definitionHash = default;
             Option<string?> businessKey = default;
-            Option<byte[]?> state = default;
+            Option<Object?> state = default;
             Option<int?> varVersion = default;
             Option<bool?> completed = default;
             Option<DateTime?> updatedAt = default;
@@ -211,7 +211,7 @@ namespace NativeBPM.Client.Model
                             businessKey = new Option<string?>(utf8JsonReader.GetString()!);
                             break;
                         case "state":
-                            state = new Option<byte[]?>(JsonSerializer.Deserialize<byte[]>(ref utf8JsonReader, jsonSerializerOptions)!);
+                            state = new Option<Object?>(JsonSerializer.Deserialize<Object>(ref utf8JsonReader, jsonSerializerOptions)!);
                             break;
                         case "version":
                             varVersion = new Option<int?>(utf8JsonReader.TokenType == JsonTokenType.Null ? (int?)null : utf8JsonReader.GetInt32());

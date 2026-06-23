@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **ProcessId** | **string** |  | 
 **DefinitionHash** | **string** |  | 
 **BusinessKey** | **string** |  | 
-**State** | **string** | Base64/raw JSON encoded internal Wazero process engine state representation | 
+**State** | **map[string]interface{}** | Raw JSON object representing internal Wazero process engine state representation | 
 **Version** | **int32** |  | 
 **Completed** | **bool** |  | 
 **UpdatedAt** | **time.Time** |  | 
@@ -18,7 +18,7 @@ Name | Type | Description | Notes
 
 ### NewProcessInstance
 
-`func NewProcessInstance(id string, processId string, definitionHash string, businessKey string, state string, version int32, completed bool, updatedAt time.Time, tenantId string, ) *ProcessInstance`
+`func NewProcessInstance(id string, processId string, definitionHash string, businessKey string, state map[string]interface{}, version int32, completed bool, updatedAt time.Time, tenantId string, ) *ProcessInstance`
 
 NewProcessInstance instantiates a new ProcessInstance object
 This constructor will assign default values to properties that have it defined,
@@ -115,20 +115,20 @@ SetBusinessKey sets BusinessKey field to given value.
 
 ### GetState
 
-`func (o *ProcessInstance) GetState() string`
+`func (o *ProcessInstance) GetState() map[string]interface{}`
 
 GetState returns the State field if non-nil, zero value otherwise.
 
 ### GetStateOk
 
-`func (o *ProcessInstance) GetStateOk() (*string, bool)`
+`func (o *ProcessInstance) GetStateOk() (*map[string]interface{}, bool)`
 
 GetStateOk returns a tuple with the State field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetState
 
-`func (o *ProcessInstance) SetState(v string)`
+`func (o *ProcessInstance) SetState(v map[string]interface{})`
 
 SetState sets State field to given value.
 

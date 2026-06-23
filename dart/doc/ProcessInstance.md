@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 **processId** | **String** |  | 
 **definitionHash** | **String** |  | 
 **businessKey** | **String** |  | 
-**state** | **String** | Base64/raw JSON encoded internal Wazero process engine state representation | 
+**state** | **Object** | Raw JSON object representing internal Wazero process engine state representation | 
 **version** | **int** |  | 
 **completed** | **bool** |  | 
 **updatedAt** | [**DateTime**](DateTime.md) |  | 

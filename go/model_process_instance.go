@@ -26,8 +26,8 @@ type ProcessInstance struct {
 	ProcessId string `json:"process_id"`
 	DefinitionHash string `json:"definition_hash"`
 	BusinessKey string `json:"business_key"`
-	// Base64/raw JSON encoded internal Wazero process engine state representation
-	State string `json:"state"`
+	// Raw JSON object representing internal Wazero process engine state representation
+	State map[string]interface{} `json:"state"`
 	Version int32 `json:"version"`
 	Completed bool `json:"completed"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -40,7 +40,7 @@ type _ProcessInstance ProcessInstance
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewProcessInstance(id string, processId string, definitionHash string, businessKey string, state string, version int32, completed bool, updatedAt time.Time, tenantId string) *ProcessInstance {
+func NewProcessInstance(id string, processId string, definitionHash string, businessKey string, state map[string]interface{}, version int32, completed bool, updatedAt time.Time, tenantId string) *ProcessInstance {
 	this := ProcessInstance{}
 	this.Id = id
 	this.ProcessId = processId
@@ -159,9 +159,9 @@ func (o *ProcessInstance) SetBusinessKey(v string) {
 }
 
 // GetState returns the State field value
-func (o *ProcessInstance) GetState() string {
+func (o *ProcessInstance) GetState() map[string]interface{} {
 	if o == nil {
-		var ret string
+		var ret map[string]interface{}
 		return ret
 	}
 
@@ -170,15 +170,15 @@ func (o *ProcessInstance) GetState() string {
 
 // GetStateOk returns a tuple with the State field value
 // and a boolean to check if the value has been set.
-func (o *ProcessInstance) GetStateOk() (*string, bool) {
+func (o *ProcessInstance) GetStateOk() (map[string]interface{}, bool) {
 	if o == nil {
-		return nil, false
+		return map[string]interface{}{}, false
 	}
-	return &o.State, true
+	return o.State, true
 }
 
 // SetState sets field value
-func (o *ProcessInstance) SetState(v string) {
+func (o *ProcessInstance) SetState(v map[string]interface{}) {
 	o.State = v
 }
 

@@ -61,7 +61,7 @@ class ProcessInstance implements ModelInterface, ArrayAccess, \JsonSerializable
         'process_id' => 'string',
         'definition_hash' => 'string',
         'business_key' => 'string',
-        'state' => 'string',
+        'state' => 'object',
         'version' => 'int',
         'completed' => 'bool',
         'updated_at' => '\DateTime',
@@ -80,7 +80,7 @@ class ProcessInstance implements ModelInterface, ArrayAccess, \JsonSerializable
         'process_id' => null,
         'definition_hash' => null,
         'business_key' => null,
-        'state' => 'byte',
+        'state' => null,
         'version' => null,
         'completed' => null,
         'updated_at' => 'date-time',
@@ -483,7 +483,7 @@ class ProcessInstance implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets state
      *
-     * @return string
+     * @return object
      */
     public function getState()
     {
@@ -493,7 +493,7 @@ class ProcessInstance implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets state
      *
-     * @param string $state Base64/raw JSON encoded internal Wazero process engine state representation
+     * @param object $state Raw JSON object representing internal Wazero process engine state representation
      *
      * @return self
      */

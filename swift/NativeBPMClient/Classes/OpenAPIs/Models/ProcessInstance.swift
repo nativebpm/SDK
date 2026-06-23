@@ -16,14 +16,14 @@ public struct ProcessInstance: Codable, JSONEncodable, Hashable {
     public var processId: String
     public var definitionHash: String
     public var businessKey: String
-    /** Base64/raw JSON encoded internal Wazero process engine state representation */
-    public var state: Data
+    /** Raw JSON object representing internal Wazero process engine state representation */
+    public var state: AnyCodable
     public var version: Int
     public var completed: Bool
     public var updatedAt: Date
     public var tenantId: String
 
-    public init(id: UUID, processId: String, definitionHash: String, businessKey: String, state: Data, version: Int, completed: Bool, updatedAt: Date, tenantId: String) {
+    public init(id: UUID, processId: String, definitionHash: String, businessKey: String, state: AnyCodable, version: Int, completed: Bool, updatedAt: Date, tenantId: String) {
         self.id = id
         self.processId = processId
         self.definitionHash = definitionHash

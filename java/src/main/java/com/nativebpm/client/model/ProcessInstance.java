@@ -75,7 +75,7 @@ public class ProcessInstance {
   public static final String SERIALIZED_NAME_STATE = "state";
   @SerializedName(SERIALIZED_NAME_STATE)
   @javax.annotation.Nonnull
-  private byte[] state;
+  private Object state;
 
   public static final String SERIALIZED_NAME_VERSION = "version";
   @SerializedName(SERIALIZED_NAME_VERSION)
@@ -176,21 +176,21 @@ public class ProcessInstance {
   }
 
 
-  public ProcessInstance state(@javax.annotation.Nonnull byte[] state) {
+  public ProcessInstance state(@javax.annotation.Nonnull Object state) {
     this.state = state;
     return this;
   }
 
   /**
-   * Base64/raw JSON encoded internal Wazero process engine state representation
+   * Raw JSON object representing internal Wazero process engine state representation
    * @return state
    */
   @javax.annotation.Nonnull
-  public byte[] getState() {
+  public Object getState() {
     return state;
   }
 
-  public void setState(@javax.annotation.Nonnull byte[] state) {
+  public void setState(@javax.annotation.Nonnull Object state) {
     this.state = state;
   }
 
@@ -285,7 +285,7 @@ public class ProcessInstance {
         Objects.equals(this.processId, processInstance.processId) &&
         Objects.equals(this.definitionHash, processInstance.definitionHash) &&
         Objects.equals(this.businessKey, processInstance.businessKey) &&
-        Arrays.equals(this.state, processInstance.state) &&
+        Objects.equals(this.state, processInstance.state) &&
         Objects.equals(this.version, processInstance.version) &&
         Objects.equals(this.completed, processInstance.completed) &&
         Objects.equals(this.updatedAt, processInstance.updatedAt) &&
@@ -294,7 +294,7 @@ public class ProcessInstance {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, processId, definitionHash, businessKey, Arrays.hashCode(state), version, completed, updatedAt, tenantId);
+    return Objects.hash(id, processId, definitionHash, businessKey, state, version, completed, updatedAt, tenantId);
   }
 
   @Override
