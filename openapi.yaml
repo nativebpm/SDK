@@ -1,0 +1,1064 @@
+openapi: 3.0.3
+info:
+  title: NativeBPM Engine REST API
+  description: |
+    REST API for managing, executing, and monitoring workflows, human tasks, incidents, and outgoing webhooks inside the NativeBPM Cloud-Native engine.
+    
+    ### Authentication
+    Requests must include a session cookie or a Bearer API token:
+    `Authorization: Bearer <API_TOKEN>`
+  version: 1.0.1
+servers:
+  - url: /
+paths:
+  /api/definitions:
+    get:
+      summary: List process definitions
+      description: Retrieve a list of all deployed process definitions.
+      operationId: listDefinitions
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessDefinition'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/deploy:
+    post:
+      summary: Deploy process definition
+      description: Deploy a new BPMN 2.0 XML process definition.
+      operationId: deployDefinition
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: BPMN 2.0 XML file content to deploy
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDefinition'
+        '400':
+          description: Invalid request body or malformed BPMN XML
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/definitions/{id}/start:
+    post:
+      summary: Start process instance
+      description: Start a new workflow process instance by process definition ID.
+      operationId: startInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The process definition ID (e.g., matching the BPMN process element ID)
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartInstanceRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessInstance'
+        '400':
+          description: Invalid variables or configuration
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances:
+    get:
+      summary: List process instances
+      description: Retrieve a list of active and completed process instances.
+      operationId: listInstances
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessInstance'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}:
+    get:
+      summary: Get process instance
+      description: Fetch a single process instance state by instance ID.
+      operationId: getInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessInstance'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Process instance not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}/visualization:
+    get:
+      summary: Get process instance visualization data
+      description: Retrieve diagram XML, execution node status, and history events for visualization.
+      operationId: getInstanceVisualization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisualizationData'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Process instance not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}/visualization/widget:
+    get:
+      summary: Get process instance visualization widget HTML
+      description: Retrieve the ready-to-embed HTML process visualization widget.
+      operationId: getInstanceVisualizationWidget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/html:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Process instance not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}/history:
+    get:
+      summary: Get process instance execution history
+      description: Fetch the audit trail / execution history log for a process instance.
+      operationId: getInstanceHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryRecord'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}/incidents:
+    get:
+      summary: List incidents for process instance
+      description: Get active execution incidents (failures) for a specific process instance.
+      operationId: listIncidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IncidentRecord'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '404':
+          description: Process instance not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}/complete:
+    post:
+      summary: Complete a wait state / task activity in process instance
+      description: Complete a specific active node/wait state within a process instance.
+      operationId: completeInstanceTask
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteInstanceTaskRequest'
+      responses:
+        '200':
+          description: Process instance state after completion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessInstance'
+        '400':
+          description: Missing parameter node_id or invalid payload
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}/resume:
+    post:
+      summary: Resume process instance
+      description: Manually trigger execution resumption of a process instance.
+      operationId: resumeInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Process instance state after resuming
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessInstance'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/instances/{id}/incidents/{incidentId}/resolve:
+    post:
+      summary: Resolve process incident
+      description: Resolve a process execution failure incident, triggering retry/resume.
+      operationId: resolveIncident
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: incidentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Incident resolved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: resolved
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/tasks:
+    get:
+      summary: List human/user tasks
+      description: Query tasks matching criteria (assignee, candidateGroup, status).
+      operationId: listTasks
+      parameters:
+        - name: assignee
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: candidateGroup
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [CREATED, CLAIMED, COMPLETED]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskRecord'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/tasks/{id}/claim:
+    post:
+      summary: Claim human task
+      description: Claim a task for a specific user assignee.
+      operationId: claimTask
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - assignee
+              properties:
+                assignee:
+                  type: string
+      responses:
+        '200':
+          description: Task claimed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRecord'
+        '400':
+          description: Task cannot be claimed
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          description: Task not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/tasks/{id}/complete:
+    post:
+      summary: Complete human task
+      description: Complete a claimed human task, providing results variables.
+      operationId: completeTask
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                variables:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Task completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessInstance'
+        '400':
+          description: Task is not claimed
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          description: Task not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/webhooks:
+    get:
+      summary: List configured outgoing webhooks
+      description: List all registered webhook targets.
+      operationId: listWebhooks
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookRecord'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+    post:
+      summary: Create webhook target
+      description: Register a new webhook target.
+      operationId: createWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+      responses:
+        '200':
+          description: Webhook created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookRecord'
+        '400':
+          description: Invalid URL or events list
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/webhooks/{id}:
+    put:
+      summary: Update webhook target
+      description: Modify the configuration of an existing webhook.
+      operationId: updateWebhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+      responses:
+        '200':
+          description: Webhook updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookRecord'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          description: Webhook not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+    delete:
+      summary: Delete webhook target
+      description: Delete a webhook configuration.
+      operationId: deleteWebhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: deleted
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          description: Webhook not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/webhooks/{id}/test:
+    post:
+      summary: Test webhook target
+      description: Send a test ping event delivery to verification URL.
+      operationId: testWebhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Test ping sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          description: Webhook not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/webhooks/{id}/deliveries:
+    get:
+      summary: List deliveries for webhook
+      description: Get delivery audit logs and history queue for a specific webhook target.
+      operationId: listWebhookDeliveries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookDeliveryRecord'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          description: Webhook not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/users/{username}/groups:
+    get:
+      summary: Get user groups
+      description: Retrieve the list of groups (chats) the user is a member of.
+      operationId: getUserGroups
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: The username to retrieve groups for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /api/smtp-config:
+    get:
+      summary: Get SMTP configuration
+      description: Retrieve the current SMTP mailer configuration (admin/developer only).
+      operationId: getSMTPConfig
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMTPConfig'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '404':
+          description: SMTP config not found
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+components:
+  responses:
+    401Unauthorized:
+      description: Unauthorized - missing or invalid session cookie / API Bearer Token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unauthorized
+    403Forbidden:
+      description: Forbidden - insufficient operator permissions or role level
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Forbidden - Insufficient permissions
+    500InternalError:
+      description: Internal Server Error - database failure or execution crash
+
+  schemas:
+    VisualizationData:
+      type: object
+      required:
+        - instance_id
+        - definition_id
+        - xml
+        - active_nodes
+        - waiting_nodes
+        - completed_nodes
+        - history
+        - completed
+      properties:
+        instance_id:
+          type: string
+        definition_id:
+          type: string
+        xml:
+          type: string
+        active_nodes:
+          type: array
+          items:
+            type: string
+        waiting_nodes:
+          type: array
+          items:
+            type: string
+        completed_nodes:
+          type: array
+          items:
+            type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryRecord'
+        completed:
+          type: boolean
+
+    ProcessDefinition:
+      type: object
+      required:
+        - hash
+        - id
+        - name
+        - xml_data
+        - deployed_at
+      properties:
+        hash:
+          type: string
+          description: MD5/SHA256 content hash of the process XML schema definition
+        id:
+          type: string
+          description: Unique process definition identifier
+        name:
+          type: string
+          description: Friendly name of the process
+        xml_data:
+          type: string
+          format: byte
+          description: Base64-encoded raw BPMN 2.0 XML schema data
+        deployed_at:
+          type: string
+          format: date-time
+
+    ProcessInstance:
+      type: object
+      required:
+        - id
+        - process_id
+        - definition_hash
+        - business_key
+        - state
+        - version
+        - completed
+        - updated_at
+        - tenant_id
+      properties:
+        id:
+          type: string
+          format: uuid
+        process_id:
+          type: string
+        definition_hash:
+          type: string
+        business_key:
+          type: string
+        state:
+          type: object
+          description: Raw JSON object representing internal Wazero process engine state representation
+        version:
+          type: integer
+        completed:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+
+    HistoryRecord:
+      type: object
+      required:
+        - id
+        - instance_id
+        - node_id
+        - node_name
+        - node_type
+        - action
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+        instance_id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+        node_name:
+          type: string
+        node_type:
+          type: string
+        action:
+          type: string
+          example: start
+        variables:
+          type: object
+          description: JSON encoded payload variables associated with this transition
+        timestamp:
+          type: string
+          format: date-time
+
+    IncidentRecord:
+      type: object
+      required:
+        - id
+        - instance_id
+        - activity_id
+        - error_message
+        - attempts_made
+        - resolved
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        instance_id:
+          type: string
+          format: uuid
+        activity_id:
+          type: string
+        error_message:
+          type: string
+        stack_trace:
+          type: string
+        attempts_made:
+          type: integer
+        resolved:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+
+    TaskRecord:
+      type: object
+      required:
+        - id
+        - instance_id
+        - activity_id
+        - name
+        - assignee
+        - candidate_groups
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        instance_id:
+          type: string
+          format: uuid
+        activity_id:
+          type: string
+        name:
+          type: string
+        assignee:
+          type: string
+        candidate_groups:
+          type: string
+        status:
+          type: string
+          example: CREATED
+        due_date:
+          type: string
+          format: date-time
+        input_schema:
+          type: string
+          description: JSON schema definition of form widgets
+        created_at:
+          type: string
+          format: date-time
+        claimed_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        current_step:
+          type: integer
+        draft_variables:
+          type: object
+          additionalProperties: true
+
+    WebhookRecord:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - url
+        - events
+        - is_active
+        - enable_audit
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        url:
+          type: string
+        secret:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        process_id:
+          type: string
+        is_active:
+          type: boolean
+        enable_audit:
+          type: boolean
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    WebhookDeliveryRecord:
+      type: object
+      required:
+        - id
+        - webhook_id
+        - tenant_id
+        - event_type
+        - payload
+        - status
+        - attempts
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        webhook_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        event_type:
+          type: string
+        payload:
+          type: string
+          format: byte
+        status:
+          type: string
+          example: PENDING
+        response_code:
+          type: integer
+        response_body:
+          type: string
+        attempts:
+          type: integer
+        next_retry:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        processed_at:
+          type: string
+          format: date-time
+
+    StartInstanceRequest:
+      type: object
+      properties:
+        instance_id:
+          type: string
+          format: uuid
+          description: Optional user-generated UUID to enforce idempotency
+        business_key:
+          type: string
+          description: Business tracking keyword
+        variables:
+          type: object
+          additionalProperties: true
+
+    CompleteInstanceTaskRequest:
+      type: object
+      required:
+        - node_id
+      properties:
+        node_id:
+          type: string
+          description: BPMN task element identifier
+        variables:
+          type: object
+          additionalProperties: true
+
+    CreateWebhookRequest:
+      type: object
+      required:
+        - url
+        - events
+      properties:
+        url:
+          type: string
+        secret:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        process_id:
+          type: string
+        is_active:
+          type: boolean
+        enable_audit:
+          type: boolean
+
+    SMTPConfig:
+      type: object
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+        username:
+          type: string
+        password:
+          type: string
+        from:
+          type: string
+        from_name:
+          type: string
+        use_ssl:
+          type: boolean
+        max_html_size:
+          type: integer
+          format: int64
+        max_attachment_size:
+          type: integer
+          format: int64
+        max_total_attachments_size:
+          type: integer
+          format: int64
