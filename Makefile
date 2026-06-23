@@ -106,3 +106,6 @@ test-rust:
 
 test-dart:
 	docker run --rm -v "$$(pwd):/local" -w /local/dart dart:stable dart test
+
+test-swift:
+	@echo "No tests configured for Swift"
