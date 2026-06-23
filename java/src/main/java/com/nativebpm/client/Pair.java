@@ -13,7 +13,7 @@
 
 package com.nativebpm.client;
 
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T06:22:05.837782937Z[Etc/UTC]", comments = "Generator version: 7.24.0-SNAPSHOT")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T06:26:30.840384984Z[Etc/UTC]", comments = "Generator version: 7.24.0-SNAPSHOT")
 public class Pair {
   private final String name;
   private final String value;
