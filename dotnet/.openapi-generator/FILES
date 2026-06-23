@@ -1,5 +1,4 @@
 .gitignore
-NativeBPM.Client.sln
 README.md
 api/openapi.yaml
 appveyor.yml
@@ -23,7 +22,6 @@ docs/models/WebhookRecord.md
 docs/scripts/git_push.ps1
 docs/scripts/git_push.sh
 src/NativeBPM.Client.Test/Api/DependencyInjectionTests.cs
-src/NativeBPM.Client.Test/NativeBPM.Client.Test.csproj
 src/NativeBPM.Client.Test/README.md
 src/NativeBPM.Client/Api/DefaultApi.cs
 src/NativeBPM.Client/Api/IApi.cs
@@ -65,5 +63,4 @@ src/NativeBPM.Client/Model/TaskRecord.cs
 src/NativeBPM.Client/Model/VisualizationData.cs
 src/NativeBPM.Client/Model/WebhookDeliveryRecord.cs
 src/NativeBPM.Client/Model/WebhookRecord.cs
-src/NativeBPM.Client/NativeBPM.Client.csproj
 src/NativeBPM.Client/README.md
