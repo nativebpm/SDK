@@ -1,11 +1,17 @@
 .PHONY: generate generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift generate-dart
-.PHONY: test test-go test-python test-typescript test-java test-kotlin test-php test-dotnet test-rust test-dart test-swift
+.PHONY: test test-go test-python test-typescript test-java test-kotlin test-php test-dotnet test-rust test-dart test-swift push-images
 
 # Registry-backed images to bypass Docker Hub rate limits in CI/CD
 OPENAPI_GEN_IMG = registry.gitlab.com/nativebpm/sdk/openapi-generator-cli:latest
 GOLANG_IMG = registry.gitlab.com/nativebpm/sdk/golang:1.26-alpine
 PYTHON_IMG = registry.gitlab.com/nativebpm/sdk/python:3.11
 NODE_IMG = registry.gitlab.com/nativebpm/sdk/node:20-alpine
+GRADLE_IMG = registry.gitlab.com/nativebpm/sdk/gradle:8-jdk17
+COMPOSER_IMG = registry.gitlab.com/nativebpm/sdk/composer:latest
+PHP_IMG = registry.gitlab.com/nativebpm/sdk/php:8.2-cli
+DOTNET_IMG = registry.gitlab.com/nativebpm/sdk/dotnet-sdk:8.0
+RUST_IMG = registry.gitlab.com/nativebpm/sdk/rust:1.75
+DART_IMG = registry.gitlab.com/nativebpm/sdk/dart:stable
 
 # Unified code generator target for all polyglot SDKs using local openapi.yaml
 generate: generate-go generate-python generate-typescript generate-java generate-php generate-dotnet generate-rust generate-kotlin generate-swift generate-dart
@@ -95,23 +101,28 @@ test-typescript:
 	docker run --rm -v "$$(pwd):/local" -w /local/typescript $(NODE_IMG) sh -c "apk add --no-cache make && make test"
 
 test-java:
-	docker run --rm -v "$$(pwd):/local" -w /local/java gradle:8-jdk17 gradle test
+	docker run --rm -v "$$(pwd):/local" -w /local/java $(GRADLE_IMG) gradle test
 
 test-kotlin:
-	docker run --rm -v "$$(pwd):/local" -w /local/kotlin gradle:8-jdk17 gradle test
+	docker run --rm -v "$$(pwd):/local" -w /local/kotlin $(GRADLE_IMG) gradle test
 
 test-php:
-	docker run --rm -v "$$(pwd):/local" -w /local/php composer install --no-interaction
-	docker run --rm -v "$$(pwd):/local" -w /local/php php:8.2-cli vendor/bin/phpunit
+	docker run --rm -v "$$(pwd):/local" -w /local/php $(COMPOSER_IMG) composer install --no-interaction
+	docker run --rm -v "$$(pwd):/local" -w /local/php $(PHP_IMG) vendor/bin/phpunit
 
 test-dotnet:
-	docker run --rm -v "$$(pwd):/local" -w /local/dotnet mcr.microsoft.com/dotnet/sdk:8.0 dotnet test NativeBPM.Client.sln
+	docker run --rm -v "$$(pwd):/local" -w /local/dotnet $(DOTNET_IMG) dotnet test NativeBPM.Client.sln
 
 test-rust:
-	docker run --rm -v "$$(pwd):/local" -w /local/rust rust:1.75 cargo test
+	docker run --rm -v "$$(pwd):/local" -w /local/rust $(RUST_IMG) cargo test
 
 test-dart:
-	docker run --rm -v "$$(pwd):/local" -w /local/dart dart:stable dart test
+	docker run --rm -v "$$(pwd):/local" -w /local/dart $(DART_IMG) dart test
 
 test-swift:
 	@echo "No tests configured for Swift"
+
+push-images:
+	bash scripts/push-images.sh
+
+
