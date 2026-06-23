@@ -12,6 +12,17 @@ export type TaskRecord = api.TaskRecord;
 export type WebhookRecord = api.WebhookRecord;
 export type WebhookDeliveryRecord = api.WebhookDeliveryRecord;
 
+export interface VisualizationData {
+  instance_id: string;
+  definition_id: string;
+  xml: string;
+  active_nodes: string[];
+  waiting_nodes: string[];
+  completed_nodes: string[];
+  history: HistoryRecord[];
+  completed: boolean;
+}
+
 export class Client {
   private baseUrl: string;
   private apiToken: string;
@@ -194,6 +205,33 @@ export class InstancesService {
 
   public resolveIncident(id: string, incidentID: string): ResolveIncidentBuilder {
     return new ResolveIncidentBuilder(this.client, id, incidentID);
+  }
+
+  public async getVisualization(instanceID: string): Promise<VisualizationData> {
+    const res = await fetch(`${this.client.getBaseUrl()}/api/instances/${instanceID}/visualization`, {
+      method: "GET",
+      headers: this.client.getHeaders()
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to get visualization: ${text}`);
+    }
+    return res.json() as Promise<VisualizationData>;
+  }
+
+  public async getVisualizationHTML(instanceID: string): Promise<string> {
+    const res = await fetch(`${this.client.getBaseUrl()}/api/instances/${instanceID}/visualization/widget`, {
+      method: "GET",
+      headers: {
+        ...this.client.getHeaders(),
+        "Accept": "text/html"
+      }
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to get visualization HTML: ${text}`);
+    }
+    return res.text();
   }
 
   public subscribe(instanceID: string, onUpdate: () => void): () => void {

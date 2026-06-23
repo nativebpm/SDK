@@ -211,6 +211,95 @@ func (s *InstancesService) Incidents() *IncidentsService {
 	return &IncidentsService{client: s.client}
 }
 
+type VisualizationData struct {
+	InstanceID     string          `json:"instance_id"`
+	DefinitionID   string          `json:"definition_id"`
+	XML            string          `json:"xml"`
+	ActiveNodes    []string        `json:"active_nodes"`
+	WaitingNodes   []string        `json:"waiting_nodes"`
+	CompletedNodes []string        `json:"completed_nodes"`
+	History        []HistoryRecord `json:"history"`
+	Completed      bool            `json:"completed"`
+}
+
+func (s *InstancesService) GetVisualization(ctx context.Context, instanceID string) (*VisualizationData, error) {
+	cfg := s.client.apiClient.cfg
+	serverURL := cfg.Servers[0].URL
+	reqURL := fmt.Sprintf("%s/api/instances/%s/visualization", serverURL, instanceID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Accept", "application/json")
+	for k, v := range cfg.DefaultHeader {
+		req.Header.Set(k, v)
+	}
+
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get visualization: status=%d, body=%s", resp.StatusCode, string(respBody))
+	}
+
+	var result VisualizationData
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func (s *InstancesService) GetVisualizationHTML(ctx context.Context, instanceID string) (string, error) {
+	cfg := s.client.apiClient.cfg
+	serverURL := cfg.Servers[0].URL
+	reqURL := fmt.Sprintf("%s/api/instances/%s/visualization/widget", serverURL, instanceID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Accept", "text/html")
+	for k, v := range cfg.DefaultHeader {
+		req.Header.Set(k, v)
+	}
+
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("failed to get visualization html: status=%d, body=%s", resp.StatusCode, string(respBody))
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bodyBytes), nil
+}
+
 type ListInstancesBuilder struct {
 	service *InstancesService
 }

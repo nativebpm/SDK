@@ -7,6 +7,16 @@ export type IncidentRecord = api.IncidentRecord;
 export type TaskRecord = api.TaskRecord;
 export type WebhookRecord = api.WebhookRecord;
 export type WebhookDeliveryRecord = api.WebhookDeliveryRecord;
+export interface VisualizationData {
+    instance_id: string;
+    definition_id: string;
+    xml: string;
+    active_nodes: string[];
+    waiting_nodes: string[];
+    completed_nodes: string[];
+    history: HistoryRecord[];
+    completed: boolean;
+}
 export declare class Client {
     private baseUrl;
     private apiToken;
@@ -54,6 +64,8 @@ export declare class InstancesService {
     history(id: string): GetInstanceHistoryBuilder;
     incidents(id: string): ListIncidentsBuilder;
     resolveIncident(id: string, incidentID: string): ResolveIncidentBuilder;
+    getVisualization(instanceID: string): Promise<VisualizationData>;
+    getVisualizationHTML(instanceID: string): Promise<string>;
     subscribe(instanceID: string, onUpdate: () => void): () => void;
 }
 export declare class ListInstancesBuilder {

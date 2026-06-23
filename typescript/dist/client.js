@@ -163,6 +163,31 @@ export class InstancesService {
     resolveIncident(id, incidentID) {
         return new ResolveIncidentBuilder(this.client, id, incidentID);
     }
+    async getVisualization(instanceID) {
+        const res = await fetch(`${this.client.getBaseUrl()}/api/instances/${instanceID}/visualization`, {
+            method: "GET",
+            headers: this.client.getHeaders()
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Failed to get visualization: ${text}`);
+        }
+        return res.json();
+    }
+    async getVisualizationHTML(instanceID) {
+        const res = await fetch(`${this.client.getBaseUrl()}/api/instances/${instanceID}/visualization/widget`, {
+            method: "GET",
+            headers: {
+                ...this.client.getHeaders(),
+                "Accept": "text/html"
+            }
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Failed to get visualization HTML: ${text}`);
+        }
+        return res.text();
+    }
     subscribe(instanceID, onUpdate) {
         const targetUrl = `${this.client.getBaseUrl()}/ui/instances/${instanceID}/stream`;
         const clientModule = targetUrl.startsWith("https") ? https : http;

@@ -146,6 +146,22 @@ class InstancesService:
     def resolve_incident(self, instance_id: str, incident_id: str) -> 'ResolveIncidentBuilder':
         return ResolveIncidentBuilder(self, instance_id, incident_id)
 
+    def get_visualization(self, instance_id: str) -> dict:
+        url = f'{self.client._base_url}/api/instances/{instance_id}/visualization'
+        resp = requests.get(url, headers=self.client._headers)
+        if not resp.ok:
+            raise RuntimeError(f"Failed to get visualization: {resp.text}")
+        return resp.json()
+
+    def get_visualization_html(self, instance_id: str) -> str:
+        url = f'{self.client._base_url}/api/instances/{instance_id}/visualization/widget'
+        headers = dict(self.client._headers)
+        headers['Accept'] = 'text/html'
+        resp = requests.get(url, headers=headers)
+        if not resp.ok:
+            raise RuntimeError(f"Failed to get visualization HTML: {resp.text}")
+        return resp.text
+
     def subscribe(self, instance_id: str, on_update: Callable[[], None]) -> Callable[[], None]:
         url = f'{self.client._base_url}/ui/instances/{instance_id}/stream'
         stop_event = threading.Event()
