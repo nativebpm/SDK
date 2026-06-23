@@ -776,9 +776,8 @@ components:
         business_key:
           type: string
         state:
-          type: string
-          format: byte
-          description: Base64/raw JSON encoded internal Wazero process engine state representation
+          type: object
+          description: Raw JSON object representing internal Wazero process engine state representation
         version:
           type: integer
         completed:
