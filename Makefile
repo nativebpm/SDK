@@ -26,7 +26,7 @@ generate-go:
 		-i /local/openapi.yaml \
 		-g go \
 		-o /local/go \
-		--additional-properties=packageName=nativebpm \
+		--additional-properties=packageName=nativebpm,hideGenerationTimestamp=true \
 		--git-host gitlab.com \
 		--git-user-id nativebpm \
 		--git-repo-id sdk/go
@@ -36,63 +36,63 @@ generate-python:
 		-i /local/openapi.yaml \
 		-g python \
 		-o /local/python \
-		--additional-properties=packageName=nativebpm_client
+		--additional-properties=packageName=nativebpm_client,hideGenerationTimestamp=true
 
 generate-typescript:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
 		-i /local/openapi.yaml \
 		-g typescript-fetch \
 		-o /local/typescript/src/api \
-		--additional-properties=npmName=@nativebpm/client,npmVersion=1.0.0
+		--additional-properties=npmName=@nativebpm/client,npmVersion=1.0.0,hideGenerationTimestamp=true
 
 generate-java:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
 		-i /local/openapi.yaml \
 		-g java \
 		-o /local/java \
-		--additional-properties=library=okhttp-gson,serializationLibrary=gson,groupId=com.nativebpm,artifactId=nativebpm-java-client,artifactVersion=1.0.0,invokerPackage=com.nativebpm.client,apiPackage=com.nativebpm.client.api,modelPackage=com.nativebpm.client.model
+		--additional-properties=library=okhttp-gson,serializationLibrary=gson,groupId=com.nativebpm,artifactId=nativebpm-java-client,artifactVersion=1.0.0,invokerPackage=com.nativebpm.client,apiPackage=com.nativebpm.client.api,modelPackage=com.nativebpm.client.model,hideGenerationTimestamp=true
 
 generate-php:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
 		-i /local/openapi.yaml \
 		-g php \
 		-o /local/php \
-		--additional-properties=invokerPackage=NativeBPM\\Client,packageName=nativebpm/client
+		--additional-properties=invokerPackage=NativeBPM\\Client,packageName=nativebpm/client,hideGenerationTimestamp=true
 
 generate-dotnet:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
 		-i /local/openapi.yaml \
 		-g csharp \
 		-o /local/dotnet \
-		--additional-properties=packageName=NativeBPM.Client,targetFramework=net9.0
+		--additional-properties=packageName=NativeBPM.Client,targetFramework=net9.0,hideGenerationTimestamp=true
 
 generate-rust:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
 		-i /local/openapi.yaml \
 		-g rust \
 		-o /local/rust \
-		--additional-properties=packageName=nativebpm-client
+		--additional-properties=packageName=nativebpm-client,hideGenerationTimestamp=true
 
 generate-kotlin:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
 		-i /local/openapi.yaml \
 		-g kotlin \
 		-o /local/kotlin \
-		--additional-properties=groupId=com.nativebpm,artifactId=nativebpm-kotlin-client,artifactVersion=1.0.0,packageName=com.nativebpm.client,library=jvm-okhttp4
+		--additional-properties=groupId=com.nativebpm,artifactId=nativebpm-kotlin-client,artifactVersion=1.0.0,packageName=com.nativebpm.client,library=jvm-okhttp4,hideGenerationTimestamp=true
 
 generate-swift:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
 		-i /local/openapi.yaml \
 		-g swift5 \
 		-o /local/swift \
-		--additional-properties=projectName=NativeBPMClient,responseAs=AsyncAwait
+		--additional-properties=projectName=NativeBPMClient,responseAs=AsyncAwait,hideGenerationTimestamp=true
 
 generate-dart:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
 		-i /local/openapi.yaml \
 		-g dart \
 		-o /local/dart \
-		--additional-properties=pubName=nativebpm_client,pubVersion=1.0.0,pubDescription="NativeBPM Client SDK for Dart and Flutter"
+		--additional-properties=pubName=nativebpm_client,pubVersion=1.0.0,pubDescription="NativeBPM Client SDK for Dart and Flutter",hideGenerationTimestamp=true
 
 test: test-go test-python test-typescript test-java test-kotlin test-php test-dotnet test-rust test-dart
 
