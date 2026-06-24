@@ -108,7 +108,29 @@ public class Main {
 }
 ```
 
+## Workflow-as-Code (Описание процессов на Java)
+
+Java SDK предоставляет Fluent API для декларативного описания бизнес-процессов непосредственно в исходном коде:
+
+```java
+import com.nativebpm.client.builder.Workflow;
+import static com.nativebpm.client.builder.Workflow.V;
+
+// Декларативное описание процесса
+Workflow workflow = new Workflow("awesome-java-process", "Awesome Java Process");
+workflow
+    .when(V("isPremium").eq(true)).then(b -> {
+        b.user("vipService", "VIP Customer Support", ut -> {
+            ut.assignee("vip_manager");
+        });
+    })
+    .Else(b -> {
+        b.service("standardNotify", "Send Regular Notification", "notification_topic");
+    });
+```
+
 ## Руководство для разработчиков: Публикация в GitLab Package Registry
+
 
 ### Автоматическая публикация через CI/CD
 Этот пакет автоматически собирается, версионируется и публикуется в GitLab Maven Package Registry при каждом пуше git-тега, соответствующего шаблону `sdk/java/v*`. Например:

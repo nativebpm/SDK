@@ -106,6 +106,7 @@ class Program
 
             var startResponse = await api.StartInstanceAsync("expense-claims-process", startRequest);
             if (startResponse.IsSuccessStatusCode && startResponse.TryOk(out var instance) && instance != null)
+
             {
                 Console.WriteLine($"Started instance: {instance.Id}");
             }
@@ -119,7 +120,29 @@ class Program
 }
 ```
 
+## Workflow-as-Code (Описание процессов на C#)
+
+.NET SDK предоставляет Fluent API для декларативного описания бизнес-процессов:
+
+```csharp
+using NativeBPM.Client.Builder;
+using static NativeBPM.Client.Builder.Workflow;
+
+// Декларативное описание процесса
+using var workflow = new Workflow("awesome-dotnet-process", "Awesome Dotnet Process");
+workflow.Start()
+    .When(V("isPremium").Eq(true)).Then(b => {
+        b.User("vipService", "VIP Customer Support", new Dictionary<string, object> {
+            { "assignee", "vip_manager" }
+        });
+    })
+    .Else(b => {
+        b.Service("standardNotify", "Send Regular Notification", "notification_topic");
+    });
+```
+
 ## Руководство для разработчиков: Публикация в GitLab Package Registry
+
 
 ### Автоматическая публикация через CI/CD
 Этот пакет автоматически собирается, версионируется и публикуется в GitLab NuGet Package Registry при каждом пуше git-тега, соответствующего шаблону `sdk/dotnet/v*`. Например:

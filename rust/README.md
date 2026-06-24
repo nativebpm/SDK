@@ -82,7 +82,56 @@ To get access to the crate's generated documentation, use:
 cargo doc --open
 ```
 
+## Fluent API & Workflow-as-Code
+
+The SDK provides a high-level Fluent Client API and a type-safe Workflow-as-Code builder.
+
+### Fluent Client Configuration
+```rust
+use nativebpm_client::apis::configuration::Configuration;
+
+let mut config = Configuration::new();
+config.base_path = "http://localhost:8080".to_string();
+config.bearer_access_token = Some("your-api-token".to_string());
+```
+
+### Defining a Workflow (Workflow-as-Code)
+```rust
+use nativebpm_client::{Workflow, v};
+
+let mut workflow = Workflow::new("my-process", "My Process");
+workflow
+    .when(v("isPremium").eq(true))
+    .then(|b| {
+        b.user("vipService", "VIP Support", serde_json::json!({ "assignee": "vip_manager" }));
+    })
+    .Else(|b| {
+        b.service("notify", "Send Email", "email_topic", serde_json::json!({}));
+    });
+```
+
+### Deploying & Starting Workflows
+```rust
+use nativebpm_client::deploy_workflow;
+use nativebpm_client::apis::default_api;
+
+// Deploy
+let definition = deploy_workflow(&config, &workflow).await.unwrap();
+
+// Start process instance
+let mut variables = std::collections::HashMap::new();
+variables.insert("isPremium".to_string(), serde_json::json!(true));
+
+let start_request = nativebpm_client::models::StartInstanceRequest {
+    instance_id: None,
+    business_key: Some("BIZ-101".to_string()),
+    variables: Some(variables),
+};
+let instance = default_api::start_instance(&config, "my-process", Some(start_request)).await.unwrap();
+```
+
 ## Author
+
 
 
 

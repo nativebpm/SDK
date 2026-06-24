@@ -47,12 +47,13 @@ class MockHandler(BaseHTTPRequestHandler):
                 "process_id": "test-proc",
                 "definition_hash": "abc",
                 "business_key": "key-123",
-                "state": "{}",
+                "state": {},
                 "version": 1,
                 "completed": False,
                 "updated_at": "2026-06-11T09:10:00Z",
                 "tenant_id": "test-tenant"
             }]).encode())
+
             return
 
         if self.path == "/api/instances/00000000-0000-0000-0000-000000000001":
@@ -64,12 +65,13 @@ class MockHandler(BaseHTTPRequestHandler):
                 "process_id": "test-proc",
                 "definition_hash": "abc",
                 "business_key": "key-123",
-                "state": "{}",
+                "state": {},
                 "version": 1,
                 "completed": False,
                 "updated_at": "2026-06-11T09:10:00Z",
                 "tenant_id": "test-tenant"
             }).encode())
+
             return
 
         if self.path == "/api/instances/00000000-0000-0000-0000-000000000001/history":
@@ -186,7 +188,7 @@ class MockHandler(BaseHTTPRequestHandler):
                 "process_id": "test-proc",
                 "definition_hash": "abc",
                 "business_key": req_data.get("business_key") or "key-123",
-                "state": "{}",
+                "state": {},
                 "version": 1,
                 "completed": False,
                 "updated_at": "2026-06-11T09:10:00Z",
@@ -203,7 +205,7 @@ class MockHandler(BaseHTTPRequestHandler):
                 "process_id": "test-proc",
                 "definition_hash": "abc",
                 "business_key": "key-123",
-                "state": "{}",
+                "state": {},
                 "version": 1,
                 "completed": True,
                 "updated_at": "2026-06-11T09:10:00Z",
@@ -220,7 +222,7 @@ class MockHandler(BaseHTTPRequestHandler):
                 "process_id": "test-proc",
                 "definition_hash": "abc",
                 "business_key": "key-123",
-                "state": "{}",
+                "state": {},
                 "version": 1,
                 "completed": False,
                 "updated_at": "2026-06-11T09:10:00Z",
@@ -258,7 +260,7 @@ class MockHandler(BaseHTTPRequestHandler):
                 "process_id": "test-proc",
                 "definition_hash": "abc",
                 "business_key": "key-123",
-                "state": "{}",
+                "state": {},
                 "version": 1,
                 "completed": True,
                 "updated_at": "2026-06-11T09:10:00Z",

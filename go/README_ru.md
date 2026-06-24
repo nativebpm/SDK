@@ -65,3 +65,23 @@ func main() {
 	fmt.Printf("Started process instance: %s\n", instance.Id)
 }
 ```
+
+## Workflow-as-Code (Описание процессов на Go)
+
+Вы можете описывать бизнес-процессы прямо в Go-коде, не создавая XML-файлы вручную.
+
+```go
+workflow := nativebpm.NewWorkflow("awesome-go-process", "Awesome Go Process")
+workflow.
+	When(nativebpm.V("isPremium").Eq(true)).
+	Then(func(flow *nativebpm.Branch) {
+		flow.User("vipService", "VIP Customer Support", nativebpm.M{"assignee": "vip_manager"})
+	}).
+	Else(func(flow *nativebpm.Branch) {
+		flow.Service("standardNotify", "Send Regular Notification", "notification_topic")
+	})
+
+// Развертывание процесса на движке
+definition, err := client.Deploy(ctx, workflow)
+```
+

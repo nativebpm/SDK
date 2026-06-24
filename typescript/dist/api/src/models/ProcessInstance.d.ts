@@ -40,11 +40,11 @@ export interface ProcessInstance {
      */
     businessKey: string;
     /**
-     * Base64/raw JSON encoded internal Wazero process engine state representation
-     * @type {string}
+     * Raw JSON object representing internal Wazero process engine state representation
+     * @type {object}
      * @memberof ProcessInstance
      */
-    state: string;
+    state: object;
     /**
      *
      * @type {number}

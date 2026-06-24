@@ -61,6 +61,29 @@ const instance = await client.instances()
 console.log(`Started process instance: ${instance.id}`);
 ```
 
+## Workflow-as-Code (Описание процессов в коде)
+
+Вы можете описывать бизнес-процессы непосредственно в TypeScript-коде:
+
+```typescript
+import { Workflow, v } from "@nativebpm/sdk";
+
+// Описание процесса
+const workflow = new Workflow('awesome-ts-process', 'Awesome TS Process');
+workflow
+  .when(v('isPremium').eq(true))
+  .then(flow => {
+    flow.user('vipService', 'VIP Customer Support', { assignee: 'vip_manager' });
+  })
+  .else(flow => {
+    flow.service('standardNotify', 'Send Regular Notification', 'notification_topic');
+  });
+
+// Развертывание процесса
+const definition = await client.deploy(workflow);
+```
+
+
 ## Руководство для разработчиков: Публикация в GitLab Package Registry
 
 ### Автоматическая публикация через CI/CD

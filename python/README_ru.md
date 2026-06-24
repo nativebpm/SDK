@@ -36,7 +36,7 @@ Python SDK содержит полностью типизированную об
 from nativebpm import Client
 
 # Инициализация клиента
-client = Client(base_url="http://localhost:8080", token="your-api-token")
+client = Client(base_url="http://localhost:8080", api_token="your-api-token")
 
 # 1. Получение списка развернутых определений процессов
 definitions = client.definitions().list().send()
@@ -54,6 +54,26 @@ instance = (
 )
 print(f"Started instance: {instance.id}")
 ```
+
+## Workflow-as-Code (Описание процессов на Python)
+
+Вы можете описывать логику ваших бизнес-процессов на чистом Python:
+
+```python
+from nativebpm import Workflow, V
+
+# Описание процесса
+workflow = Workflow("awesome-python-process", "Awesome Python Process")
+workflow.when(V("isPremium").eq(True)).then(
+    lambda flow: flow.user("vipService", "VIP Customer Support", assignee="vip_manager")
+).Else(
+    lambda flow: flow.service("standardNotify", "Send Regular Notification", "notification_topic")
+)
+
+# Развертывание процесса на движке
+definition = client.deploy(workflow)
+```
+
 
 ## Запуск внешнего воркера (External Worker)
 

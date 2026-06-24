@@ -98,7 +98,28 @@ try {
 ?>
 ```
 
+## Workflow-as-Code (Описание процессов на PHP)
+
+PHP SDK поддерживает Fluent API для декларативного описания бизнес-процессов непосредственно в коде:
+
+```php
+use NativeBPM\Client\Builder\Workflow;
+
+// Декларативное описание процесса
+$workflow = new Workflow("awesome-php-process", "Awesome PHP Process");
+$workflow->when(Workflow::V('isPremium')->eq(true))->then(function($b) {
+        $b->user("vipService", "VIP Customer Support", ["assignee" => "vip_manager"]);
+    })
+    ->else(function($b) {
+        $b->service("standardNotify", "Send Regular Notification", "notification_topic");
+    });
+
+// Развертывание процесса
+$definition = $apiInstance->deployWorkflow($workflow);
+```
+
 ## Руководство для разработчиков: Выпуск версий и тегирование
+
 
 Поскольку данный SDK находится в подпапке (`sdk/php/`), он не публикуется в реестры пакетов. Вместо этого просто установите тег в репозитории для выпуска новых версий:
 

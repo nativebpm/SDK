@@ -175,7 +175,53 @@ Endpoints do not require authorization.
 
 It's recommended to create an instance of `ApiClient` per thread in a multithreaded environment to avoid any potential issues.
 
+## Fluent API & Workflow-as-Code
+
+The SDK provides a high-level Fluent Client API and a type-safe Workflow-as-Code builder.
+
+### Fluent Client Initialization
+```java
+import com.nativebpm.client.ApiClient;
+import com.nativebpm.client.Configuration;
+import com.nativebpm.client.api.DefaultApi;
+
+ApiClient client = Configuration.getDefaultApiClient();
+client.setBasePath("http://localhost:8080");
+client.addDefaultHeader("Authorization", "Bearer your-api-token");
+
+DefaultApi apiInstance = new DefaultApi(client);
+```
+
+### Defining a Workflow (Workflow-as-Code)
+```java
+import com.nativebpm.client.builder.Workflow;
+import static com.nativebpm.client.builder.Workflow.V;
+
+Workflow workflow = new Workflow("my-process", "My Process");
+workflow
+    .when(V("isPremium").eq(true)).then(b -> {
+        b.user("vipService", "VIP Support", ut -> {
+            ut.assignee("vip_manager");
+        });
+    })
+    .Else(b -> {
+        b.service("notify", "Send Email", "email_topic");
+    });
+```
+
+### Deploying & Starting Workflows
+```java
+import com.nativebpm.client.model.ProcessDefinition;
+import com.nativebpm.client.model.ProcessInstance;
+import com.nativebpm.client.model.StartInstanceRequest;
+
+// Deploy (by sending serialized workflow JSON)
+String workflowJson = workflow.toJson();
+// Use apiInstance.deployDefinition(...)
+```
+
 ## Author
+
 
 
 

@@ -142,7 +142,44 @@ Each of these functions takes a value of the given basic type and returns a poin
 * `PtrString`
 * `PtrTime`
 
+## Fluent API & Workflow-as-Code
+
+The SDK provides a high-level Fluent Client API and a type-safe Workflow-as-Code builder.
+
+### Fluent Client Initialization
+```go
+import "gitlab.com/nativebpm/sdk/go"
+
+client, err := nativebpm.NewClient("http://localhost:8080", "your-api-token")
+```
+
+### Defining a Workflow (Workflow-as-Code)
+```go
+workflow := nativebpm.NewWorkflow("my-process", "My Process")
+workflow.
+	When(nativebpm.V("isPremium").Eq(true)).
+	Then(func(flow *nativebpm.Branch) {
+		flow.User("vipService", "VIP Support", nativebpm.M{"assignee": "vip_manager"})
+	}).
+	Else(func(flow *nativebpm.Branch) {
+		flow.Service("notify", "Send Email", "email_topic")
+	})
+```
+
+### Deploying & Starting Workflows
+```go
+// Deploy
+definition, err := client.Deploy(ctx, workflow)
+
+// Start process instance
+instance, err := client.Instances().Start("my-process").
+	WithBusinessKey("BIZ-101").
+	WithVariable("isPremium", true).
+	Send(ctx)
+```
+
 ## Author
+
 
 
 

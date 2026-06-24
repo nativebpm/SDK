@@ -61,6 +61,29 @@ const instance = await client.instances()
 console.log(`Started process instance: ${instance.id}`);
 ```
 
+## Workflow-as-Code (Workflow definition in TypeScript)
+
+You can describe your business processes directly in TypeScript code:
+
+```typescript
+import { Workflow, v } from "@nativebpm/sdk";
+
+// Define a process
+const workflow = new Workflow('awesome-ts-process', 'Awesome TS Process');
+workflow
+  .when(v('isPremium').eq(true))
+  .then(flow => {
+    flow.user('vipService', 'VIP Customer Support', { assignee: 'vip_manager' });
+  })
+  .else(flow => {
+    flow.service('standardNotify', 'Send Regular Notification', 'notification_topic');
+  });
+
+// Deploy the process using the client
+const definition = await client.deploy(workflow);
+```
+
+
 ## Developer Guide: Publishing to GitLab Package Registry
 
 ### Automated Publishing via CI/CD
