@@ -9,7 +9,7 @@
 Чтобы установить пакет из публичного реестра GitLab PyPI Package Registry:
 
 ```bash
-pip install nativebpm-sdk --extra-index-url https://gitlab.com/api/v4/projects/nativebpm%2Fsdk/packages/pypi/simple
+pip install nativebpm-client --extra-index-url https://gitlab.com/api/v4/projects/nativebpm%2Fsdk/packages/pypi/simple
 ```
 
 Для локальной разработки:
