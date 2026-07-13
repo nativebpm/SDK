@@ -90,44 +90,7 @@ https://openapi-generator.tech/docs/faq-generators#how-do-i-migrate-from-the-swi
 
 https://openapi-generator.tech/docs/faq-generators#how-do-i-implement-bearer-token-authentication-with-urlsession-on-the-swift-5-api-client
 
-## Fluent API & Workflow-as-Code
-
-The SDK provides a high-level Fluent Client API and a type-safe Workflow-as-Code builder.
-
-### Fluent Client Initialization
-```swift
-import NativeBPMClient
-
-let client = Client(baseURL: "http://localhost:8080", apiToken: "your-api-token")
-```
-
-### Defining a Workflow (Workflow-as-Code)
-```swift
-let workflow = Workflow(id: "my-process", name: "My Process")
-workflow
-    .when(V("isPremium").eq(true)).then { b in
-        b.user("vipService", name: "VIP Support", options: ["assignee": "vip_manager"])
-    }.else { b in
-        b.service("notify", name: "Send Email", topic: "email_topic")
-    }
-```
-
-### Deploying & Starting Workflows
-```swift
-import AnyCodable
-
-// Deploy
-let definition = try await client.deploy(workflow)
-
-// Start process instance
-let instance = try await client.instances().start(definition.id)
-    .withBusinessKey("BIZ-101")
-    .withVariable("isPremium", AnyCodable(true))
-    .send()
-```
-
 ## Author
-
 
 
 

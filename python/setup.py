@@ -26,9 +26,7 @@ REQUIRES = [
     "python-dateutil >= 2.8.2",
     "pydantic >= 2.11",
     "typing-extensions >= 4.7.1",
-    "requests >= 2.31.0",
 ]
-
 
 setup(
     name=NAME,

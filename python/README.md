@@ -142,46 +142,7 @@ Class | Method | HTTP request | Description
 Endpoints do not require authorization.
 
 
-## Fluent API & Workflow-as-Code
-
-The SDK provides a high-level Fluent Client API and a type-safe Workflow-as-Code builder.
-
-### Fluent Client Initialization
-```python
-from nativebpm import Client
-
-client = Client(base_url="http://localhost:8080", api_token="your-api-token")
-```
-
-### Defining a Workflow (Workflow-as-Code)
-```python
-from nativebpm import Workflow, V
-
-workflow = Workflow("my-process", "My Process")
-workflow.when(V("isPremium").eq(True)).then(
-    lambda flow: flow.user("vipService", "VIP Support", assignee="vip_manager")
-).Else(
-    lambda flow: flow.service("notify", "Send Email", "email_topic")
-)
-```
-
-### Deploying & Starting Workflows
-```python
-# Deploy
-definition = client.deploy(workflow)
-
-# Start process instance
-instance = (
-    client.instances()
-    .start("my-process")
-    .business_key("BIZ-101")
-    .variables({"isPremium": True})
-    .send()
-)
-```
-
 ## Author
-
 
 
 

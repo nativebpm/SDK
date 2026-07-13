@@ -115,44 +115,7 @@ Class | Method | HTTP request | Description
 Endpoints do not require authorization.
 
 
-## Fluent API & Workflow-as-Code
-
-The SDK provides a high-level Fluent Client API and a type-safe Workflow-as-Code builder.
-
-### Fluent Client Initialization
-```dart
-import 'package:nativebpm_client/nativebpm_client.dart';
-
-final client = Client('http://localhost:8080', 'your-api-token');
-```
-
-### Defining a Workflow (Workflow-as-Code)
-```dart
-final workflow = Workflow('my-process', 'My Process');
-workflow
-    .when(V('isPremium').eq(true))
-    .then((flow) {
-      flow.user('vipService', 'VIP Support', {'assignee': 'vip_manager'});
-    })
-    .Else((flow) {
-      flow.service('notify', 'Send Email', 'email_topic');
-    });
-```
-
-### Deploying & Starting Workflows
-```dart
-// Deploy
-final definition = await client.deploy(workflow);
-
-// Start process instance
-final instance = await client.instances().start(definition.id)
-    .withBusinessKey('BIZ-101')
-    .withVariables({'isPremium': true})
-    .send();
-```
-
 ## Author
-
 
 
 
