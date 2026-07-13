@@ -7,7 +7,7 @@ info:
     ### Authentication
     Requests must include a session cookie or a Bearer API token:
     `Authorization: Bearer <API_TOKEN>`
-  version: 1.0.1
+  version: 0.1.38
 servers:
   - url: /
 paths:
