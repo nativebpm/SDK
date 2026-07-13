@@ -4,7 +4,7 @@
 
 # Registry-backed images to bypass Docker Hub rate limits in CI/CD
 OPENAPI_GEN_IMG = registry.gitlab.com/nativebpm/sdk/openapi-generator-cli:latest
-GOLANG_IMG = registry.gitlab.com/nativebpm/sdk/golang:1.24-alpine
+GOLANG_IMG = registry.gitlab.com/nativebpm/sdk/golang:1.26-alpine
 PYTHON_IMG = registry.gitlab.com/nativebpm/sdk/python:3.12
 NODE_IMG = registry.gitlab.com/nativebpm/sdk/node:22-alpine
 GRADLE_IMG = registry.gitlab.com/nativebpm/sdk/gradle:8-jdk21
@@ -178,7 +178,7 @@ push-openapi-gen:
 	$(call mirror_image,openapitools/openapi-generator-cli:latest,$(OPENAPI_GEN_IMG))
 
 push-golang:
-	$(call mirror_image,mirror.gcr.io/library/golang:1.24-alpine,$(GOLANG_IMG))
+	$(call mirror_image,mirror.gcr.io/library/golang:1.26-alpine,$(GOLANG_IMG))
 
 push-python:
 	$(call mirror_image,mirror.gcr.io/library/python:3.12,$(PYTHON_IMG))
