@@ -22,3 +22,5 @@
 # Then explicitly reverse the ignore rule for a single file:
 # Docs and OpenAPI specs
 api/openapi.yaml
+.travis.yml
+git_push.sh
