@@ -84,6 +84,7 @@ Every language has its unique ecosystem, strengths, and philosophy. NativeBPM em
 * **Native Cohesion**: Since the core NativeBPM execution engine is written in Go, the Go client features direct and seamless integration.
 * **Concurrency-First**: Take full advantage of Go's lightweight goroutines and channels to write high-concurrency topic workers.
 * **Minimal Footprint**: Compiles into a single statically linked binary with absolute zero runtime dependencies.
+* **Full Contract Code-Gen**: Generates both the client library and server-side boilerplate interfaces (`StrictServerInterface`) dynamically from the OpenAPI contract.
 
 ### 🐍 Python
 * **Outstanding Ergonomics**: Clear, readable syntax makes writing workflows as code feel natural and pleasant.
@@ -152,7 +153,7 @@ For a detailed walkthrough on setting up your environment, modifying the API, ge
 
 ### 1. How to Work with the SDKs
 
-The SDKs in this monorepo follow a dual-layer architecture:
+The SDKs in this monorepo follow a dual-layer architecture (with Go also featuring a server-side generated contract layer):
 1. **Low-Level Generated Client**: Automatically generated from `openapi.yaml` under each language subdirectory. This layer handles low-level HTTP requests, route mapping, request/response serialization, and raw payload structures.
 2. **High-Level Fluent client wrapper**: A manually maintained wrapper that sits on top of the generated code. It provides an ergonomic, type-safe Fluent API for workflow builders, client configuration, and task handlers.
 
