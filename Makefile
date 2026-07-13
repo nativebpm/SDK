@@ -32,6 +32,7 @@ generate-go:
 		--git-repo-id sdk/go
 	mkdir -p go/api
 	docker run --rm -v "$$(pwd):/local" -w /local/go $(GOLANG_IMG) sh -c "go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.1 -package api -generate types,std-http,spec,strict-server /local/api/openapi.yaml > /local/go/api/api.gen.go"
+	docker run --rm -v "$$(pwd):/local" -w /local/go $(GOLANG_IMG) go mod tidy
 
 generate-python:
 	docker run --rm -v "$$(pwd):/local" $(OPENAPI_GEN_IMG) generate \
