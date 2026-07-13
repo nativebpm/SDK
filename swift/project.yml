@@ -7,7 +7,7 @@ targets:
     sources: [NativeBPMClient]
     info:
       path: ./Info.plist
-      version: 1.0.1
+      version: 0.1.38
     settings:
       APPLICATION_EXTENSION_API_ONLY: true
     scheme: {}
