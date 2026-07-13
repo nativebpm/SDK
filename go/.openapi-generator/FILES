@@ -1,5 +1,4 @@
 .gitignore
-.travis.yml
 README.md
 api_default.go
 client.go
@@ -21,7 +20,6 @@ docs/TaskRecord.md
 docs/VisualizationData.md
 docs/WebhookDeliveryRecord.md
 docs/WebhookRecord.md
-git_push.sh
 go.mod
 go.sum
 model_claim_task_request.go
