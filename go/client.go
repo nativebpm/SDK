@@ -416,6 +416,10 @@ func (c *APIClient) prepareRequest(
 		// add context to the request
 		localVarRequest = localVarRequest.WithContext(ctx)
 
+		if val, ok := ctx.Value("X-Tenant-ID").(string); ok && val != "" {
+			localVarRequest.Header.Set("X-Tenant-ID", val)
+		}
+
 		// Walk through any authentication.
 
 	}

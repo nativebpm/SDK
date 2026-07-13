@@ -177,6 +177,10 @@ func (b *DeployDefinitionBuilder) Send(ctx context.Context) (*ProcessDefinition,
 		return nil, err
 	}
 
+	if val, ok := ctx.Value("X-Tenant-ID").(string); ok && val != "" {
+		req.Header.Set("X-Tenant-ID", val)
+	}
+
 	req.Header.Set("Content-Type", contentType)
 	req.Header.Set("Accept", "application/json")
 	for k, v := range cfg.DefaultHeader {
@@ -226,6 +230,10 @@ func (s *InstancesService) GetVisualization(ctx context.Context, instanceID stri
 		return nil, err
 	}
 
+	if val, ok := ctx.Value("X-Tenant-ID").(string); ok && val != "" {
+		req.Header.Set("X-Tenant-ID", val)
+	}
+
 	req.Header.Set("Accept", "application/json")
 	for k, v := range cfg.DefaultHeader {
 		req.Header.Set(k, v)
@@ -263,6 +271,10 @@ func (s *InstancesService) GetVisualizationHTML(ctx context.Context, instanceID 
 	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return "", err
+	}
+
+	if val, ok := ctx.Value("X-Tenant-ID").(string); ok && val != "" {
+		req.Header.Set("X-Tenant-ID", val)
 	}
 
 	req.Header.Set("Accept", "text/html")
