@@ -3,8 +3,8 @@ module gitlab.com/nativebpm/sdk/go
 go 1.25
 
 require (
-	github.com/getkin/kin-openapi v0.142.0
-	github.com/oapi-codegen/runtime v1.5.0
+	github.com/getkin/kin-openapi v0.146.0
+	github.com/oapi-codegen/runtime v1.6.0
 	github.com/stretchr/testify v1.11.1
 )
 
